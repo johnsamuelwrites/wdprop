@@ -1,0 +1,20 @@
+.property,.language {
+  float : left;
+  background-color : #0077c2;
+  color : white;
+}
+.property > a, .language > a{
+  color : white;
+}
+.property > a:visited, .language >  a:visited {
+  color : white;
+}
+@media screen and (min-width: 480px) {
+  .property,.language  {
+    font-size : 18px;
+    line-height : 20px;
+    font-weight : 400;
+    padding : 15px;
+    margin : 5px;
+  }
+}
