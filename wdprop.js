@@ -4,6 +4,9 @@
 function createDivProperties(json) {
   const { head: { vars }, results } = json;
   var properties = document.getElementById("properties");
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Total " + results.bindings.length + " properties";
+  properties.appendChild(total);
   for ( const result of results.bindings ) {
     for ( const variable of vars ) {
       var property = document.createElement("div"); 
@@ -79,7 +82,7 @@ function getLanguages() {
   queryWikidata(sparqlQuery, createDivLanguage);
 }
 
-function getPropertiesNeedingTranslation() {
+function getPropertyLabelsNeedingTranslation() {
   var language = "en";
   if(window.location.search.length > 0) {
     var reg = new RegExp("language=([^&#=]*)");
@@ -88,6 +91,9 @@ function getPropertiesNeedingTranslation() {
        language = decodeURIComponent(value[1]);
     }
   }
+
+  getLanguage(language);
+
   const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
     SELECT ?property
@@ -99,6 +105,57 @@ function getPropertiesNeedingTranslation() {
       FILTER (!BOUND(?label)).
     }
     ORDER by ?property
+    `;
+  queryWikidata(sparqlQuery, createDivProperties);
+}
+
+function createDivLanguageCode(json) { 
+  const { head: { vars }, results } = json;
+  var languageText = document.getElementById("languagecode");
+  if(results.bindings.length > 0) {
+    languageText.innerHTML = results.bindings[0]['languageLabel']['value'];
+  }
+}
+
+function getLanguage(language){
+  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+
+    SELECT ?languageLabel
+    WHERE
+    {
+      ?languageWiki wdt:P424 "` + language + `";
+               wdt:P407 ?language.   
+      ?language rdfs:label ?languageLabel.
+      FILTER(lang(?languageLabel) = "en")
+       
+    }
+    LIMIT 1`;
+  queryWikidata(sparqlQuery, createDivLanguageCode);
+}
+
+function getPropertyDescriptionsNeedingTranslation() {
+  var language = "en";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+  }
+  
+  getLanguage(language);
+  
+  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+
+    SELECT ?property
+    WHERE
+    {
+      ?property rdf:type wikibase:Property.
+      OPTIONAL{?property schema:description ?description FILTER (lang(?description)="`
+      + language + `")}
+      FILTER (!BOUND(?description)).
+    }
+    ORDER by ?description
     `;
   queryWikidata(sparqlQuery, createDivProperties);
 }
