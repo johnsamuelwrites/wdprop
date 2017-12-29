@@ -21,6 +21,98 @@ function createDivProperties(json) {
   }
 }
 
+function getColor(colors, index, total) {
+  var colorCount = colors.length;
+  var groupSize = total/colorCount;
+
+  for (i = 0; i * groupSize < total; i ++) {
+    if (index >= i * groupSize && index <= (i + 1) * groupSize) {
+      return colors[i];
+    }
+  }
+}
+
+function createDivTranslatedAliasesCount(json) {
+  const { head: { vars }, results } = json;
+  var languages = document.getElementById("translated");
+  var colors =  ["#002171", "#004ba0", 
+                 "#0069c0", "#2286c3", "#bbdefb"]; 
+  var backgroundColors =  ["#ffffff", "#ffffff", 
+                 "#000000", "#000000", "#000000"]; 
+ 
+  var count = 0;
+  for ( const result of results.bindings ) {
+    var language = document.createElement("div"); 
+    language.setAttribute('class', "language");
+
+    language.style['background-color'] = getColor(colors, count, results.bindings.length);
+
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "language.html?language=" + result['languageCode'].value);
+    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
+    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value +")");
+    a.appendChild(text);
+    language.appendChild(a);
+    languages.appendChild(language);
+
+    count++;
+  }
+}
+
+function createDivTranslatedLabelsCount(json) {
+  const { head: { vars }, results } = json;
+  var languages = document.getElementById("translated");
+  var colors =  ["#002171", "#004ba0", 
+                 "#0069c0", "#2286c3", "#bbdefb"]; 
+  var backgroundColors =  ["#ffffff", "#ffffff", 
+                 "#000000", "#000000", "#000000"]; 
+ 
+  var count = 0;
+  for ( const result of results.bindings ) {
+    var language = document.createElement("div"); 
+    language.setAttribute('class', "language");
+
+    language.style['background-color'] = getColor(colors, count, results.bindings.length);
+
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "language.html?language=" + result['languageCode'].value);
+    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
+    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value +")");
+    a.appendChild(text);
+    language.appendChild(a);
+    languages.appendChild(language);
+
+    count++;
+  }
+}
+
+function createDivTranslatedDescriptionsCount(json) {
+  const { head: { vars }, results } = json;
+  var languages = document.getElementById("translated");
+  var colors =  ["#002171", "#004ba0", 
+                 "#0069c0", "#2286c3", "#bbdefb"]; 
+  var backgroundColors =  ["#ffffff", "#ffffff", 
+                 "#000000", "#000000", "#000000"]; 
+ 
+  var count = 0;
+  for ( const result of results.bindings ) {
+    var language = document.createElement("div"); 
+    language.setAttribute('class', "language");
+
+    language.style['background-color'] = getColor(colors, count, results.bindings.length);
+
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "language.html?language=" + result['languageCode'].value);
+    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
+    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value +")");
+    a.appendChild(text);
+    language.appendChild(a);
+    languages.appendChild(language);
+
+    count++;
+  }
+}
+
 function createDivLanguage(json) {
   const { head: { vars }, results } = json;
   var languages = document.getElementById("languages");
@@ -158,6 +250,66 @@ function getPropertyDescriptionsNeedingTranslation() {
     ORDER by ?description
     `;
   queryWikidata(sparqlQuery, createDivProperties);
+}
+
+function getCountOfTranslatedLabels() {
+  const sparqlQuery = `
+     SELECT ?languageCode (SUM(?count) as ?total)
+     WHERE
+     {
+       SELECT ?property ?languageCode (count(?label) as ?count)
+       WHERE
+       {
+         ?property a wikibase:Property;
+                rdfs:label ?label.
+         BIND(lang(?label) as ?languageCode)            
+       }
+       GROUP BY ?property ?languageCode
+     }
+     GROUP BY ?languageCode
+     ORDER BY DESC(?total)    `;
+
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount);
+}
+
+function getCountOfTranslatedDescriptions() {
+  const sparqlQuery = `
+    SELECT ?languageCode (SUM(?count) as ?total)
+    WHERE
+    {
+      SELECT ?property ?languageCode (count(?description) as ?count)
+      WHERE
+      {
+        ?property a wikibase:Property;
+                schema:description ?description.
+        BIND(lang(?description) as ?languageCode)            
+      }
+      GROUP BY ?property ?languageCode
+    }
+    GROUP BY ?languageCode
+    ORDER BY DESC(?total) `;
+
+  queryWikidata(sparqlQuery, createDivTranslatedDescriptionsCount);
+}
+
+function getCountOfTranslatedAliases() {
+  const sparqlQuery = `
+   SELECT ?languageCode (SUM(?count) as ?total)
+   WHERE
+   {
+     SELECT ?property ?languageCode (count(?altLabel) as ?count)
+     WHERE
+     {
+       ?property a wikibase:Property;
+                skos:altLabel ?altLabel.
+       BIND(lang(?altLabel) as ?languageCode)            
+     }
+     GROUP BY ?property ?languageCode
+   }
+   GROUP BY ?languageCode
+   ORDER BY DESC(?total) `;
+
+  queryWikidata(sparqlQuery, createDivTranslatedAliasesCount);
 }
 
 function getProperties() {
