@@ -112,6 +112,32 @@ function createDivTranslatedDescriptionsCount(json) {
     count++;
   }
 }
+function createDivTranslatedDescriptionsCount(json) {
+  const { head: { vars }, results } = json;
+  var languages = document.getElementById("translated");
+  var colors =  ["#002171", "#004ba0", 
+                 "#0069c0", "#2286c3", "#bbdefb"]; 
+  var backgroundColors =  ["#ffffff", "#ffffff", 
+                 "#000000", "#000000", "#000000"]; 
+ 
+  var count = 0;
+  for ( const result of results.bindings ) {
+    var language = document.createElement("div"); 
+    language.setAttribute('class', "language");
+
+    language.style['background-color'] = getColor(colors, count, results.bindings.length);
+
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "language.html?language=" + result['languageCode'].value);
+    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
+    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value +")");
+    a.appendChild(text);
+    language.appendChild(a);
+    languages.appendChild(language);
+
+    count++;
+  }
+}
 
 function createDivLanguage(json) {
   const { head: { vars }, results } = json;
@@ -172,6 +198,32 @@ function getLanguages() {
       ORDER by ?language
       `;
   queryWikidata(sparqlQuery, createDivLanguage);
+}
+
+function getMissingPropertyAliases() {
+  var language = "en";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+  }
+
+  getLanguage(language);
+
+  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    SELECT ?property
+    WHERE
+    {
+      ?property rdf:type wikibase:Property.
+      OPTIONAL{?property skos:altLabel ?alias FILTER (lang(?alias)="`
+      + language + `")}
+      FILTER (!BOUND(?alias)).
+    }
+    ORDER by ?alias
+    `;
+  queryWikidata(sparqlQuery, createDivProperties);
 }
 
 function getPropertyLabelsNeedingTranslation() {
@@ -270,6 +322,26 @@ function getCountOfTranslatedLabels() {
      ORDER BY DESC(?total)    `;
 
   queryWikidata(sparqlQuery, createDivTranslatedLabelsCount);
+}
+
+function getCountOfTranslatedAliases() {
+  const sparqlQuery = `
+    SELECT ?languageCode (SUM(?count) as ?total)
+    WHERE
+    {
+      SELECT ?property ?languageCode (count(?alias) as ?count)
+      WHERE
+      {
+        ?property a wikibase:Property;
+                skos:altLabel ?alias.
+        BIND(lang(?alias) as ?languageCode)
+      }
+      GROUP BY ?property ?languageCode
+    }
+    GROUP BY ?languageCode
+    ORDER BY DESC(?total) `;
+
+  queryWikidata(sparqlQuery, createDivTranslatedAliasCount);
 }
 
 function getCountOfTranslatedDescriptions() {
