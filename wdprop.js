@@ -387,5 +387,33 @@ function getPropertyDetails() {
        property = decodeURIComponent(value[1]);
     }
   }
+  var div = document.getElementById("propertyCode");
+  div.innerHTML = property;
 
+  var sparqlQuery = `
+    SELECT ?language
+    {
+      wd:`+ property + ` rdfs:label ?label.
+      BIND(lang(?label) as ?language)
+    }
+    ORDER by ?language`;
+   queryWikidata(sparqlQuery, createDivLanguage, "translatedLabelsInLanguages");
+   
+   sparqlQuery = `
+    SELECT DISTINCT ?language
+    {
+      wd:`+ property + ` schema:description ?description.
+      BIND(lang(?description) as ?language)
+    } 
+    ORDER by ?language`;
+   queryWikidata(sparqlQuery, createDivLanguage, "translatedDescriptionsInLanguages");
+
+   sparqlQuery = `
+    SELECT ?language
+    {
+      wd:`+ property + ` skos:altLabel ?alias.
+      BIND(lang(?alias) as ?language)
+    }
+    ORDER by ?language`;
+   queryWikidata(sparqlQuery, createDivLanguage, "translatedAliasesInLanguages");
 }
