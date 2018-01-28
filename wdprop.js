@@ -1,9 +1,9 @@
 /*
  * Author: John Samuel
  */
-function createDivProperties(json) {
+function createDivProperties(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById("properties");
+  var properties = document.getElementById(divId);
   var total = document.createElement("h3"); 
   total.innerHTML = "Total " + results.bindings.length + " properties";
   properties.appendChild(total);
@@ -32,9 +32,9 @@ function getColor(colors, index, total) {
   }
 }
 
-function createDivTranslatedAliasesCount(json) {
+function createDivTranslatedAliasesCount(divId, json) {
   const { head: { vars }, results } = json;
-  var languages = document.getElementById("translated");
+  var languages = document.getElementById(divId);
   var colors =  ["#002171", "#004ba0", 
                  "#0069c0", "#2286c3", "#bbdefb"]; 
   var backgroundColors =  ["#ffffff", "#ffffff", 
@@ -59,9 +59,36 @@ function createDivTranslatedAliasesCount(json) {
   }
 }
 
-function createDivTranslatedLabelsCount(json) {
+function createDivTranslatedLabelsCount(divId, json) {
   const { head: { vars }, results } = json;
-  var languages = document.getElementById("translated");
+  var languages = document.getElementById(divId);
+  var colors =  ["#002171", "#004ba0", 
+                 "#0069c0", "#2286c3", "#bbdefb"]; 
+  var backgroundColors =  ["#ffffff", "#ffffff", 
+                 "#000000", "#000000", "#000000"]; 
+ 
+  var count = 0;
+  for ( const result of results.bindings ) {
+    var language = document.createElement("div"); 
+    language.setAttribute('class', "language");
+
+    language.style['background-color'] = getColor(colors, count, results.bindings.length);
+
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "../language.html?language=" + result['languageCode'].value);
+    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
+    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value +")");
+    a.appendChild(text);
+    language.appendChild(a);
+    languages.appendChild(language);
+
+    count++;
+  }
+}
+
+function createDivTranslatedDescriptionsCount(divId, json) {
+  const { head: { vars }, results } = json;
+  var languages = document.getElementById(divId);
   var colors =  ["#002171", "#004ba0", 
                  "#0069c0", "#2286c3", "#bbdefb"]; 
   var backgroundColors =  ["#ffffff", "#ffffff", 
@@ -86,62 +113,9 @@ function createDivTranslatedLabelsCount(json) {
   }
 }
 
-function createDivTranslatedDescriptionsCount(json) {
+function createDivLanguage(divId, json) {
   const { head: { vars }, results } = json;
-  var languages = document.getElementById("translated");
-  var colors =  ["#002171", "#004ba0", 
-                 "#0069c0", "#2286c3", "#bbdefb"]; 
-  var backgroundColors =  ["#ffffff", "#ffffff", 
-                 "#000000", "#000000", "#000000"]; 
- 
-  var count = 0;
-  for ( const result of results.bindings ) {
-    var language = document.createElement("div"); 
-    language.setAttribute('class', "language");
-
-    language.style['background-color'] = getColor(colors, count, results.bindings.length);
-
-    var a = document.createElement("a"); 
-    a.setAttribute('href', "language.html?language=" + result['languageCode'].value);
-    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
-    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value +")");
-    a.appendChild(text);
-    language.appendChild(a);
-    languages.appendChild(language);
-
-    count++;
-  }
-}
-function createDivTranslatedDescriptionsCount(json) {
-  const { head: { vars }, results } = json;
-  var languages = document.getElementById("translated");
-  var colors =  ["#002171", "#004ba0", 
-                 "#0069c0", "#2286c3", "#bbdefb"]; 
-  var backgroundColors =  ["#ffffff", "#ffffff", 
-                 "#000000", "#000000", "#000000"]; 
- 
-  var count = 0;
-  for ( const result of results.bindings ) {
-    var language = document.createElement("div"); 
-    language.setAttribute('class', "language");
-
-    language.style['background-color'] = getColor(colors, count, results.bindings.length);
-
-    var a = document.createElement("a"); 
-    a.setAttribute('href', "language.html?language=" + result['languageCode'].value);
-    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
-    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value +")");
-    a.appendChild(text);
-    language.appendChild(a);
-    languages.appendChild(language);
-
-    count++;
-  }
-}
-
-function createDivLanguage(json) {
-  const { head: { vars }, results } = json;
-  var languages = document.getElementById("languages");
+  var languages = document.getElementById(divId);
   for ( const result of results.bindings ) {
     for ( const variable of vars ) {
       var language = document.createElement("div"); 
@@ -156,9 +130,9 @@ function createDivLanguage(json) {
   }
 }
 
-function createDivPropertyDetails(json) {
+function createDivPropertyDetails(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById("properties");
+  var properties = document.getElementById(divId);
   for ( const result of results.bindings ) {
     for ( const variable of vars ) {
       var property = document.createElement("div"); 
@@ -173,7 +147,7 @@ function createDivPropertyDetails(json) {
   }
 }
 
-function queryWikidata(sparqlQuery, func) {
+function queryWikidata(sparqlQuery, func, divId) {
      /*
       * Following script is a modified form of automated
       * script generated from Wikidata Query services
@@ -183,7 +157,7 @@ function queryWikidata(sparqlQuery, func) {
      headers = { 'Accept': 'application/sparql-results+json' };
 
      fetch( fullUrl, { headers } ).then( body => body.json() ).then( json => {
-       func(json)
+       func(divId, json)
      } );
 }
 
@@ -197,7 +171,7 @@ function getLanguages() {
       }
       ORDER by ?language
       `;
-  queryWikidata(sparqlQuery, createDivLanguage);
+  queryWikidata(sparqlQuery, createDivLanguage, "languages");
 }
 
 function getMissingPropertyAliases() {
@@ -223,7 +197,7 @@ function getMissingPropertyAliases() {
     }
     ORDER by ?alias
     `;
-  queryWikidata(sparqlQuery, createDivProperties);
+  queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
 }
 
 function getPropertyLabelsNeedingTranslation() {
@@ -250,12 +224,12 @@ function getPropertyLabelsNeedingTranslation() {
     }
     ORDER by ?property
     `;
-  queryWikidata(sparqlQuery, createDivProperties);
+  queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
 }
 
-function createDivLanguageCode(json) { 
+function createDivLanguageCode(divId, json) { 
   const { head: { vars }, results } = json;
-  var languageText = document.getElementById("languagecode");
+  var languageText = document.getElementById(divId);
   if(results.bindings.length > 0) {
     languageText.innerHTML = results.bindings[0]['languageLabel']['value'];
   }
@@ -274,7 +248,7 @@ function getLanguage(language){
        
     }
     LIMIT 1`;
-  queryWikidata(sparqlQuery, createDivLanguageCode);
+  queryWikidata(sparqlQuery, createDivLanguageCode, "languageCode");
 }
 
 function getPropertyDescriptionsNeedingTranslation() {
@@ -301,7 +275,7 @@ function getPropertyDescriptionsNeedingTranslation() {
     }
     ORDER by ?description
     `;
-  queryWikidata(sparqlQuery, createDivProperties);
+  queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
 }
 
 function getCountOfTranslatedLabels() {
@@ -321,7 +295,7 @@ function getCountOfTranslatedLabels() {
      GROUP BY ?languageCode
      ORDER BY DESC(?total)    `;
 
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount);
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
 }
 
 function getCountOfTranslatedAliases() {
@@ -341,7 +315,7 @@ function getCountOfTranslatedAliases() {
     GROUP BY ?languageCode
     ORDER BY DESC(?total) `;
 
-  queryWikidata(sparqlQuery, createDivTranslatedAliasCount);
+  queryWikidata(sparqlQuery, createDivTranslatedAliasCount, "translatedAliasesCount");
 }
 
 function getCountOfTranslatedDescriptions() {
@@ -361,7 +335,7 @@ function getCountOfTranslatedDescriptions() {
     GROUP BY ?languageCode
     ORDER BY DESC(?total) `;
 
-  queryWikidata(sparqlQuery, createDivTranslatedDescriptionsCount);
+  queryWikidata(sparqlQuery, createDivTranslatedDescriptionsCount, "translatedDescriptionsCount");
 }
 
 function getCountOfTranslatedAliases() {
@@ -381,7 +355,7 @@ function getCountOfTranslatedAliases() {
    GROUP BY ?languageCode
    ORDER BY DESC(?total) `;
 
-  queryWikidata(sparqlQuery, createDivTranslatedAliasesCount);
+  queryWikidata(sparqlQuery, createDivTranslatedAliasesCount, "translatedAliasesCount");
 }
 
 function getProperties() {
@@ -394,5 +368,24 @@ function getProperties() {
     }
     ORDER by ?property
     `;
-  queryWikidata(sparqlQuery, createDivPropertyDetails);
+  queryWikidata(sparqlQuery, createDivPropertyDetails, "allProperties");
+}
+
+function getPropertiesNeedingTranslation() {
+  getPropertyLabelsNeedingTranslation();
+  getPropertyDescriptionsNeedingTranslation();
+  getMissingPropertyAliases();
+}
+
+
+function getPropertyDetails() {
+  var property = "P31";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("property=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       property = decodeURIComponent(value[1]);
+    }
+  }
+
 }
