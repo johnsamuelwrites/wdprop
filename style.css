@@ -2,6 +2,12 @@ body {
   padding-left:10vw;
   padding-right:10vw;
 }
+h1,h2 {
+  color: #1B80CF;
+}
+a:link, a:visited {
+  color: #1B80CF;
+}
 .property,.language {
   float : left;
   background-color : #0077c2;
