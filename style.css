@@ -2,8 +2,20 @@ body {
   padding-left:10vw;
   padding-right:10vw;
 }
-h1,h2 {
-  color: #1B80CF;
+h1 {
+  color: #002f6c;
+  font-size : 1.8vmax;
+  clear:both;
+}
+h2 {
+  color:#002f6c ;
+  font-size : 1.6vmax;
+  clear:both;
+}
+h3 {
+  color: #002f6c;
+  font-size : 1.4vmax;
+  clear:both;
 }
 a:link, a:visited {
   color: #1B80CF;
@@ -12,6 +24,7 @@ a:link, a:visited {
   float : left;
   background-color : #0077c2;
   color : white;
+  overflow:unset;
 }
 .property > a, .language > a, .datatype > a{
   color : white;
@@ -21,10 +34,10 @@ a:link, a:visited {
 }
 @media screen and (min-width: 480px) {
   .property,.language,.datatype  {
-    font-size : 18px;
-    line-height : 20px;
+    font-size : 1.0vmax;
+    line-height : 1.2vmax;
     font-weight : 400;
-    padding : 15px;
-    margin : 5px;
+    padding : 0.6vmax;
+    margin : 0.4vmax;
   }
 }
