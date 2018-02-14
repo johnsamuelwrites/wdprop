@@ -358,6 +358,39 @@ function getCountOfTranslatedAliases() {
   queryWikidata(sparqlQuery, createDivTranslatedAliasesCount, "translatedAliasesCount");
 }
 
+function createDivDataTypes(divId, json) {
+  const { head: { vars }, results } = json;
+  var datatypes = document.getElementById(divId);
+  for ( const result of results.bindings ) {
+    for ( const variable of vars ) {
+      var datatype = document.createElement("div"); 
+      datatype.setAttribute('class', "datatype");
+      var a = document.createElement("a"); 
+      var datatypeValue = result[variable].value.replace("http://wikiba.se/ontology#", "");
+      var text = document.createTextNode(datatypeValue);
+      a.setAttribute('href', "datatype.html?datatype=wikibase:" + datatypeValue);
+      a.appendChild(text);
+      datatype.appendChild(a);
+      datatypes.appendChild(datatype);
+    }
+  }
+}
+
+function getDatatypes() {
+  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+
+    SELECT DISTINCT ?datatype
+    WHERE
+    {
+      ?property rdf:type wikibase:Property;
+                wikibase:propertyType ?datatype.
+    }
+    ORDER by ?property
+
+    `;
+  queryWikidata(sparqlQuery, createDivDataTypes, "propertyDatatypes");
+}
+
 function getProperties() {
   const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
@@ -416,4 +449,32 @@ function getPropertyDetails() {
     }
     ORDER by ?language`;
    queryWikidata(sparqlQuery, createDivLanguage, "translatedAliasesInLanguages");
+}
+
+function getPropertiesWithDatatype() {
+  var datatype = "wikibase:WikibaseItem";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("datatype=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       datatype = decodeURIComponent(value[1]);
+    }
+  }
+
+  var datatypeCode = document.getElementById("datatypeCode");
+  datatypeCode.innerHTML = "Properties with datatype- "+ datatype;
+  
+  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+
+    SELECT DISTINCT ?property
+    WHERE
+    {
+      ?property rdf:type wikibase:Property;
+                wikibase:propertyType ` + datatype + `
+    }
+    ORDER by ?property
+
+    `;
+  console.log(sparqlQuery);
+  queryWikidata(sparqlQuery, createDivPropertyDetails, "propertiesWithDatatype");
 }
