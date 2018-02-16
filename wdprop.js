@@ -478,3 +478,54 @@ function getPropertiesWithDatatype() {
   console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivPropertyDetails, "propertiesWithDatatype");
 }
+
+function createDivPropertyDescriptors(divId, json) {
+  const { head: { vars }, results } = json;
+  var properties = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  var count = 0;
+  properties.appendChild(total);
+  for ( const result of results.bindings ) {
+    for ( const variable of vars ) {
+      var property = document.createElement("div"); 
+      property.setAttribute('class', "property");
+      var a = document.createElement("a"); 
+      if (result[variable].value.indexOf("/direct") != -1 || 
+          result[variable].value.indexOf("wikiba.se") != -1  ||
+          result[variable].value.indexOf("schema.org") != -1 ||
+          result[variable].value.indexOf("w3.org") != -1) {
+         continue; //To avoid properties  
+      }
+      count = count + 1;
+      //a.setAttribute('href', result[variable].value);
+      a.setAttribute('href', "property.html?property=" + result[variable].value.replace("http://www.wikidata.org/prop/", ""));
+      var text = document.createTextNode(result[variable].value.replace(new RegExp(".*/"), ""));
+      a.appendChild(text);
+      property.appendChild(a);
+      properties.appendChild(property);
+    }
+  }
+  total.innerHTML = "Total " + count + " properties";
+}
+
+function getPropertyDescriptors1() {
+  var str = "http://www.wikidata.org/prop/P101";
+  str = str.replace(new RegExp(".*/"), "");
+  console.log(str);
+}
+function getPropertyDescriptors() {
+  const sparqlQuery = `
+    PREFIX wikibase: <http://wikiba.se/ontology#>
+
+    SELECT DISTINCT ?subproperty
+    WHERE
+    {
+      ?property rdf:type wikibase:Property;
+                ?subproperty [].
+    }
+    ORDER by ?subproperty
+
+    `;
+  console.log(sparqlQuery);
+  queryWikidata(sparqlQuery, createDivPropertyDescriptors, "propertyDescriptors");
+}
