@@ -7,6 +7,13 @@ h1 {
   font-size : 1.8vmax;
   clear:both;
 }
+p,ul {
+  font-size : 1.1vmax;
+  line-height : 1.5vmax;
+}
+h1 > a {
+  text-decoration: none;
+}
 h2 {
   color:#002f6c ;
   font-size : 1.6vmax;

@@ -116,6 +116,9 @@ function createDivTranslatedDescriptionsCount(divId, json) {
 function createDivLanguage(divId, json) {
   const { head: { vars }, results } = json;
   var languages = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Total " + results.bindings.length + " languages";
+  languages.appendChild(total);
   for ( const result of results.bindings ) {
     for ( const variable of vars ) {
       var language = document.createElement("div"); 
@@ -133,6 +136,9 @@ function createDivLanguage(divId, json) {
 function createDivPropertyDetails(divId, json) {
   const { head: { vars }, results } = json;
   var properties = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Total " + results.bindings.length + " properties";
+  properties.appendChild(total);
   for ( const result of results.bindings ) {
     for ( const variable of vars ) {
       var property = document.createElement("div"); 
@@ -187,7 +193,7 @@ function getMissingPropertyAliases() {
   getLanguage(language);
 
   const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
-    SELECT ?property
+    SELECT DISTINCT ?property
     WHERE
     {
       ?property rdf:type wikibase:Property.
@@ -214,7 +220,7 @@ function getPropertyLabelsNeedingTranslation() {
 
   const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
-    SELECT ?property
+    SELECT DISTINCT ?property
     WHERE
     {
       ?property rdf:type wikibase:Property.
@@ -238,7 +244,7 @@ function createDivLanguageCode(divId, json) {
 function getLanguage(language){
   const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
-    SELECT ?languageLabel
+    SELECT DISTINCT ?languageLabel
     WHERE
     {
       ?languageWiki wdt:P424 "` + language + `";
@@ -265,7 +271,7 @@ function getPropertyDescriptionsNeedingTranslation() {
   
   const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
-    SELECT ?property
+    SELECT DISTINCT ?property
     WHERE
     {
       ?property rdf:type wikibase:Property.
@@ -361,6 +367,9 @@ function getCountOfTranslatedAliases() {
 function createDivDataTypes(divId, json) {
   const { head: { vars }, results } = json;
   var datatypes = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Total " + results.bindings.length + " datatypes";
+  datatypes.appendChild(total);
   for ( const result of results.bindings ) {
     for ( const variable of vars ) {
       var datatype = document.createElement("div"); 
@@ -394,7 +403,7 @@ function getDatatypes() {
 function getProperties() {
   const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
-    SELECT ?property
+    SELECT DISTINCT ?property
     WHERE
     {
       ?property rdf:type wikibase:Property.
@@ -424,7 +433,7 @@ function getPropertyDetails() {
   div.innerHTML = property;
 
   var sparqlQuery = `
-    SELECT ?language
+    SELECT DISTINCT ?language
     {
       wd:`+ property + ` rdfs:label ?label.
       BIND(lang(?label) as ?language)
@@ -442,7 +451,7 @@ function getPropertyDetails() {
    queryWikidata(sparqlQuery, createDivLanguage, "translatedDescriptionsInLanguages");
 
    sparqlQuery = `
-    SELECT ?language
+    SELECT DISTINCT ?language
     {
       wd:`+ property + ` skos:altLabel ?alias.
       BIND(lang(?alias) as ?language)
