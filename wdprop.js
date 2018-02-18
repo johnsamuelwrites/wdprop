@@ -484,7 +484,6 @@ function getPropertiesWithDatatype() {
     ORDER by ?property
 
     `;
-  console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivPropertyDetails, "propertiesWithDatatype");
 }
 
@@ -520,7 +519,6 @@ function createDivPropertyDescriptors(divId, json) {
 function getPropertyDescriptors1() {
   var str = "http://www.wikidata.org/prop/P101";
   str = str.replace(new RegExp(".*/"), "");
-  console.log(str);
 }
 function getPropertyDescriptors() {
   const sparqlQuery = `
@@ -535,6 +533,5 @@ function getPropertyDescriptors() {
     ORDER by ?subproperty
 
     `;
-  console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivPropertyDescriptors, "propertyDescriptors");
 }
