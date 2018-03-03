@@ -21,6 +21,53 @@ function createDivProperties(divId, json) {
   }
 }
 
+function createDivSearchProperties(divId, json) {
+  const { head: { vars }, results } = json;
+  var properties = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Total " + results.bindings.length + " properties";
+  while (properties.hasChildNodes()) {
+    properties.removeChild(properties.lastChild);
+  }
+  properties.appendChild(total);
+  var table = document.createElement("table"); 
+  var th = document.createElement("th"); 
+  var td = document.createElement("td"); 
+  td.innerHTML = "Property";
+  th.append(td);
+  td = document.createElement("td"); 
+  td.innerHTML = "Language";
+  th.append(td);
+  td = document.createElement("td"); 
+  td.innerHTML = "Label";
+  th.append(td);
+  table.append(th);
+  var tr = "";
+  for ( const result of results.bindings ) {
+    tr = document.createElement("tr");
+
+    td = document.createElement("td"); 
+    td.innerHTML = result['language'].value;
+    tr.append(td);
+
+    var property = document.createElement("th"); 
+    property.setAttribute('class', "property");
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "https://www.wikidata.org/wiki/Property:" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    a.appendChild(text);
+    property.appendChild(a);
+    tr.appendChild(property);
+
+    td = document.createElement("td"); 
+    td.innerHTML = result['label'].value;
+    tr.append(td);
+
+    table.appendChild(tr);
+  }
+  properties.appendChild(table);
+}
+
 function getColor(colors, index, total) {
   var colorCount = colors.length;
   var groupSize = total/colorCount;
@@ -159,7 +206,7 @@ function queryWikidata(sparqlQuery, func, divId) {
       * script generated from Wikidata Query services
       */
      const endpointUrl = 'https://query.wikidata.org/sparql',
-     fullUrl = endpointUrl + '?query=' + encodeURIComponent( sparqlQuery ),
+     fullUrl = endpointUrl + '?query=' + encodeURIComponent( sparqlQuery )+"&format=json";
      headers = { 'Accept': 'application/sparql-results+json' };
 
      fetch( fullUrl, { headers } ).then( body => body.json() ).then( json => {
@@ -516,10 +563,6 @@ function createDivPropertyDescriptors(divId, json) {
   total.innerHTML = "Total " + count + " properties";
 }
 
-function getPropertyDescriptors1() {
-  var str = "http://www.wikidata.org/prop/P101";
-  str = str.replace(new RegExp(".*/"), "");
-}
 function getPropertyDescriptors() {
   const sparqlQuery = `
     PREFIX wikibase: <http://wikiba.se/ontology#>
@@ -534,4 +577,22 @@ function getPropertyDescriptors() {
 
     `;
   queryWikidata(sparqlQuery, createDivPropertyDescriptors, "propertyDescriptors");
+}
+
+function findProperty(e, form) {
+  e.preventDefault();
+  console.log("search: " + document.getElementById("searchText").value);
+  var search = '"' + document.getElementById("searchText").value + '"';
+  const sparqlQuery = `
+    PREFIX wikibase: <http://wikiba.se/ontology#>
+
+    SELECT DISTINCT ?property (LANG(?label) as ?language) ?label
+    WHERE
+    {
+      ?property a wikibase:Property;
+                  rdfs:label ?label.
+      FILTER(contains(lcase(?label), ` + search +`))
+    }
+    `;
+  queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
