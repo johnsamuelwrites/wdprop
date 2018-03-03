@@ -31,24 +31,24 @@ function createDivSearchProperties(divId, json) {
   }
   properties.appendChild(total);
   var table = document.createElement("table"); 
-  var th = document.createElement("th"); 
-  var td = document.createElement("td"); 
-  td.innerHTML = "Property";
-  th.append(td);
-  td = document.createElement("td"); 
+  var th = document.createElement("tr"); 
+  var td = document.createElement("th"); 
   td.innerHTML = "Language";
-  th.append(td);
-  td = document.createElement("td"); 
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "Property";
+  th.appendChild(td);
+  td = document.createElement("th"); 
   td.innerHTML = "Label";
-  th.append(td);
-  table.append(th);
+  th.appendChild(td);
+  table.appendChild(th);
   var tr = "";
   for ( const result of results.bindings ) {
     tr = document.createElement("tr");
 
     td = document.createElement("td"); 
     td.innerHTML = result['language'].value;
-    tr.append(td);
+    tr.appendChild(td);
 
     var property = document.createElement("th"); 
     property.setAttribute('class', "property");
@@ -61,7 +61,7 @@ function createDivSearchProperties(divId, json) {
 
     td = document.createElement("td"); 
     td.innerHTML = result['label'].value;
-    tr.append(td);
+    tr.appendChild(td);
 
     table.appendChild(tr);
   }
@@ -479,6 +479,30 @@ function getPropertyDetails() {
   var div = document.getElementById("propertyCode");
   div.innerHTML = property;
 
+  div = document.getElementById("propertyDetails");
+  var table = document.createElement("table"); 
+  var th = document.createElement("tr"); 
+  var td = document.createElement("th"); 
+  td.innerHTML = "Feature";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "Value";
+  th.appendChild(td);
+  table.appendChild(th);
+  var th = document.createElement("tr"); 
+  var td = document.createElement("td"); 
+  td.innerHTML = "Link";
+  th.appendChild(td);
+  td = document.createElement("td"); 
+  link = document.createElement("a"); 
+  link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
+  var text = document.createTextNode("https://www.wikidata.org/entity/"+property);
+  link.appendChild(text);
+  td.appendChild(link)
+  th.appendChild(td);
+  table.appendChild(th);
+  div.appendChild(table);
+  
   var sparqlQuery = `
     SELECT DISTINCT ?language
     {

@@ -2,6 +2,21 @@ body {
   padding-left:10vw;
   padding-right:10vw;
 }
+tr>th {
+  background-color : #0077c2;
+  font-size : 1.5vmax;
+  line-height : 1.8vmax;
+  text-align: center;
+  color : white;
+  margin:2vmax;
+  padding:0.5vmax;
+}
+tr>td {
+  font-size : 1.2vmax;
+  line-height : 1.8vmax;
+  text-align:left;
+  text-align: left;
+}
 h1 {
   color: #002f6c;
   font-size : 1.8vmax;
