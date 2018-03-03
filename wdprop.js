@@ -53,7 +53,7 @@ function createDivSearchProperties(divId, json) {
     var property = document.createElement("th"); 
     property.setAttribute('class', "property");
     var a = document.createElement("a"); 
-    a.setAttribute('href', "https://www.wikidata.org/wiki/Property:" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
     var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
     a.appendChild(text);
     property.appendChild(a);
