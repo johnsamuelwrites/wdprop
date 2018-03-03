@@ -591,7 +591,7 @@ function findProperty(e, form) {
     {
       ?property a wikibase:Property;
                   rdfs:label ?label.
-      FILTER(contains(lcase(?label), ` + search +`))
+      FILTER(contains(lcase(?label), lcase(` + search +`)))
     }
     `;
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
