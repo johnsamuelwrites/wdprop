@@ -503,6 +503,42 @@ function getPropertyDetails() {
   table.appendChild(th);
   div.appendChild(table);
   
+   sparqlQuery = `
+    SELECT ?code
+    WHERE
+    {
+      ?wikipedia wdt:P31 wd:Q10876391;
+                 wdt:P407 [wdt:P424 ?code]
+      MINUS {wd:`+ property + ` rdfs:label ?label. BIND(lang(?label) as ?code)}
+    }
+    ORDER by ?code
+    `;
+   queryWikidata(sparqlQuery, createDivLanguage, "untranslatedLabelsInLanguages");
+
+   sparqlQuery = `
+    SELECT ?code
+    WHERE
+    {
+      ?wikipedia wdt:P31 wd:Q10876391;
+                 wdt:P407 [wdt:P424 ?code]
+      MINUS {wd:`+ property + ` schema:description ?description. BIND(lang(?description) as ?code)}
+    }
+    ORDER by ?code
+    `;
+   queryWikidata(sparqlQuery, createDivLanguage, "untranslatedDescriptionsInLanguages");
+
+   sparqlQuery = `
+    SELECT ?code
+    WHERE
+    {
+      ?wikipedia wdt:P31 wd:Q10876391;
+                 wdt:P407 [wdt:P424 ?code]
+      MINUS {wd:`+ property + ` skos:altLabel ?alias. BIND(lang(?alias) as ?code)}
+    }
+    ORDER by ?code
+    `;
+
+   queryWikidata(sparqlQuery, createDivLanguage, "untranslatedAliasesInLanguages");
   var sparqlQuery = `
     SELECT DISTINCT ?language
     {
@@ -529,6 +565,7 @@ function getPropertyDetails() {
     }
     ORDER by ?language`;
    queryWikidata(sparqlQuery, createDivLanguage, "translatedAliasesInLanguages");
+
 }
 
 function getPropertiesWithDatatype() {
