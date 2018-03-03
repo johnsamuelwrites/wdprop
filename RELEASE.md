@@ -3,6 +3,7 @@
 * Search properties
 * About WDProp
 * Statistics on missing translations for property labels, descriptions and aliases
+* Statistics on languages completely missing translations
 
 # v0.2
 ===============================================================================

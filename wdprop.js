@@ -215,12 +215,12 @@ function queryWikidata(sparqlQuery, func, divId) {
 }
 
 function getLanguages() {
-  const sparqlQuery = `PREFIX schema: <http://schema.org/>
-
+  const sparqlQuery = `
       SELECT DISTINCT ?language
       WHERE
       {
-        [] schema:inLanguage ?language.
+        ?wikipedia wdt:P31 wd:Q10876391;
+                 wdt:P407 [wdt:P424 ?language]
       }
       ORDER by ?language
       `;
@@ -351,26 +351,6 @@ function getCountOfTranslatedLabels() {
   queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
 }
 
-function getCountOfTranslatedAliases() {
-  const sparqlQuery = `
-    SELECT ?languageCode (SUM(?count) as ?total)
-    WHERE
-    {
-      SELECT ?property ?languageCode (count(?alias) as ?count)
-      WHERE
-      {
-        ?property a wikibase:Property;
-                skos:altLabel ?alias.
-        BIND(lang(?alias) as ?languageCode)
-      }
-      GROUP BY ?property ?languageCode
-    }
-    GROUP BY ?languageCode
-    ORDER BY DESC(?total) `;
-
-  queryWikidata(sparqlQuery, createDivTranslatedAliasCount, "translatedAliasesCount");
-}
-
 function getCountOfTranslatedDescriptions() {
   const sparqlQuery = `
     SELECT ?languageCode (SUM(?count) as ?total)
@@ -409,6 +389,63 @@ function getCountOfTranslatedAliases() {
    ORDER BY DESC(?total) `;
 
   queryWikidata(sparqlQuery, createDivTranslatedAliasesCount, "translatedAliasesCount");
+}
+
+function getLanguagesWithUntranslatedLabels() {
+  const sparqlQuery = `
+    SELECT DISTINCT ?language
+    WHERE
+    {
+      ?wikipedia wdt:P31 wd:Q10876391;
+                 wdt:P407 [wdt:P424 ?language]
+      MINUS {[a wikibase:Property] rdfs:label ?label. BIND(lang(?label) as ?language)}
+    }
+    ORDER by ?language
+   `;
+
+  queryWikidata(sparqlQuery, createDivLanguage, "untranslatedLabelsInLanguages");
+}
+
+function getLanguagesWithUntranslatedDescriptions() {
+  const sparqlQuery = `
+    SELECT DISTINCT ?language
+    WHERE
+    {
+      ?wikipedia wdt:P31 wd:Q10876391;
+                 wdt:P407 [wdt:P424 ?language]
+      MINUS {[a wikibase:Property] schema:description ?description. BIND(lang(?description) as ?language)}
+    }
+    ORDER by ?language
+   `;
+
+  queryWikidata(sparqlQuery, createDivLanguage, "untranslatedDescriptionsInLanguages");
+}
+
+function getLanguagesWithUntranslatedAliases() {
+  const sparqlQuery = `
+    SELECT DISTINCT ?language
+    WHERE
+    {
+      ?wikipedia wdt:P31 wd:Q10876391;
+                 wdt:P407 [wdt:P424 ?language]
+      MINUS {[a wikibase:Property] skos:altLabel ?alias. BIND(lang(?alias) as ?language)}
+    }
+    ORDER by ?language
+   `;
+
+  queryWikidata(sparqlQuery, createDivLanguage, "untranslatedAliasesInLanguages");
+}
+
+function getMissingTranslationStatistics() {
+  getLanguagesWithUntranslatedLabels();
+  getLanguagesWithUntranslatedDescriptions();
+  getLanguagesWithUntranslatedAliases();
+}
+
+function getTranslationStatistics() {
+  getCountOfTranslatedLabels();
+  getCountOfTranslatedDescriptions();
+  getCountOfTranslatedAliases();
 }
 
 function createDivDataTypes(divId, json) {
@@ -504,38 +541,38 @@ function getPropertyDetails() {
   div.appendChild(table);
   
    sparqlQuery = `
-    SELECT ?code
+    SELECT DISTINCT ?language
     WHERE
     {
       ?wikipedia wdt:P31 wd:Q10876391;
-                 wdt:P407 [wdt:P424 ?code]
-      MINUS {wd:`+ property + ` rdfs:label ?label. BIND(lang(?label) as ?code)}
+                 wdt:P407 [wdt:P424 ?language]
+      MINUS {wd:`+ property + ` rdfs:label ?label. BIND(lang(?label) as ?language)}
     }
-    ORDER by ?code
+    ORDER by ?language
     `;
    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedLabelsInLanguages");
 
    sparqlQuery = `
-    SELECT ?code
+    SELECT DISTINCT ?language
     WHERE
     {
       ?wikipedia wdt:P31 wd:Q10876391;
-                 wdt:P407 [wdt:P424 ?code]
-      MINUS {wd:`+ property + ` schema:description ?description. BIND(lang(?description) as ?code)}
+                 wdt:P407 [wdt:P424 ?language]
+      MINUS {wd:`+ property + ` schema:description ?description. BIND(lang(?description) as ?language)}
     }
-    ORDER by ?code
+    ORDER by ?language
     `;
    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedDescriptionsInLanguages");
 
    sparqlQuery = `
-    SELECT ?code
+    SELECT DISTINCT ?language
     WHERE
     {
       ?wikipedia wdt:P31 wd:Q10876391;
-                 wdt:P407 [wdt:P424 ?code]
-      MINUS {wd:`+ property + ` skos:altLabel ?alias. BIND(lang(?alias) as ?code)}
+                 wdt:P407 [wdt:P424 ?language]
+      MINUS {wd:`+ property + ` skos:altLabel ?alias. BIND(lang(?alias) as ?language)}
     }
-    ORDER by ?code
+    ORDER by ?language
     `;
 
    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedAliasesInLanguages");
