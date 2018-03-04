@@ -1,0 +1,9 @@
+{
+    "name" : "WDProp",
+    "title" : "WDProp: Everything about Wikidata properties",
+    "description" : "Understanding and improving translation of properties",
+    "url" : "https://rawgit.com/johnsamuelwrites/wdprop/master/index.html",
+    "keywords" : "wikidata, properties, multilingualism",
+    "author" : "John Samuel",
+    "repository" : "https://github.com/johnsamuelwrites/wdprop"
+}
