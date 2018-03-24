@@ -106,6 +106,45 @@ function createDivTranslatedAliasesCount(divId, json) {
   }
 }
 
+function createDivTranslatedLabels(divId, json) {
+  const { head: { vars }, results } = json;
+
+  var properties = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Total " + results.bindings.length + " properties";
+  properties.appendChild(total);
+
+  var table = document.createElement("table"); 
+  var th = document.createElement("tr"); 
+  var td = document.createElement("th"); 
+  td.innerHTML = "Property";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "Label";
+  th.appendChild(td);
+  table.appendChild(th);
+  for ( const result of results.bindings ) {
+    tr = document.createElement("tr");
+
+    var property = document.createElement("div"); 
+    property.setAttribute('class', "property");
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "https://www.wikidata.org/wiki/Property:" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    a.appendChild(text);
+    property.appendChild(a);
+    td = document.createElement("td"); 
+    td.appendChild(property);
+    tr.appendChild(td);
+
+    td = document.createElement("td"); 
+    td.innerHTML = result['label'].value;
+    tr.appendChild(td);
+    table.appendChild(tr);
+  }
+  properties.appendChild(table);
+}
+
 function createDivTranslatedLabelsCount(divId, json) {
   const { head: { vars }, results } = json;
   var languages = document.getElementById(divId);
@@ -122,7 +161,7 @@ function createDivTranslatedLabelsCount(divId, json) {
     language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
     var a = document.createElement("a"); 
-    a.setAttribute('href', "../language.html?language=" + result['languageCode'].value);
+    a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
     a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
     var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value +")");
     a.appendChild(text);
@@ -149,7 +188,7 @@ function createDivTranslatedDescriptionsCount(divId, json) {
     language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
     var a = document.createElement("a"); 
-    a.setAttribute('href', "language.html?language=" + result['languageCode'].value);
+    a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
     a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
     var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value +")");
     a.appendChild(text);
@@ -171,7 +210,7 @@ function createDivLanguage(divId, json) {
       var language = document.createElement("div"); 
       language.setAttribute('class', "language");
       var a = document.createElement("a"); 
-      a.setAttribute('href', "language.html?language=" + result[variable].value);
+      a.setAttribute('href', "./language.html?language=" + result[variable].value);
       var text = document.createTextNode(result[variable].value);
       a.appendChild(text);
       language.appendChild(a);
@@ -205,11 +244,16 @@ function queryWikidata(sparqlQuery, func, divId) {
       * Following script is a modified form of automated
       * script generated from Wikidata Query services
       */
+  var div = document.getElementById(divId);
+  var total = document.createElement("h4"); 
+  total.innerHTML = "Fetching data...";
+  div.append(total);
      const endpointUrl = 'https://query.wikidata.org/sparql',
      fullUrl = endpointUrl + '?query=' + encodeURIComponent( sparqlQuery )+"&format=json";
      headers = { 'Accept': 'application/sparql-results+json' };
 
      fetch( fullUrl, { headers } ).then( body => body.json() ).then( json => {
+       div.removeChild(total);
        func(divId, json)
      } );
 }
@@ -350,6 +394,79 @@ function getCountOfTranslatedLabels() {
 
   queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
 }
+
+function getTranslatedLabels() {
+  var language = "en";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+  }
+  getLanguage(language);
+
+  const sparqlQuery = `
+    SELECT ?property ?label
+    WHERE
+    {
+      ?property a wikibase:Property;
+              rdfs:label ?label.
+      FILTER(lang(?label) = "`+ language +`")            
+    }
+    ORDER by ?property
+   `;
+  queryWikidata(sparqlQuery, createDivTranslatedLabels, "translatedLabels");
+}
+
+function getTranslatedDescriptions() {
+  var language = "en";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+  }
+  getLanguage(language);
+
+  const sparqlQuery = `
+    SELECT ?property ?label
+    WHERE
+    {
+      ?property a wikibase:Property;
+              schema:description ?label.
+      FILTER(lang(?label) = "`+ language +`")            
+    }
+    ORDER by ?property
+   `;
+  queryWikidata(sparqlQuery, createDivTranslatedLabels, "translatedDescription");
+}
+
+function getTranslatedAliases() {
+  var language = "en";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+  }
+  getLanguage(language);
+
+  const sparqlQuery = `
+    SELECT ?property ?label
+    WHERE
+    {
+      ?property a wikibase:Property;
+              skos:altLabel ?label.
+      FILTER(lang(?label) = "`+ language +`")            
+    }
+    ORDER by ?property
+   `;
+  queryWikidata(sparqlQuery, createDivTranslatedLabels, "translatedAliases");
+}
+
 
 function getCountOfTranslatedDescriptions() {
   const sparqlQuery = `
@@ -679,7 +796,6 @@ function getPropertyDescriptors() {
 
 function findProperty(e, form) {
   e.preventDefault();
-  console.log("search: " + document.getElementById("searchText").value);
   var search = '"' + document.getElementById("searchText").value + '"';
   const sparqlQuery = `
     PREFIX wikibase: <http://wikiba.se/ontology#>
