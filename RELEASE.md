@@ -1,9 +1,13 @@
-# v0.3 (under progress)
+# v0.4 (under progress)
+===============================================================================
+
+# v0.3
 ===============================================================================
 * Search properties
 * About WDProp
 * Statistics on missing translations for property labels, descriptions and aliases
 * Statistics on languages completely missing translations
+* Add .gitignore
 
 # v0.2
 ===============================================================================
