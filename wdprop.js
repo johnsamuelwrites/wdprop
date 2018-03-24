@@ -12,7 +12,7 @@ function createDivProperties(divId, json) {
       var property = document.createElement("div"); 
       property.setAttribute('class', "property");
       var a = document.createElement("a"); 
-      a.setAttribute('href', "https://www.wikidata.org/wiki/Property:" + result[variable].value.replace("http://www.wikidata.org/entity/", ""));
+      a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
       var text = document.createTextNode(result[variable].value.replace("http://www.wikidata.org/entity/", ""));
       a.appendChild(text);
       property.appendChild(a);
@@ -106,7 +106,7 @@ function createDivTranslatedAliasesCount(divId, json) {
   }
 }
 
-function createDivTranslatedLabels(divId, json) {
+function createDivTranslatedValues(divId, json) {
   const { head: { vars }, results } = json;
 
   var properties = document.getElementById(divId);
@@ -120,7 +120,7 @@ function createDivTranslatedLabels(divId, json) {
   td.innerHTML = "Property";
   th.appendChild(td);
   td = document.createElement("th"); 
-  td.innerHTML = "Label";
+  td.innerHTML = "Value";
   th.appendChild(td);
   table.appendChild(th);
   for ( const result of results.bindings ) {
@@ -263,7 +263,7 @@ function getLanguages() {
       SELECT DISTINCT ?language
       WHERE
       {
-        ?wikipedia wdt:P31 wd:Q10876391;
+        [] wdt:P31 wd:Q10876391;
                  wdt:P407 [wdt:P424 ?language]
       }
       ORDER by ?language
@@ -416,7 +416,7 @@ function getTranslatedLabels() {
     }
     ORDER by ?property
    `;
-  queryWikidata(sparqlQuery, createDivTranslatedLabels, "translatedLabels");
+  queryWikidata(sparqlQuery, createDivTranslatedValues, "translatedLabels");
 }
 
 function getTranslatedDescriptions() {
@@ -440,7 +440,7 @@ function getTranslatedDescriptions() {
     }
     ORDER by ?property
    `;
-  queryWikidata(sparqlQuery, createDivTranslatedLabels, "translatedDescription");
+  queryWikidata(sparqlQuery, createDivTranslatedValues, "translatedDescription");
 }
 
 function getTranslatedAliases() {
@@ -464,7 +464,7 @@ function getTranslatedAliases() {
     }
     ORDER by ?property
    `;
-  queryWikidata(sparqlQuery, createDivTranslatedLabels, "translatedAliases");
+  queryWikidata(sparqlQuery, createDivTranslatedValues, "translatedAliases");
 }
 
 
@@ -592,7 +592,7 @@ function getDatatypes() {
     SELECT DISTINCT ?datatype
     WHERE
     {
-      ?property rdf:type wikibase:Property;
+      [] rdf:type wikibase:Property;
                 wikibase:propertyType ?datatype.
     }
     ORDER by ?property
@@ -661,7 +661,7 @@ function getPropertyDetails() {
     SELECT DISTINCT ?language
     WHERE
     {
-      ?wikipedia wdt:P31 wd:Q10876391;
+      [] wdt:P31 wd:Q10876391;
                  wdt:P407 [wdt:P424 ?language]
       MINUS {wd:`+ property + ` rdfs:label ?label. BIND(lang(?label) as ?language)}
     }
@@ -673,7 +673,7 @@ function getPropertyDetails() {
     SELECT DISTINCT ?language
     WHERE
     {
-      ?wikipedia wdt:P31 wd:Q10876391;
+      [] wdt:P31 wd:Q10876391;
                  wdt:P407 [wdt:P424 ?language]
       MINUS {wd:`+ property + ` schema:description ?description. BIND(lang(?description) as ?language)}
     }
@@ -685,7 +685,7 @@ function getPropertyDetails() {
     SELECT DISTINCT ?language
     WHERE
     {
-      ?wikipedia wdt:P31 wd:Q10876391;
+      [] wdt:P31 wd:Q10876391;
                  wdt:P407 [wdt:P424 ?language]
       MINUS {wd:`+ property + ` skos:altLabel ?alias. BIND(lang(?alias) as ?language)}
     }
@@ -785,7 +785,7 @@ function getPropertyDescriptors() {
     SELECT DISTINCT ?subproperty
     WHERE
     {
-      ?property rdf:type wikibase:Property;
+      [] rdf:type wikibase:Property;
                 ?subproperty [].
     }
     ORDER by ?subproperty
