@@ -1,42 +1,52 @@
 body {
   padding-left:10vw;
   padding-right:10vw;
+  margin:0;
+  font-family: "Arial";
 }
 tr>th {
   background-color : #0077c2;
-  font-size : 1.5vmax;
-  line-height : 1.8vmax;
+  font-size : 3vh;
+  line-height : 5vh;
   text-align: center;
   color : white;
   margin:2vmax;
   padding:0.5vmax;
 }
 tr>td {
-  font-size : 1.2vmax;
-  line-height : 1.8vmax;
+  font-size : 3vh;
+  line-height : 5vh;
   text-align:left;
-  text-align: left;
 }
 h1 {
-  color: #002f6c;
-  font-size : 1.8vmax;
+  margin:0;
+  color: #ffffff;
+  background-color: #1B80CF;
+  font-size : 6vh;
+  text-align: center;
+  height:20vh;
   clear:both;
 }
+h1>a:link,h1> a:visited {
+  position:relative; 
+  top:5vh;
+  color: #ffffff;
+}
 p,ul {
-  font-size : 1.1vmax;
-  line-height : 1.5vmax;
+  font-size : 3vh;
+  line-height : 5vh;
 }
 h1 > a {
   text-decoration: none;
 }
 h2 {
   color:#002f6c ;
-  font-size : 1.6vmax;
+  font-size : 4vh;
   clear:both;
 }
 h3 {
   color: #002f6c;
-  font-size : 1.4vmax;
+  font-size : 3vh;
   clear:both;
 }
 a:link, a:visited {
@@ -54,12 +64,16 @@ a:link, a:visited {
 .property > a:visited, .language >  a:visited, .datatype >a:visited {
   color : white;
 }
+img {
+  width : 50vw;
+  height : 50vh;
+}
 @media screen and (min-width: 480px) {
   .property,.language,.datatype  {
-    font-size : 1.0vmax;
-    line-height : 1.2vmax;
+    font-size : 2.5vh;
+    line-height : 4vh;
     font-weight : 400;
-    padding : 0.6vmax;
-    margin : 0.4vmax;
+    padding : 1vh;
+    margin : 0.8vh;
   }
 }
