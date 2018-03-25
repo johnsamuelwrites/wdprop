@@ -1,5 +1,7 @@
 # v0.4 (under progress)
 ===============================================================================
+* Compare translation statistics
+* Add support to view translated labels, descriptions and aliases
 
 # v0.3
 ===============================================================================
