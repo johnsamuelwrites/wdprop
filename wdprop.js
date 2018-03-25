@@ -21,6 +21,53 @@ function createDivProperties(divId, json) {
   }
 }
 
+function createDivComparisonResults(divId, json) {
+  const { head: { vars }, results } = json;
+  var properties = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Translation statistics";
+  while (properties.hasChildNodes()) {
+    properties.removeChild(properties.lastChild);
+  }
+  properties.appendChild(total);
+  var table = document.createElement("table"); 
+  var th = document.createElement("tr"); 
+  var td = document.createElement("th"); 
+  td.innerHTML = "Language";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "Property";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "Label";
+  th.appendChild(td);
+  table.appendChild(th);
+  var tr = "";
+  for ( const result of results.bindings ) {
+    tr = document.createElement("tr");
+
+    td = document.createElement("td"); 
+    td.innerHTML = result['language'].value;
+    tr.appendChild(td);
+
+    var property = document.createElement("th"); 
+    property.setAttribute('class', "property");
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    a.appendChild(text);
+    property.appendChild(a);
+    tr.appendChild(property);
+
+    td = document.createElement("td"); 
+    td.innerHTML = result['label'].value;
+    tr.appendChild(td);
+
+    table.appendChild(tr);
+  }
+  properties.appendChild(table);
+}
+
 function createDivSearchProperties(divId, json) {
   const { head: { vars }, results } = json;
   var properties = document.getElementById(divId);
@@ -393,6 +440,29 @@ function getCountOfTranslatedLabels() {
      ORDER BY DESC(?total)    `;
 
   queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
+}
+
+function getComparisonResults(e, form) {
+  e.preventDefault();
+  var search = "('" + document.getElementById("searchText").value + "')";
+  search = search.replace(/ /g, "") 
+  search = search.replace(/,/g, "') ('") 
+  const sparqlQuery = `
+      SELECT ?languageCode (COUNT(?label) as ?total)
+      {
+        VALUES (?languageCode) {` + search + `}
+        [] a wikibase:Property;
+             rdfs:label ?label FILTER(lang(?label)= ?languageCode)
+      }
+      GROUP BY ?languageCode
+      ORDER BY DESC(?total)
+     `;
+
+  var compareDiv = document.getElementById("comparisonResults");
+  while (compareDiv.hasChildNodes()) {
+    compareDiv.removeChild(compareDiv.lastChild);
+  }
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResults");
 }
 
 function getTranslatedLabels() {
