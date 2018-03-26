@@ -291,16 +291,17 @@ function queryWikidata(sparqlQuery, func, divId) {
       * Following script is a modified form of automated
       * script generated from Wikidata Query services
       */
-  var div = document.getElementById(divId);
-  var total = document.createElement("h4"); 
-  total.innerHTML = "Fetching data...";
-  div.append(total);
+     var div = document.getElementById(divId);
+     var fetchText = document.createElement("h4"); 
+     fetchText.innerHTML = "Fetching data...";
+     div.append(fetchText);
+
      const endpointUrl = 'https://query.wikidata.org/sparql',
      fullUrl = endpointUrl + '?query=' + encodeURIComponent( sparqlQuery )+"&format=json";
      headers = { 'Accept': 'application/sparql-results+json' };
 
      fetch( fullUrl, { headers } ).then( body => body.json() ).then( json => {
-       div.removeChild(total);
+       div.removeChild(fetchText);
        func(divId, json)
      } );
 }
@@ -444,10 +445,19 @@ function getCountOfTranslatedLabels() {
 
 function getComparisonResults(e, form) {
   e.preventDefault();
-  var search = "('" + document.getElementById("searchText").value + "')";
+  var search = "en, fr";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("languages=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       search = decodeURIComponent(value[1]);
+       console.log(search);
+    }
+  }
+  var search = "('" + document.getElementById("languages").value + "')";
   search = search.replace(/ /g, "") 
   search = search.replace(/,/g, "') ('") 
-  const sparqlQuery = `
+  var sparqlQuery = `
       SELECT ?languageCode (COUNT(?label) as ?total)
       {
         VALUES (?languageCode) {` + search + `}
@@ -462,7 +472,63 @@ function getComparisonResults(e, form) {
   while (compareDiv.hasChildNodes()) {
     compareDiv.removeChild(compareDiv.lastChild);
   }
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResults");
+
+  //URL to comparison page
+  var compareURLdiv = document.createElement("div"); 
+  var textURL = document.createTextNode("URL: ");
+  compareURLdiv.appendChild(textURL);
+  var compareURL = document.createElement("a"); 
+  compareURL.setAttribute("href","./compare.html?languages=" + document.getElementById("languages").value);
+  var text = document.createTextNode("compare.html?languages=" + document.getElementById("languages").value);
+  compareURL.appendChild(text);
+  compareURLdiv.appendChild(compareURL);
+  compareDiv.appendChild(compareURLdiv);
+
+  var labels = document.createElement("div"); 
+  labels.setAttribute("id", "comparisonResultsLabels");
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Count of translated labels";
+  compareDiv.appendChild(total);
+  compareDiv.appendChild(labels);  
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsLabels");
+
+  sparqlQuery = `
+      SELECT ?languageCode (COUNT(?label) as ?total)
+      {
+        VALUES (?languageCode) {` + search + `}
+        [] a wikibase:Property;
+             schema:description ?label FILTER(lang(?label)= ?languageCode)
+      }
+      GROUP BY ?languageCode
+      ORDER BY DESC(?total)
+     `;
+
+  var descriptions = document.createElement("div"); 
+  descriptions.setAttribute("id", "comparisonResultsDescriptions");
+  total = document.createElement("h3"); 
+  total.innerHTML = "Count of translated descriptions";
+  compareDiv.appendChild(total);
+  compareDiv.appendChild(descriptions);
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsDescriptions");
+
+  sparqlQuery = `
+      SELECT ?languageCode (COUNT(?label) as ?total)
+      {
+        VALUES (?languageCode) {` + search + `}
+        [] a wikibase:Property;
+             skos:altLabel ?label FILTER(lang(?label)= ?languageCode)
+      }
+      GROUP BY ?languageCode
+      ORDER BY DESC(?total)
+     `;
+
+  var aliases = document.createElement("div"); 
+  aliases.setAttribute("id", "comparisonResultsAliases");
+  total = document.createElement("h3"); 
+  total.innerHTML = "Count of available aliases";
+  compareDiv.appendChild(total);
+  compareDiv.appendChild(aliases);
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsAliases");
 }
 
 function getTranslatedLabels() {
