@@ -27,7 +27,8 @@ function createDivLanguage(divId, json, url) {
       break;
     }
     var languageText = match[1].replace(/\s/g, "") 
-    if(languageText == "lang" || languageText == "#default") {
+    if(languageText == "lang" || languageText == "#default"
+       || languageText == "templatedata") {
       continue;
     }
     count ++;
