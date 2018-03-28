@@ -17,3 +17,4 @@
 * Compare translation statistics among different languages
 * Navigation of properties by their datatypes and their describing properties
 * View already translated labels, descriptions and aliases in any supported language
+* Translation statistics of property discussion templates
