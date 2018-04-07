@@ -21,6 +21,56 @@ function createDivProperties(divId, json) {
   }
 }
 
+function createDivClasses(divId, json) {
+  const { head: { vars }, results } = json;
+  var properties = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Total " + results.bindings.length + " classes";
+  properties.appendChild(total);
+  for ( const result of results.bindings ) {
+    var property = document.createElement("div"); 
+    property.setAttribute('class', "property");
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "class.html?class=" + result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+  
+    if(result.hasOwnProperty("label")) {
+      var text = document.createTextNode(result['label'].value);
+      a.appendChild(text);
+    }
+    else {
+      var text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+      a.appendChild(text);
+    }
+    property.appendChild(a);
+    properties.appendChild(property);
+  }
+}
+
+function createDivClassProperties(divId, json) {
+  const { head: { vars }, results } = json;
+  var properties = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  total.innerHTML = "Total " + results.bindings.length + " properties";
+  properties.appendChild(total);
+  for ( const result of results.bindings ) {
+    var property = document.createElement("div"); 
+    property.setAttribute('class', "property");
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+  
+    if(result.hasOwnProperty("label")) {
+      var text = document.createTextNode(result['label'].value);
+      a.appendChild(text);
+    }
+    else {
+      var text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+      a.appendChild(text);
+    }
+    property.appendChild(a);
+    properties.appendChild(property);
+  }
+}
+
 function createDivComparisonResults(divId, json) {
   const { head: { vars }, results } = json;
   var properties = document.getElementById(divId);
@@ -319,6 +369,100 @@ function getLanguages() {
   queryWikidata(sparqlQuery, createDivLanguage, "languages");
 }
 
+function getProperty(item, language) {
+  const sparqlQuery = `
+      SELECT ?propertyLabel
+      {
+        wd:`+ item +` rdfs:label ?propertyLabel FILTER (lang(?propertyLabel) = "`+language+`").
+      }
+      `;
+  queryWikidata(sparqlQuery, createDivProperty, "property");
+}
+
+function getClasses() {
+  var language = "en";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+  }
+
+  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    SELECT DISTINCT ?item ?label
+    {
+      {
+        SELECT ?item ?label
+        WHERE
+        {
+          ?item wdt:P1963 [].
+          OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="` + language + `").}.
+        }
+      }
+      UNION
+      {
+        SELECT ?item ?label
+        WHERE
+        {
+          ?property a wikibase:Property;
+                    wdt:P31 ?item.
+          OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="` + language + `").}.
+        }
+      }
+    }
+    ORDER by ?label
+    `;
+  console.log(sparqlQuery);
+  queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
+}
+
+function getClassProperties() {
+  var language = "en";
+  var item = "Q9143";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+    reg = new RegExp("class=([^&#=]*)");
+    value = reg.exec(window.location.search);
+    if (value != null) {
+       item = decodeURIComponent(value[1]);
+    }
+  }
+
+  getProperty(item, language);
+
+  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    SELECT DISTINCT ?property ?label
+    {
+      {
+        SELECT ?property ?label
+        WHERE
+        {
+          wd:`+ item +` wdt:P1963 ?property.
+          OPTIONAL{ ?property rdfs:label ?label FILTER (lang(?label)="`+ language +`").}
+        }
+      }
+      UNION
+      {
+        SELECT DISTINCT ?property ?label
+        WHERE
+        {
+          ?property a wikibase:Property;
+                    wdt:P31  wd:`+ item +`.
+          OPTIONAL{ ?property rdfs:label ?label FILTER (lang(?label)="`+ language +`").}
+        }
+      } 
+    }
+    ORDER by ?label
+    `;
+  console.log(sparqlQuery);
+  queryWikidata(sparqlQuery, createDivClassProperties, "classProperties");
+}
+
 function getMissingPropertyAliases() {
   var language = "en";
   if(window.location.search.length > 0) {
@@ -370,6 +514,14 @@ function getPropertyLabelsNeedingTranslation() {
     ORDER by ?property
     `;
   queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
+}
+
+function createDivProperty(divId, json) { 
+  const { head: { vars }, results } = json;
+  var languageText = document.getElementById(divId);
+  if(results.bindings.length > 0) {
+    languageText.innerHTML = results.bindings[0]['propertyLabel']['value'];
+  }
 }
 
 function createDivLanguageCode(divId, json) { 
