@@ -130,9 +130,6 @@ function createDivSearchProperties(divId, json) {
   var table = document.createElement("table"); 
   var th = document.createElement("tr"); 
   var td = document.createElement("th"); 
-  td.innerHTML = "Language";
-  th.appendChild(td);
-  td = document.createElement("th"); 
   td.innerHTML = "Property";
   th.appendChild(td);
   td = document.createElement("th"); 
@@ -142,10 +139,6 @@ function createDivSearchProperties(divId, json) {
   var tr = "";
   for ( const result of results.bindings ) {
     tr = document.createElement("tr");
-
-    td = document.createElement("td"); 
-    td.innerHTML = result['language'].value;
-    tr.appendChild(td);
 
     var property = document.createElement("th"); 
     property.setAttribute('class', "property");
@@ -1084,17 +1077,52 @@ function getPropertyDescriptors() {
 
 function findProperty(e, form) {
   e.preventDefault();
-  var search = '"' + document.getElementById("searchText").value + '"';
+  var language = "en";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+  }
+  var search = '"' + document.getElementById("search").value + '"';
   const sparqlQuery = `
     PREFIX wikibase: <http://wikiba.se/ontology#>
-
-    SELECT DISTINCT ?property (LANG(?label) as ?language) ?label
-    WHERE
+    SELECT DISTINCT ?property ?label
     {
-      ?property a wikibase:Property;
-                  rdfs:label ?label.
-      FILTER(contains(lcase(?label), lcase(` + search +`)))
+      {
+        SELECT ?property ?label
+        WHERE
+        {
+          ?property a wikibase:Property;
+                      rdfs:label ?label FILTER (lang(?label) = "`+ language +`").
+          FILTER(contains(lcase(?label), lcase(`+search+`)))
+        }
+      }
+      UNION
+      {
+        SELECT ?property ?label
+        WHERE
+        {
+          [rdfs:label ?ilabel] wdt:P1963 ?property.
+          ?property rdfs:label ?label FILTER(lang(?label)="`+language+`").
+          FILTER (lang(?ilabel)="en" && contains(lcase(?ilabel), lcase(`+search+`)))
+        }
+      }
+      UNION
+      {
+        SELECT DISTINCT ?property ?label
+        WHERE
+        {
+          ?property a wikibase:Property;
+                    wdt:P31  [rdfs:label ?ilabel];
+                    rdfs:label ?label FILTER (lang(?label)="`+language+`").
+          FILTER (lang(?ilabel)="en" && contains(lcase(?ilabel), lcase(`+search+`)))
+        }
+      } 
     }
+    ORDER by ?label
     `;
+  console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
