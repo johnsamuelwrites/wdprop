@@ -18,3 +18,6 @@
 * Navigation of properties by their datatypes and their describing properties
 * View already translated labels, descriptions and aliases in any supported language
 * Translation statistics of property discussion templates
+* Support navigation by classes
+* Improve search results
+* Support search and language parameter in URLs ([classes,class,search].html)

@@ -1,5 +1,11 @@
-# v0.5 (under progress)
+# v0.6 (under progress)
 ===============================================================================
+
+# v0.5
+===============================================================================
+* Support navigation by classes
+* Improve search results
+* Support search and language parameter in URLs ([classes,class,search].html)
 
 # v0.4
 ===============================================================================
