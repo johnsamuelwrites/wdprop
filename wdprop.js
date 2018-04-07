@@ -1075,17 +1075,7 @@ function getPropertyDescriptors() {
   queryWikidata(sparqlQuery, createDivPropertyDescriptors, "propertyDescriptors");
 }
 
-function findProperty(e, form) {
-  e.preventDefault();
-  var language = "en";
-  if(window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
-    if (value != null) {
-       language = decodeURIComponent(value[1]);
-    }
-  }
-  var search = '"' + document.getElementById("search").value + '"';
+function getSearchQuery(language, search) {
   const sparqlQuery = `
     PREFIX wikibase: <http://wikiba.se/ontology#>
     SELECT DISTINCT ?property ?label
@@ -1123,6 +1113,43 @@ function findProperty(e, form) {
     }
     ORDER by ?label
     `;
+  return(sparqlQuery);
+}
+
+function findPropertyOnLoad() {
+  var language = "en";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+  }
+  var search = 'instance of';
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("search=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       search = decodeURIComponent(value[1]);
+    }
+  }
+  sparqlQuery = getSearchQuery(language, '"'+search+'"');
+  document.getElementById("search").value = search; 
+  queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
+}
+
+function findProperty(e, form) {
+  e.preventDefault();
+  var language = "en";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("language=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       language = decodeURIComponent(value[1]);
+    }
+  }
+  var search = '"' + document.getElementById("search").value + '"';
+  sparqlQuery = getSearchQuery(language, search);
   console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
