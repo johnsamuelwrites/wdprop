@@ -7,16 +7,20 @@
   <script type="text/javascript" src="wdprop.js">
   </script>
 </head>
-<body onload="getComparisonResults(event, this)">
+<body onload="getComparisonResultsOnLoad()">
   <h1><a href="./index.html">WDProp: Everything about Wikidata properties</a></h1>
   <h2>Compare translations among different languages</h2>
-  <form action="./compare.html" onsubmit="getComparisonResults(event, this)">
+  <form action="./compare.html" onsubmit="getComparisonResultsOnEvent(event, this)">
     <input id="languages" name="languages" type="text" value="en, fr"/>
     <input type="submit">
   </form>
   <h3>Results</h3>
   <div id="comparisonResults">
   </div>
+  <h3>Examples</h3>
+  <ul>
+    <li><a href="./compare.html?languages=en,fr,de,es">Compare translation statistics of English, French, German, Spanish</a></li>
+  </ul>
   <h3>Get language codes</h3>
   <ul>
     <li><a href="./languages.html">Supported languages</a></li>

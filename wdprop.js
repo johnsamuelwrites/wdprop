@@ -27,23 +27,42 @@ function createDivClasses(divId, json) {
   var total = document.createElement("h3"); 
   total.innerHTML = "Total " + results.bindings.length + " classes";
   properties.appendChild(total);
+
+  var table = document.createElement("table"); 
+  var th = document.createElement("tr"); 
+  var td = document.createElement("th"); 
+  td.innerHTML = "Item";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "Class label";
+  th.appendChild(td);
+  table.append(th);
+
   for ( const result of results.bindings ) {
-    var property = document.createElement("div"); 
-    property.setAttribute('class', "property");
+    tr = document.createElement("tr");
+
+    td = document.createElement("td"); 
+    td.setAttribute('class', "property");
     var a = document.createElement("a"); 
     a.setAttribute('href', "class.html?class=" + result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+    var text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+    a.append(text);
+    td.appendChild(a);
+    tr.appendChild(td);
   
+    td = document.createElement("td"); 
+    text = null;
     if(result.hasOwnProperty("label")) {
-      var text = document.createTextNode(result['label'].value);
-      a.appendChild(text);
+      text = document.createTextNode(result['label'].value);
     }
     else {
-      var text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
-      a.appendChild(text);
+      text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
     }
-    property.appendChild(a);
-    properties.appendChild(property);
+    td.appendChild(text);
+    tr.appendChild(td);
+    table.appendChild(tr);
   }
+  properties.appendChild(table);
 }
 
 function createDivClassProperties(divId, json) {
@@ -52,23 +71,45 @@ function createDivClassProperties(divId, json) {
   var total = document.createElement("h3"); 
   total.innerHTML = "Total " + results.bindings.length + " properties";
   properties.appendChild(total);
+
+  var table = document.createElement("table"); 
+  var th = document.createElement("tr"); 
+  var td = document.createElement("th"); 
+  td.innerHTML = "Item";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "Property label";
+  th.appendChild(td);
+  table.append(th);
+
   for ( const result of results.bindings ) {
-    var property = document.createElement("div"); 
-    property.setAttribute('class', "property");
+    tr = document.createElement("tr");
+
+    td = document.createElement("td"); 
+    td.setAttribute('class', "property");
     var a = document.createElement("a"); 
     a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    a.append(text);
+    td.appendChild(a);
+    tr.appendChild(td);
+  
+    td = document.createElement("td"); 
+    text = null;
   
     if(result.hasOwnProperty("label")) {
       var text = document.createTextNode(result['label'].value);
       a.appendChild(text);
     }
     else {
-      var text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+      var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
       a.appendChild(text);
     }
-    property.appendChild(a);
-    properties.appendChild(property);
+    td.appendChild(text);
+    tr.appendChild(td);
+    table.appendChild(tr);
   }
+  properties.appendChild(table);
 }
 
 function createDivComparisonResults(divId, json) {
@@ -406,7 +447,6 @@ function getClasses() {
     }
     ORDER by ?label
     `;
-  console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
 }
 
@@ -452,7 +492,6 @@ function getClassProperties() {
     }
     ORDER by ?label
     `;
-  console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivClassProperties, "classProperties");
 }
 
@@ -588,7 +627,23 @@ function getCountOfTranslatedLabels() {
   queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
 }
 
-function getComparisonResults(e, form) {
+function getComparisonResultsOnLoad() {
+  var search = "en, fr";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("languages=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       search = decodeURIComponent(value[1]);
+    }
+  }
+  document.getElementById("languages").value = search;
+  search = "('" + search + "')";
+  search = search.replace(/ /g, "");
+  search = search.replace(/,/g, "') ('");
+  getComparisonResult(search);
+}
+
+function getComparisonResultsOnEvent(e, form) {
   e.preventDefault();
   var search = "en, fr";
   if(window.location.search.length > 0) {
@@ -596,12 +651,15 @@ function getComparisonResults(e, form) {
     var value = reg.exec(window.location.search);
     if (value != null) {
        search = decodeURIComponent(value[1]);
-       console.log(search);
     }
   }
-  var search = "('" + document.getElementById("languages").value + "')";
-  search = search.replace(/ /g, "") 
-  search = search.replace(/,/g, "') ('") 
+  search = "('" + document.getElementById("languages").value + "')";
+  search = search.replace(/ /g, "");
+  search = search.replace(/,/g, "') ('");
+  getComparisonResult(search);
+}
+
+function getComparisonResult(search) {
   var sparqlQuery = `
       SELECT ?languageCode (COUNT(?label) as ?total)
       {
@@ -1150,6 +1208,5 @@ function findProperty(e, form) {
   }
   var search = '"' + document.getElementById("search").value + '"';
   sparqlQuery = getSearchQuery(language, search);
-  console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
