@@ -14,9 +14,7 @@ function queryMediaWiki(queryparams, func, divId, url) {
 }
 
 function createDivLanguage(divId, json, url) {
-  console.log(json);
   xml = json.parse["parsetree"]["*"];
-  console.log(xml);
   var languagesDiv = document.getElementById(divId);
   var count = 0;
   var regexp = /<name>(.+?)<\/name>/g;
