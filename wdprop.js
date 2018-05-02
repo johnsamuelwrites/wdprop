@@ -1,6 +1,13 @@
 /*
  * Author: John Samuel
  */
+
+/*
+ * For pagination
+ */
+var limit = 500;
+var offset = 0;
+
 function createDivProperties(divId, json) {
   const { head: { vars }, results } = json;
   var properties = document.getElementById(divId);
@@ -157,6 +164,66 @@ function createDivComparisonResults(divId, json) {
     table.appendChild(tr);
   }
   properties.appendChild(table);
+}
+
+function createDivWikiProjects(divId, json) {
+  const { head: { vars }, results } = json;
+  var projects = document.getElementById(divId);
+  while (projects.hasChildNodes()) {
+    projects.removeChild(projects.lastChild);
+  }
+  
+  var table = document.createElement("table"); 
+  var th = document.createElement("tr"); 
+  var td = document.createElement("th"); 
+  td.innerHTML = "Project";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "Link";
+  th.appendChild(td);
+  table.appendChild(th);
+  var tr = "";
+  for ( const result of results.bindings ) {
+    tr = document.createElement("tr");
+
+    td = document.createElement("td"); 
+    td.innerHTML = result['title'].value;
+    tr.appendChild(td);
+
+    var project = document.createElement("td"); 
+    project.setAttribute('class', "property");
+    var a = document.createElement("a"); 
+    a.setAttribute('href', "wikiproject.html?search=" + result['title'].value);
+    var text = document.createTextNode("https://www.wikidata.org/wiki/" + result['title'].value);
+    a.appendChild(text);
+    project.appendChild(a);
+    tr.appendChild(project);
+
+    table.appendChild(tr);
+  }
+  if (results.bindings.length == 500) {
+    offset = offset + 500;
+    var nextFirst = document.createElement("div"); 
+    var nextLast = document.createElement("div"); 
+    nextFirst.setAttribute('class', "property");
+    nextLast.setAttribute('class', "property");
+    var aF = document.createElement("a"); 
+    aF.setAttribute('href', "wikiprojects.html?limit=500&offset="+ offset);
+    var aL = document.createElement("a"); 
+    aL.setAttribute('href', "wikiprojects.html?limit=500&offset="+ offset);
+    var textF = document.createTextNode("Next");
+    var textL = document.createTextNode("Next");
+    aF.appendChild(textF);
+    aL.appendChild(textL);
+    nextFirst.appendChild(aF);
+    nextLast.appendChild(aL);
+    projects.appendChild(nextFirst);
+    projects.appendChild(table);
+    projects.appendChild(nextLast);
+  }
+  else {
+    projects.appendChild(table);
+  }
 }
 
 function createDivSearchProperties(divId, json) {
@@ -1172,6 +1239,81 @@ function getSearchQuery(language, search) {
     ORDER by ?label
     `;
   return(sparqlQuery);
+}
+
+function getSearchWikiProjectQuery(search) {
+  const sparqlQuery = `
+    SELECT ?title WHERE{
+     FILTER (contains(lcase(?title), lcase(` + search + `))).
+     {
+       SELECT ?title WHERE {
+        SERVICE wikibase:mwapi {
+          bd:serviceParam wikibase:api "Search" .
+          bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+          bd:serviceParam mwapi:srsearch "Wikidata:WikiProject" .
+          ?title wikibase:apiOutput mwapi:title .
+        }
+        FILTER(contains(?title, "Wikidata:WikiProject" ))
+       }
+      }
+    }
+  `;
+   return sparqlQuery;
+}
+function getWikiProjects() {
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("limit=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       limit = decodeURIComponent(value[1]);
+       limit = Number(limit);
+    }
+  }
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("offset=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       offset = decodeURIComponent(value[1]);
+       offset = Number(offset);
+    }
+  }
+  const sparqlQuery = `
+    SELECT DISTINCT ?title WHERE {
+      SERVICE wikibase:mwapi {
+        bd:serviceParam wikibase:api "Search" .
+        bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+        bd:serviceParam mwapi:srsearch "Wikidata:WikiProject" .
+        ?title wikibase:apiOutput mwapi:title .
+      }
+      FILTER(contains(?title, "Wikidata:WikiProject" )).
+    }
+    LIMIT ` + limit + `
+    OFFSET `+ offset + `
+  `;
+  queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+}
+
+function findWikiProjects(e, form) {
+  e.preventDefault();
+  var search = '"' + document.getElementById("search").value + '"';
+  sparqlQuery = getSearchWikiProjectQuery(search);
+  queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+}
+
+function findWikiProjectsOnLoad() {
+  limit = 500;
+  offset = 500;
+  var search = 'heritage';
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("search=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       search = decodeURIComponent(value[1]);
+    }
+  }
+  sparqlQuery = getSearchWikiProjectQuery('"'+search+'"');
+  document.getElementById("search").value = search; 
+  queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
 }
 
 function findPropertyOnLoad() {

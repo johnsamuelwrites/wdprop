@@ -1,6 +1,7 @@
 # v0.6 (under progress)
 ===============================================================================
 * Example search and comparison queries
+* Search and navigate Wikidata WikiProjects
 
 # v0.5
 ===============================================================================
