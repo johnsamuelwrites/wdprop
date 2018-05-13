@@ -23,3 +23,4 @@
 * Improve search results
 * Support search and language parameter in URLs ([classes,class,search].html)
 * Search and Navigate WikiProjects
+* Visualize path of translation

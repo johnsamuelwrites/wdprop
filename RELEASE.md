@@ -1,7 +1,11 @@
-# v0.6 (under progress)
+# v0.7 (under progress)
+===============================================================================
+
+# v0.6
 ===============================================================================
 * Example search and comparison queries
 * Search and navigate Wikidata WikiProjects
+* Visualize path of translation
 
 # v0.5
 ===============================================================================

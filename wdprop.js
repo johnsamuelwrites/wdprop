@@ -1049,18 +1049,31 @@ function getPropertyDetails() {
   td.innerHTML = "Value";
   th.appendChild(td);
   table.appendChild(th);
-  var th = document.createElement("tr"); 
+  var tr = document.createElement("tr"); 
   var td = document.createElement("td"); 
   td.innerHTML = "Link";
-  th.appendChild(td);
+  tr.appendChild(td);
   td = document.createElement("td"); 
   link = document.createElement("a"); 
   link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
   var text = document.createTextNode("https://www.wikidata.org/entity/"+property);
   link.appendChild(text);
   td.appendChild(link)
-  th.appendChild(td);
-  table.appendChild(th);
+  tr.appendChild(td);
+  table.appendChild(tr);
+
+  tr = document.createElement("tr"); 
+  td = document.createElement("td"); 
+  td.innerHTML = "Translation Path";
+  tr.appendChild(td);
+  td = document.createElement("td"); 
+  link = document.createElement("a"); 
+  link.setAttribute('href', "path.html?property=" + property)
+  var text = document.createTextNode("path.html?property="+property);
+  link.appendChild(text);
+  td.appendChild(link)
+  tr.appendChild(td);
+  table.appendChild(tr);
   div.appendChild(table);
   
    sparqlQuery = `
@@ -1351,4 +1364,390 @@ function findProperty(e, form) {
   var search = '"' + document.getElementById("search").value + '"';
   sparqlQuery = getSearchQuery(language, search);
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
+}
+
+function createDivTranslationPath(divId, json) {
+  const { head: { vars }, results } = json;
+  var path = document.getElementById(divId);
+
+  var table = document.createElement("table"); 
+  var th = document.createElement("tr"); 
+  var td = document.createElement("th"); 
+  table.setAttribute("class", "path");
+  td.innerHTML = "Time";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "L";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "D";
+  th.appendChild(td);
+  td = document.createElement("th"); 
+  td.innerHTML = "A";
+  th.appendChild(td);
+  table.append(th);
+  
+  trMap = {};
+
+  for ( const result of results.bindings ) {
+    var newEntry = false;
+    tr = null;
+    var comment = result['comment'].value;
+    comment = comment.replace(/\*\/.*/g, '') ;
+    console.log(comment);
+    comment = comment.replace(/\/\* wb.*[0-9]| /, '');
+    console.log("lang: "+ comment);
+    if (result['time'].value + comment in trMap) {
+      tr = trMap[result['time'].value+comment];
+    }
+    console.log("tr: " + tr);
+    if(tr == null) {
+      tr = document.createElement("tr");
+      tr.setAttribute('id', result['time'].value + comment);
+      trMap[result['time'].value + comment] = tr;
+      td = document.createElement("td"); 
+      text = document.createTextNode(result['time'].value);
+      td.appendChild(text);
+      tr.appendChild(td);
+      newEntry = true;
+    }
+    console.log("newEntry " + newEntry);
+
+    console.log(result['time'].value);
+    comment = result['comment'].value;
+    console.log(comment);
+
+    if (comment.indexOf('wbeditentity-create') != -1) {
+      td = document.createElement("td"); 
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\* wbeditentity-create:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      text = document.createTextNode(comment);
+      textDiv = document.createElement("div");
+      textDiv.setAttribute('class', "pathlanguage");
+      textDiv.style['background-color'] = '#002171';
+      textDiv.append(text);
+      td.appendChild(textDiv);
+      tr.appendChild(td);
+      td = document.createElement("td"); 
+      tr.appendChild(td);
+      td = document.createElement("td"); 
+      tr.appendChild(td);
+      table.appendChild(tr);
+    }
+
+    if (comment.indexOf('wbsetlabel-add') != -1) {
+      td = document.createElement("td"); 
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\* wbsetlabel-add:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#002171';
+        textDiv.append(text);
+        tr.children[1].appendChild(textDiv);
+      }
+      else {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#002171';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+    if (comment.indexOf('wbsetdescription-add') != -1) {
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\*.*wbsetdescription-add:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#002171';
+        textDiv.append(text);
+        tr.children[2].appendChild(textDiv);
+      }
+      else {
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#002171';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+    if (comment.indexOf('wbsetaliases-add') != -1) {
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\*.*wbsetaliases-add:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#002171';
+        textDiv.append(text);
+        tr.children[3].appendChild(textDiv);
+      }
+      else {
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#002171';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+    if (comment.indexOf('wbsetlabel-set') != -1) {
+      td = document.createElement("td"); 
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\* wbsetlabel-set:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#0069c0';
+        textDiv.append(text);
+        tr.children[1].appendChild(textDiv);
+      }
+      else {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#0069c0';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+    if (comment.indexOf('wbsetdescription-set') != -1) {
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\*.*wbsetdescription-set:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#0069c0';
+        textDiv.append(text);
+        tr.children[2].appendChild(textDiv);
+      }
+      else {
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#0069c0';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+    if (comment.indexOf('wbsetaliases-set') != -1) {
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\*.*wbsetaliases-set:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#0069c0';
+        textDiv.append(text);
+        tr.children[3].appendChild(textDiv);
+      }
+      else {
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#0069c0';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+    if (comment.indexOf('wbsetlabel-remove') != -1) {
+      td = document.createElement("td"); 
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\* wbsetlabel-remove:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = 'red';
+        textDiv.append(text);
+        tr.children[1].appendChild(textDiv);
+      }
+      else {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = 'red';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+    if (comment.indexOf('wbsetdescription-remove') != -1) {
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\*.*wbsetdescription-remove:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = 'red';
+        textDiv.append(text);
+        tr.children[2].appendChild(textDiv);
+      }
+      else {
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = 'red';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+    if (comment.indexOf('wbsetaliases-remove') != -1) {
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\*.*wbsetaliases-remove:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = 'red';
+        textDiv.append(text);
+        tr.children[3].appendChild(textDiv);
+      }
+      else {
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = 'red';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+  }
+  path.appendChild(table);
+}
+
+function getPath() {
+  var property = "P3966";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("property=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       property = decodeURIComponent(value[1]);
+    }
+  }
+
+  
+  const sparqlQuery = `
+     SELECT * {
+     SERVICE wikibase:mwapi {
+      bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+      bd:serviceParam wikibase:api "Generator" .
+      bd:serviceParam mwapi:generator "revisions" .
+      bd:serviceParam mwapi:titles "Property:` + property +`" .
+      bd:serviceParam mwapi:grvprop "timestamp|comment" .
+      bd:serviceParam mwapi:grvlimit "1".
+      bd:serviceParam mwapi:prop  "revisions".
+      ?time wikibase:apiOutput "revisions/rev[1]/@timestamp" . 
+      ?comment wikibase:apiOutput "revisions/rev[1]/@comment" .
+     }
+    }
+    order by ?time
+    `;
+  console.log(sparqlQuery);
+  queryWikidata(sparqlQuery, createDivTranslationPath, "translationPath");
 }
