@@ -1413,9 +1413,8 @@ function createDivTranslationPath(divId, json) {
     }
     console.log("newEntry " + newEntry);
 
-    console.log(result['time'].value);
     comment = result['comment'].value;
-    console.log(comment);
+    console.log(result['time'].value + ": " + comment);
 
     if (comment.indexOf('wbeditentity-create') != -1) {
       td = document.createElement("td"); 
@@ -1619,6 +1618,66 @@ function createDivTranslationPath(divId, json) {
         textDiv.style['background-color'] = '#0069c0';
         textDiv.append(text);
         td.appendChild(textDiv);
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+
+    if (comment.indexOf('wbsetlabeldescriptionaliases') != -1) {
+      comment = comment.replace(/\*\/.*/g, '') ;
+      console.log(comment);
+      comment = comment.replace(/\/\*.*wbsetlabeldescriptionaliases:[0-9]| /, '');
+      console.log(comment);
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text1 = document.createTextNode(comment);
+        text2 = document.createTextNode(comment);
+        text3 = document.createTextNode(comment);
+        textDiv1 = document.createElement("div");
+        textDiv2 = document.createElement("div");
+        textDiv3 = document.createElement("div");
+        textDiv1.setAttribute('class', "pathlanguage");
+        textDiv1.style['background-color'] = '#0069c0';
+        textDiv1.append(text1);
+
+        textDiv2.setAttribute('class', "pathlanguage");
+        textDiv2.style['background-color'] = '#0069c0';
+        textDiv2.append(text2);
+
+        textDiv3.setAttribute('class', "pathlanguage");
+        textDiv3.style['background-color'] = '#0069c0';
+        textDiv3.append(text3);
+        tr.children[1].appendChild(textDiv1);
+        tr.children[2].appendChild(textDiv2);
+        tr.children[3].appendChild(textDiv3);
+      }
+      else {
+        text1 = document.createTextNode(comment);
+        text2 = document.createTextNode(comment);
+        text3 = document.createTextNode(comment);
+        textDiv1 = document.createElement("div");
+        textDiv2 = document.createElement("div");
+        textDiv3 = document.createElement("div");
+        textDiv1.setAttribute('class', "pathlanguage");
+        textDiv1.style['background-color'] = '#0069c0';
+        textDiv1.append(text1);
+
+        textDiv2.setAttribute('class', "pathlanguage");
+        textDiv2.style['background-color'] = '#0069c0';
+        textDiv2.append(text2);
+
+        textDiv3.setAttribute('class', "pathlanguage");
+        textDiv3.style['background-color'] = '#0069c0';
+        textDiv3.append(text3);
+
+        td = document.createElement("td"); 
+        td.appendChild(textDiv1);
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        td.appendChild(textDiv2);
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        td.appendChild(textDiv3);
         tr.appendChild(td);
         table.appendChild(tr);
       }
