@@ -1394,13 +1394,10 @@ function createDivTranslationPath(divId, json) {
     tr = null;
     var comment = result['comment'].value;
     comment = comment.replace(/\*\/.*/g, '') ;
-    console.log(comment);
     comment = comment.replace(/\/\* wb.*[0-9]| /, '');
-    console.log("lang: "+ comment);
     if (result['time'].value + comment in trMap) {
       tr = trMap[result['time'].value+comment];
     }
-    console.log("tr: " + tr);
     if(tr == null) {
       tr = document.createElement("tr");
       tr.setAttribute('id', result['time'].value + comment);
@@ -1411,17 +1408,13 @@ function createDivTranslationPath(divId, json) {
       tr.appendChild(td);
       newEntry = true;
     }
-    console.log("newEntry " + newEntry);
 
     comment = result['comment'].value;
-    console.log(result['time'].value + ": " + comment);
 
     if (comment.indexOf('wbeditentity-create') != -1) {
       td = document.createElement("td"); 
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\* wbeditentity-create:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       text = document.createTextNode(comment);
       textDiv = document.createElement("div");
@@ -1440,9 +1433,7 @@ function createDivTranslationPath(divId, json) {
     if (comment.indexOf('wbsetlabel-add') != -1) {
       td = document.createElement("td"); 
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\* wbsetlabel-add:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text = document.createTextNode(comment);
@@ -1470,9 +1461,7 @@ function createDivTranslationPath(divId, json) {
 
     if (comment.indexOf('wbsetdescription-add') != -1) {
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\*.*wbsetdescription-add:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text = document.createTextNode(comment);
@@ -1501,9 +1490,7 @@ function createDivTranslationPath(divId, json) {
 
     if (comment.indexOf('wbsetaliases-add') != -1) {
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\*.*wbsetaliases-add:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text = document.createTextNode(comment);
@@ -1533,9 +1520,7 @@ function createDivTranslationPath(divId, json) {
     if (comment.indexOf('wbsetlabel-set') != -1) {
       td = document.createElement("td"); 
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\* wbsetlabel-set:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text = document.createTextNode(comment);
@@ -1563,9 +1548,7 @@ function createDivTranslationPath(divId, json) {
 
     if (comment.indexOf('wbsetdescription-set') != -1) {
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\*.*wbsetdescription-set:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text = document.createTextNode(comment);
@@ -1594,9 +1577,7 @@ function createDivTranslationPath(divId, json) {
 
     if (comment.indexOf('wbsetaliases-set') != -1) {
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\*.*wbsetaliases-set:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text = document.createTextNode(comment);
@@ -1625,9 +1606,7 @@ function createDivTranslationPath(divId, json) {
 
     if (comment.indexOf('wbsetlabeldescriptionaliases') != -1) {
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\*.*wbsetlabeldescriptionaliases:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text1 = document.createTextNode(comment);
@@ -1686,9 +1665,7 @@ function createDivTranslationPath(divId, json) {
     if (comment.indexOf('wbsetlabel-remove') != -1) {
       td = document.createElement("td"); 
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\* wbsetlabel-remove:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text = document.createTextNode(comment);
@@ -1716,9 +1693,7 @@ function createDivTranslationPath(divId, json) {
 
     if (comment.indexOf('wbsetdescription-remove') != -1) {
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\*.*wbsetdescription-remove:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text = document.createTextNode(comment);
@@ -1747,9 +1722,7 @@ function createDivTranslationPath(divId, json) {
 
     if (comment.indexOf('wbsetaliases-remove') != -1) {
       comment = comment.replace(/\*\/.*/g, '') ;
-      console.log(comment);
       comment = comment.replace(/\/\*.*wbsetaliases-remove:[0-9]| /, '');
-      console.log(comment);
       comment = comment.replace('|', '');
       if(!newEntry) {
         text = document.createTextNode(comment);
@@ -1807,6 +1780,5 @@ function getPath() {
     }
     order by ?time
     `;
-  console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivTranslationPath, "translationPath");
 }
