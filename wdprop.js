@@ -1487,6 +1487,34 @@ function createDivTranslationPath(divId, json) {
         table.appendChild(tr);
       }
     }
+    if (comment.indexOf('wbsetaliases-add-remove') != -1) {
+      comment = comment.replace(/\*\/.*/g, '') ;
+      comment = comment.replace(/\/\*.*wbsetaliases-add-remove:[0-9]| /, '');
+      comment = comment.replace('|', '');
+      if(!newEntry) {
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#0069c0';
+        textDiv.append(text);
+        tr.children[3].appendChild(textDiv);
+      }
+      else {
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        tr.appendChild(td);
+        td = document.createElement("td"); 
+        text = document.createTextNode(comment);
+        textDiv = document.createElement("div");
+        textDiv.setAttribute('class', "pathlanguage");
+        textDiv.style['background-color'] = '#0069c0';
+        textDiv.append(text);
+        td.appendChild(textDiv);
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
 
     if (comment.indexOf('wbsetaliases-add') != -1) {
       comment = comment.replace(/\*\/.*/g, '') ;
