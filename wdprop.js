@@ -1020,19 +1020,36 @@ function getProperties() {
   queryWikidata(sparqlQuery, createDivPropertyDetails, "allProperties");
 }
 
-function getOverallProvenance() {
+
+function getPropertyWithReference() {
   const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
    SELECT DISTINCT ?property 
     {
       ?property a wikibase:Property;
          ?prop ?statement.
-      OPTIONAL{?statement prov:wasDerivedFrom ?reference}
-      OPTIONAL{?property wdt:P1628 ?equivproperty}
+      ?statement prov:wasDerivedFrom ?reference.
       FILTER(REGEX(STR(?statement), "http://www.wikidata.org/entity/statement/") && bound(?reference))
     }
     ORDER by ?property
     `;
-  queryWikidata(sparqlQuery, createDivPropertyDetails, "overallprovenance");
+  queryWikidata(sparqlQuery, createDivPropertyDetails, "propertywithreference");
+}
+
+function getPropertyWithEquivPropertySet() {
+  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+   SELECT DISTINCT ?property 
+    {
+      ?property a wikibase:Property;
+         ?prop ?statement;
+         wdt:P1628 ?equivproperty.
+    }
+    ORDER by ?property
+    `;
+  queryWikidata(sparqlQuery, createDivPropertyDetails, "propertywithequivpropertyset");
+}
+function getOverallProvenance() {
+  getPropertyWithEquivPropertySet();
+  getPropertyWithReference();
 }
 
 function getPropertiesNeedingTranslation() {
@@ -1881,6 +1898,10 @@ function createDivReferences(divId, json) {
   var statementTotal = document.createElement("h3");
   statementTotal.innerHTML = "Total " + Object.keys(refs).length + " reference statements" +
        " for a total of " + results.bindings.length + " statements";
+  if (results.bindings.length != 0) {
+    statementTotal.innerHTML = statementTotal.innerHTML +
+        " ("+ (Object.keys(refs).length * 100)/results.bindings.length + "%)"
+  }
   references.appendChild(statementTotal);
 
   if(Object.keys(refs).length == 0) {
