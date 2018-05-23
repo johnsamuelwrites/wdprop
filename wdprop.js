@@ -1900,7 +1900,7 @@ function createDivReferences(divId, json) {
        " for a total of " + results.bindings.length + " statements";
   if (results.bindings.length != 0) {
     statementTotal.innerHTML = statementTotal.innerHTML +
-        " ("+ (Object.keys(refs).length * 100)/results.bindings.length + "%)"
+        " ("+ ((Object.keys(refs).length * 100)/results.bindings.length).toFixed(2) + "%)"
   }
   references.appendChild(statementTotal);
 
