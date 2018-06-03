@@ -1856,6 +1856,46 @@ function getPath() {
     `;
   queryWikidata(sparqlQuery, createDivTranslationPath, "translationPath");
 }
+function createDivReferencesCount(divId, json) {
+  const { head: { vars }, results } = json;
+  var referencesCount = document.getElementById(divId);
+  percentage  = parseFloat(results.bindings[0]["percentage"]["value"]).toFixed(2);
+  var percentageDiv = document.createElement("h3");
+  percentageDiv.innerHTML = "Total " + 
+       results.bindings[0]["referencecount"]["value"]+
+       " referenced statements from a total of " +
+       results.bindings[0]["statementcount"]["value"] + 
+       " statements (" + percentage + "%)";
+  referencesCount.appendChild(percentageDiv);
+}
+
+function getReferencesCount() {
+  var item = "P31";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("property=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       item = decodeURIComponent(value[1]);
+    }
+  }
+  var div = document.getElementById("itemCode");
+  div.innerHTML = item;
+
+  const sparqlQuery = `
+    SELECT (count(?reference) as ?referencecount ) (count(?statement) as ?statementcount ) (?referencecount*100/?statementcount as ?percentage)
+    WITH {
+      SELECT ?statement
+      {
+        [] p:` + item + ` ?statement
+      }
+    } AS %result
+    WHERE {
+      INCLUDE %result
+      OPTIONAL{?statement prov:wasDerivedFrom ?reference}
+    }
+    `;
+  queryWikidata(sparqlQuery, createDivReferencesCount, "referencesCount");
+}
 
 function getReferences() {
   var item = "P31";
@@ -1917,11 +1957,8 @@ function createDivReferences(divId, json) {
   td.innerHTML = "Number of statements";
   th.appendChild(td);
   table.append(th);
-  console.log(refs);
-  console.log(Object.keys(refs));
   data = Object.keys(refs);
   for ( i=0; i<data.length; i++) {
-    console.log(data[i]);
     tr = document.createElement("tr");
 
     td = document.createElement("td"); 
@@ -1975,6 +2012,7 @@ function createDivExternalLinks(divId, json) {
 
 function getLinks() {
   getReferences();
+  getReferencesCount();
   getEquivalentProperties();
 }
 document.onkeydown = function(event) {
