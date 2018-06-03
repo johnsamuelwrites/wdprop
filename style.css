@@ -48,12 +48,32 @@ body {
 #content {
   top:10vh;
 }
+#footertext {
+  float:clear;
+  padding-top:2vh;
+  text-align:center;
+  margin-left:15vw;
+  margin-right:15vw;
+  border-top: 1px solid grey;
+}
 .section {
   margin-bottom:2vh;
   padding:1vh;
   margin-left:15vw;
   margin-right:15vw;
   border-top: 1px solid grey;
+}
+#propertyDatatypes, #propertiesWithDatatype, #languages,
+#propertyLabelsNeedingTranslation, #propertyDescriptionsNeedingTranslation, #missingPropertyAliases,
+#translatedLabelsCount, #translatedDescriptionsCount, #translatedAliasesCount,
+#untranslatedLabelsInLanguages, #untranslatedDescriptionsInLanguages, #untranslatedAliasesInLanguages,
+#allProperties, #untranslatedLabelsInLanguages, #untranslatedDescriptionsInLanguages,
+#untranslatedAliasesInLanguages, #translatedLabelsInLanguages,
+#translatedDescriptionsInLanguages, #translatedAliasesInLanguages,
+#propertyDescriptors, #propertywithreference, #propertywithequivpropertyset,
+#comparisonResults, #translatedTemplateSupport, #translatedTemplateOppose,
+#translatedTemplateNeutral, #translatedTemplateComment{
+  overflow:hidden;
 }
 tr>th {
   background-color : #0077c2;
@@ -128,13 +148,16 @@ a:link, a:visited {
   color: #1B80CF;
 }
 .property,.language,.datatype {
-  float : left;
+  position:relative;
+  float:left;
+  text-align:center;
   background-color : #0077c2;
   color : white;
-  overflow:unset;
+  line-height:3vh;
 }
 .property > a, .language > a, .datatype > a{
   color : white;
+  text-decoration:none;
 }
 .property > a:visited, .language >  a:visited, .datatype >a:visited {
   color : white;
@@ -145,10 +168,12 @@ img {
 }
 @media screen and (min-width: 480px) {
   .property,.language,.datatype  {
-    font-size : 2.5vh;
-    line-height : 4vh;
-    font-weight : 400;
-    padding : 1vh;
+    font-size : 2vh;
+    line-height : 2vh;
+    padding : 0.5vh;
+    width:8vw;
     margin : 0.8vh;
+    overflow:hidden;
+    font-weight : 400;
   }
 }
