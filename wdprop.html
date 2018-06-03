@@ -6,7 +6,15 @@
    <link rel="stylesheet" type="text/css" href="style.css"/>
   </head>
   <body vocab="http://schema.org/" typeof="Website"> 
-  <h1><a href="./index.html">WDProp: Everything about Wikidata properties</a></h1>
+  <div id="header">
+    <div id="logo"><a href="./index.html">WDProp</a></div>
+    <div id="headersearch">
+      <form action="./search.html" method="get">
+        <input id="headersearchtext" type="text" name="search" placeholder="Software, heritage" />
+        <button id="headersearchbutton" type="submit" value="Search">Search</button>
+      </form>
+    </div>
+  </div>
   <h2>About</h2>
   <p>
      WDProp provides a visual interface to understanding and improving multilingual and collaborative ontology development on Wikidata.  

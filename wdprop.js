@@ -1977,3 +1977,11 @@ function getLinks() {
   getReferences();
   getEquivalentProperties();
 }
+document.onkeydown = function(event) {
+  event = event || window.event;
+  if (event.keyCode == '13') {
+    var search = document.getElementById("headersearchtext").value;
+    window.location="./search.html?search="+ search;
+    findItem(event); 
+  } 
+}

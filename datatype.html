@@ -8,7 +8,15 @@
   </script>
 </head>
 <body onload="getPropertiesWithDatatype()">
-  <h1><a href="./index.html">WDProp: Everything about Wikidata properties</a></h1>
+  <div id="header">
+    <div id="logo"><a href="./index.html">WDProp</a></div>
+    <div id="headersearch">
+      <form action="./search.html" method="get">
+        <input id="headersearchtext" type="text" name="search" placeholder="Software, heritage" />
+        <button id="headersearchbutton" type="submit" value="Search">Search</button>
+      </form>
+    </div>
+  </div>
   <h2 id="datatypeCode"></h2>
   <h3></h3>
   <div id="propertiesWithDatatype">
