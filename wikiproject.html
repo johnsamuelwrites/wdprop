@@ -17,16 +17,29 @@
       </form>
     </div>
   </div>
-  <form action="./search.html" onsubmit="findWikiProjects(event, this)">
-    <input id="search" name="search" type="text" value="instance of"></input>
-    <input type="submit">
-  </form>
-  <h2>Wikidata WikiProjects</h2>
-  <div id="allWikiProjects">
+  <div id="content">
+    <div class="section">
+      <form action="./search.html" onsubmit="findWikiProjects(event, this)">
+        <input id="search" name="search" type="text" value="instance of"></input>
+        <input type="submit">
+      </form>
+    </div>
   </div>
-  <h3>Examples</h3>
-  <ul>
-    <li><a href="./wikiproject.html?search=heritage&language=en">WikiProjects related to Heritage</a></li>
-    <li><a href="./wikiproject.html?search=programming language&language=en">WikiProjects related to programming language</a></li>
+  <div id="content">
+    <div class="section">
+      <h2>Wikidata WikiProjects</h2>
+      <div id="allWikiProjects">
+      </div>
+    </div>
+  </div>
+  <div id="content">
+    <div class="section">
+      <h3>Examples</h3>
+      <ul>
+        <li><a href="./wikiproject.html?search=heritage&language=en">WikiProjects related to Heritage</a></li>
+        <li><a href="./wikiproject.html?search=programming language&language=en">WikiProjects related to programming language</a></li>
+      </ul>
+    </div>
+  </div>
 </body>
 </html>

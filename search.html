@@ -17,16 +17,29 @@
       </form>
     </div>
   </div>
-  <h2>Search properties</h2>
-  <form action="./search.html" onsubmit="findProperty(event, this)">
-    <input id="search" name="search" type="text" value="instance of"></input>
-    <input type="submit">
-  </form>
-  <div id="searchResults">
+  <div id="content">
+    <div class="section">
+      <h2>Search properties</h2>
+      <form action="./search.html" onsubmit="findProperty(event, this)">
+        <input id="search" name="search" type="text" value="instance of"></input>
+        <input type="submit">
+      </form>
+    </div>
   </div>
-  <h3>Examples</h3>
-  <ul>
-    <li><a href="./search.html?search=software&language=en">Properties to describe software</a></li>
-    <li><a href="./search.html?search=programming language&language=en">Properties to describe programming language</a></li>
+  <div id="content">
+    <div class="section">
+      <div id="searchResults">
+      </div>
+    </div>
+  </div>
+  <div id="content">
+    <div class="section">
+      <h3>Examples</h3>
+      <ul>
+        <li><a href="./search.html?search=software&language=en">Properties to describe software</a></li>
+        <li><a href="./search.html?search=programming language&language=en">Properties to describe programming language</a></li>
+      </ul>
+    </div>
+  </div>
 </body>
 </html>
