@@ -248,7 +248,7 @@ function createDivSearchProperties(divId, json) {
   for ( const result of results.bindings ) {
     tr = document.createElement("tr");
 
-    var property = document.createElement("th"); 
+    var property = document.createElement("td"); 
     property.setAttribute('class', "property");
     var a = document.createElement("a"); 
     a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
@@ -258,6 +258,7 @@ function createDivSearchProperties(divId, json) {
     tr.appendChild(property);
 
     td = document.createElement("td"); 
+    td.setAttribute('class', "searchresultvalue");
     td.innerHTML = result['label'].value;
     tr.appendChild(td);
 
@@ -1397,7 +1398,7 @@ function findPropertyOnLoad() {
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
 
-function findProperty(e, form) {
+function findProperty(e) {
   e.preventDefault();
   var language = "en";
   if(window.location.search.length > 0) {
@@ -2153,6 +2154,6 @@ document.onkeydown = function(event) {
   if (event.keyCode == '13') {
     var search = document.getElementById("headersearchtext").value;
     window.location="./search.html?search="+ search;
-    findItem(event); 
+    findProperty(event); 
   } 
 }

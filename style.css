@@ -62,6 +62,9 @@ body {
   margin-right:15vw;
   border-top: 1px solid grey;
 }
+.searchresultvalue {
+  color: #000000;
+}
 #propertyDatatypes, #propertiesWithDatatype, #languages,
 #propertyLabelsNeedingTranslation, #propertyDescriptionsNeedingTranslation, #missingPropertyAliases,
 #translatedLabelsCount, #translatedDescriptionsCount, #translatedAliasesCount,
