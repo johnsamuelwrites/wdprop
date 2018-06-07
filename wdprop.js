@@ -1411,8 +1411,15 @@ function findProperty(e, form) {
   sparqlQuery = getSearchQuery(language, search);
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
+function createDivTranslationPathOptimized(divId, json) {
+  createDivTranslationPath(divId, json, true);
+}
 
-function createDivTranslationPath(divId, json) {
+function createDivTranslationPathNonOptimized(divId, json) {
+  createDivTranslationPath(divId, json, false);
+}
+
+function createDivTranslationPath(divId, json, optimized) {
   const { head: { vars }, results } = json;
   var path = document.getElementById(divId);
 
@@ -1435,33 +1442,77 @@ function createDivTranslationPath(divId, json) {
   
   trMap = {};
 
+  count = 0;
   for ( const result of results.bindings ) {
+   var totalCount = 1;
+   if(optimized) {
+     totalCount = 15;
+   }
+   for (count=1; count<=totalCount; count++){
     var newEntry = false;
     tr = null;
-    var comment = result['comment'].value;
+    var comment = "";
+    var time = "";
+    if (optimized) {
+      console.log(count);
+      if ('comment'+count in result) {
+        comment = result['comment'+count].value;
+        time = result['time'+count].value;
+      }
+      else {
+        continue;
+      }
+    }
+    else {
+      comment = result['comment'].value;
+      time = result['time'].value;
+    }
     comment = comment.replace(/\*\/.*/g, '') ;
     comment = comment.replace(/\/\* wb.*[0-9]| /, '');
-    if (result['time'].value + comment in trMap) {
-      tr = trMap[result['time'].value+comment];
+    if (time + comment in trMap) {
+      tr = trMap[time+comment];
     }
     alanguagedifflink = document.createElement("a"); 
-    alanguagedifflink.setAttribute('href', result['diff'].value);
+    if (optimized) {
+      alanguagedifflink.setAttribute('href', 
+        "https://www.wikidata.org/wiki/Special:Diff/" +
+          result['revision'+count].value);
+    }
+    else {
+      alanguagedifflink.setAttribute('href', 
+        "https://www.wikidata.org/wiki/Special:Diff/" +
+          result['revision'].value);
+    }
 
     atimepermalink = document.createElement("a"); 
-    atimepermalink.setAttribute('href', result['diff'].value);
+    if (optimized) {
+      atimepermalink.setAttribute('href', 
+        "https://www.wikidata.org/wiki/Special:PermaLink/" +
+          result['revision'+count].value);
+    }
+    else {
+      atimepermalink.setAttribute('href', 
+        "https://www.wikidata.org/wiki/Special:PermaLink/" +
+          result['revision'].value);
+    }
     if(tr == null) {
       tr = document.createElement("tr");
-      tr.setAttribute('id', result['time'].value + comment);
-      trMap[result['time'].value + comment] = tr;
+      tr.setAttribute('id', time + comment);
+      trMap[time + comment] = tr;
       td = document.createElement("td"); 
-      text = document.createTextNode(result['time'].value);
+      text = document.createTextNode(time);
       atimepermalink.append(text);
       td.appendChild(atimepermalink);
       tr.appendChild(td);
       newEntry = true;
     }
 
-    comment = result['comment'].value;
+    if (optimized) {
+      comment = result['comment'+count].value;
+    }
+    else {
+      comment = result['comment'].value;
+    }
 
     if (comment.indexOf('wbeditentity-create') != -1) {
       td = document.createElement("td"); 
@@ -1849,9 +1900,43 @@ function createDivTranslationPath(divId, json) {
         table.appendChild(tr);
       }
     }
-
+   }
   }
   path.appendChild(table);
+}
+
+function getPathOptimized() {
+  var property = "P3966";
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("property=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       property = decodeURIComponent(value[1]);
+    }
+  }
+
+  
+  var sparqlQuery = `SELECT * {
+     SERVICE wikibase:mwapi {
+      bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+      bd:serviceParam wikibase:api "Generator" .
+      bd:serviceParam mwapi:generator "revisions" .
+      bd:serviceParam mwapi:titles "Property:` + property +`" .
+      bd:serviceParam mwapi:grvprop "timestamp|comment" .
+      bd:serviceParam mwapi:grvlimit "15".
+      bd:serviceParam mwapi:prop  "revisions". `;
+  for (i=1; i< 16; i++ ) { 
+    sparqlQuery = sparqlQuery + 
+        `?time`+ i +` wikibase:apiOutput "revisions/rev[`+i+`]/@timestamp" . 
+         ?comment`+ i +` wikibase:apiOutput "revisions/rev[`+i+`]/@comment" .
+         ?revision`+ i +` wikibase:apiOutput "revisions/rev[`+i+`]/@revid" .`;
+    }
+    sparqlQuery = sparqlQuery + `
+      }
+    }
+    order by ?time1
+    `;
+    queryWikidata(sparqlQuery, createDivTranslationPathOptimized, "translationPath");
 }
 
 function getPath() {
@@ -1879,9 +1964,6 @@ function getPath() {
       ?comment wikibase:apiOutput "revisions/rev[1]/@comment" .
       ?revision wikibase:apiOutput "revisions/rev[1]/@revid" .
      }
-     # https://phabricator.wikimedia.org/T195036
-     BIND(URI(CONCAT("https://www.wikidata.org/wiki/Special:PermaLink/", ?revision)) AS ?permaLink)
-     BIND(URI(CONCAT("https://www.wikidata.org/wiki/Special:Diff/", ?revision)) AS ?diff)
     }
     order by ?time
     `;
