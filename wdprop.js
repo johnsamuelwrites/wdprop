@@ -1534,6 +1534,26 @@ function createDivTranslationPath(divId, json, optimized) {
       table.appendChild(tr);
     }
 
+    if (comment.indexOf('special-create-property') != -1) {
+      td = document.createElement("td"); 
+      comment = comment.replace(/\*\/.*/g, '') ;
+      comment = comment.replace(/\/\* special-create-property:[0-9]| /, '');
+      comment = comment.replace('|', '');
+      text = document.createTextNode(comment);
+      textDiv = document.createElement("div");
+      textDiv.setAttribute('class', "pathlanguage");
+      textDiv.style['background-color'] = '#002171';
+      alanguagedifflink.append(text);
+      textDiv.append(alanguagedifflink);
+      td.appendChild(textDiv);
+      tr.appendChild(td);
+      td = document.createElement("td"); 
+      tr.appendChild(td);
+      td = document.createElement("td"); 
+      tr.appendChild(td);
+      table.appendChild(tr);
+    }
+
     if (comment.indexOf('wbsetlabel-add') != -1) {
       td = document.createElement("td"); 
       comment = comment.replace(/\*\/.*/g, '') ;
