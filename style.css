@@ -49,7 +49,6 @@ body {
   top:10vh;
 }
 #footertext {
-  float:clear;
   padding-top:2vh;
   text-align:center;
   margin-left:15vw;
@@ -107,6 +106,9 @@ tr>td {
   background-color : #0077c2;
   color : white;
   text-align: center;
+}
+.pathlanguage>a, .pathlanguage>a:link, .pathlanguage>a:visited{
+  color : white;
 }
 h1 {
   margin:0;

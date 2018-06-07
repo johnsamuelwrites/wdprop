@@ -1444,13 +1444,19 @@ function createDivTranslationPath(divId, json) {
     if (result['time'].value + comment in trMap) {
       tr = trMap[result['time'].value+comment];
     }
+    alanguagedifflink = document.createElement("a"); 
+    alanguagedifflink.setAttribute('href', result['diff'].value);
+
+    atimepermalink = document.createElement("a"); 
+    atimepermalink.setAttribute('href', result['diff'].value);
     if(tr == null) {
       tr = document.createElement("tr");
       tr.setAttribute('id', result['time'].value + comment);
       trMap[result['time'].value + comment] = tr;
       td = document.createElement("td"); 
       text = document.createTextNode(result['time'].value);
-      td.appendChild(text);
+      atimepermalink.append(text);
+      td.appendChild(atimepermalink);
       tr.appendChild(td);
       newEntry = true;
     }
@@ -1466,7 +1472,8 @@ function createDivTranslationPath(divId, json) {
       textDiv = document.createElement("div");
       textDiv.setAttribute('class', "pathlanguage");
       textDiv.style['background-color'] = '#002171';
-      textDiv.append(text);
+      alanguagedifflink.append(text);
+      textDiv.append(alanguagedifflink);
       td.appendChild(textDiv);
       tr.appendChild(td);
       td = document.createElement("td"); 
@@ -1486,7 +1493,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#002171';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[1].appendChild(textDiv);
       }
       else {
@@ -1494,7 +1502,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#002171';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         td = document.createElement("td"); 
@@ -1514,7 +1523,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#002171';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[2].appendChild(textDiv);
       }
       else {
@@ -1525,7 +1535,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#002171';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         td = document.createElement("td"); 
@@ -1542,7 +1553,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#0069c0';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[3].appendChild(textDiv);
       }
       else {
@@ -1555,7 +1567,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#0069c0';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         table.appendChild(tr);
@@ -1571,7 +1584,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#002171';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[3].appendChild(textDiv);
       }
       else {
@@ -1584,7 +1598,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#002171';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         table.appendChild(tr);
@@ -1601,7 +1616,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#0069c0';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[1].appendChild(textDiv);
       }
       else {
@@ -1609,7 +1625,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#0069c0';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         td = document.createElement("td"); 
@@ -1629,7 +1646,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#0069c0';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[2].appendChild(textDiv);
       }
       else {
@@ -1640,7 +1658,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#0069c0';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         td = document.createElement("td"); 
@@ -1658,7 +1677,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#0069c0';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[3].appendChild(textDiv);
       }
       else {
@@ -1671,7 +1691,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = '#0069c0';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         table.appendChild(tr);
@@ -1746,7 +1767,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = 'red';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[1].appendChild(textDiv);
       }
       else {
@@ -1754,7 +1776,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = 'red';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         td = document.createElement("td"); 
@@ -1774,7 +1797,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = 'red';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[2].appendChild(textDiv);
       }
       else {
@@ -1785,7 +1809,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = 'red';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         td = document.createElement("td"); 
@@ -1803,7 +1828,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = 'red';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         tr.children[3].appendChild(textDiv);
       }
       else {
@@ -1816,7 +1842,8 @@ function createDivTranslationPath(divId, json) {
         textDiv = document.createElement("div");
         textDiv.setAttribute('class', "pathlanguage");
         textDiv.style['background-color'] = 'red';
-        textDiv.append(text);
+        alanguagedifflink.append(text);
+        textDiv.append(alanguagedifflink);
         td.appendChild(textDiv);
         tr.appendChild(td);
         table.appendChild(tr);
@@ -1850,7 +1877,11 @@ function getPath() {
       bd:serviceParam mwapi:prop  "revisions".
       ?time wikibase:apiOutput "revisions/rev[1]/@timestamp" . 
       ?comment wikibase:apiOutput "revisions/rev[1]/@comment" .
+      ?revision wikibase:apiOutput "revisions/rev[1]/@revid" .
      }
+     # https://phabricator.wikimedia.org/T195036
+     BIND(URI(CONCAT("https://www.wikidata.org/wiki/Special:PermaLink/", ?revision)) AS ?permaLink)
+     BIND(URI(CONCAT("https://www.wikidata.org/wiki/Special:Diff/", ?revision)) AS ?diff)
     }
     order by ?time
     `;
