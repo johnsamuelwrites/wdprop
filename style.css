@@ -2,6 +2,34 @@ body {
   margin:0;
   font-family: "Arial";
 }
+#sidebar {
+  position: fixed;
+  background-color: #00549d;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width:15vw;
+}
+#sidebarlinks {
+  position:relative;
+  top: 10vh;
+  line-height: 7vh;
+  font-size: 2.5vh;
+  font-family: 'Arial';
+}
+#sidebarlinks ul {
+  list-style: none;
+  padding:1vw;
+}
+#sidebarlinks li::before {
+  content: "• ";
+  color: #ffffff;
+}
+#sidebar a:link,
+#sidebar a:visited{
+  text-decoration:none;
+  color:#FFFFFF;
+}
 #header {
   top:0;
   width:100%;
