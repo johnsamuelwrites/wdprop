@@ -77,7 +77,6 @@ body {
   top:10vh;
 }
 #footertext {
-  float:clear;
   padding-top:2vh;
   text-align:center;
   margin-left:15vw;
@@ -90,6 +89,9 @@ body {
   margin-left:15vw;
   margin-right:15vw;
   border-top: 1px solid grey;
+}
+.searchresultvalue {
+  color: #000000;
 }
 #propertyDatatypes, #propertiesWithDatatype, #languages,
 #propertyLabelsNeedingTranslation, #propertyDescriptionsNeedingTranslation, #missingPropertyAliases,
@@ -135,6 +137,9 @@ tr>td {
   background-color : #0077c2;
   color : white;
   text-align: center;
+}
+.pathlanguage>a, .pathlanguage>a:link, .pathlanguage>a:visited{
+  color : white;
 }
 h1 {
   margin:0;
