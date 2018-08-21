@@ -1385,7 +1385,7 @@ function findPropertyOnLoad() {
        language = decodeURIComponent(value[1]);
     }
   }
-  var search = 'instance of';
+  var search = '';
   if(window.location.search.length > 0) {
     var reg = new RegExp("search=([^&#=]*)");
     var value = reg.exec(window.location.search);
@@ -1393,6 +1393,11 @@ function findPropertyOnLoad() {
        search = decodeURIComponent(value[1]);
     }
   }
+
+  if (search == "") {
+    return;
+  }
+
   sparqlQuery = getSearchQuery(language, '"'+search+'"');
   document.getElementById("search").value = search; 
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
@@ -1455,7 +1460,6 @@ function createDivTranslationPath(divId, json, optimized) {
     var comment = "";
     var time = "";
     if (optimized) {
-      console.log(count);
       if ('comment'+count in result) {
         comment = result['comment'+count].value;
         time = result['time'+count].value;
