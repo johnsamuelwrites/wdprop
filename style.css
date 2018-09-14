@@ -186,8 +186,9 @@ a:link, a:visited {
   text-align:center;
   background-color : #0077c2;
   color : white;
-  line-height:3vh;
+  line-height:4vh;
 }
+
 .property > a, .language > a, .datatype > a{
   color : white;
   text-decoration:none;
@@ -201,12 +202,15 @@ img {
 }
 @media screen and (min-width: 480px) {
   .property,.language,.datatype  {
-    font-size : 2vh;
-    line-height : 2vh;
+    font-size : 1.8vh;
+    line-height : 4vh;
     padding : 0.5vh;
-    width:3vw;
+    width:10vw;
     margin : 0.8vh;
     overflow: unset;
+  }
+  .datatype  {
+    width:25vw;
   }
 }
 @media screen and (max-width: 480px){
@@ -221,12 +225,15 @@ img {
 }
 @media screen and (max-width: 480px) and (orientation : portrait){
   .property,.language,.datatype  {
-    font-size : 2vh;
-    line-height : 2vh;
+    font-size : 1.3vh;
+    line-height : 3vh;
     padding : 0.5vh;
-    width:2vw;
+    width:10vw;
     margin : 0.8vh;
     overflow: unset;
+  }
+  .datatype  {
+    width:25vw;
   }
   #logo {
     font-size:3.0vh;
