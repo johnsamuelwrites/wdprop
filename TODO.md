@@ -4,3 +4,6 @@
    b. Show language labels
 3. Statistics
    a. Visualize language translation statistics (labels, descriptions and aliases)
+4. Export statistics
+   a. JSON
+   b. CSV
