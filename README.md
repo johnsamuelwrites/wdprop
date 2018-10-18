@@ -25,6 +25,12 @@
 * Search and Navigate WikiProjects
 * Visualize path of translation and provenance information
 
+## Author
+* John Samuel
+
+## Acknowledgements
+* Wikidata Community
+
 ## Archives and Releases
 * [Software Heritage](https://archive.softwareheritage.org/browse/origin/https://github.com/johnsamuelwrites/wdprop/directory/)
 * [Zenodo](https://doi.org/10.5281/zenodo.1174371)
