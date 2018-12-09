@@ -1,9 +1,43 @@
 1. Which properties are highly used and their translation status
 2. Language
-   a. Top used properties that still miss translation
-   b. Show language labels
+     * Top used properties that still miss translation
+     * Show language labels
 3. Statistics
-   a. Visualize language translation statistics (labels, descriptions and aliases)
+     * Visualize language translation statistics (labels, descriptions and aliases)
 4. Export statistics
-   a. JSON
-   b. CSV
+     * JSON
+     * CSV
+5. Add subtitle under the main page and every subpages: "Everything about Wikidata properties"
+6. Add description on the main page for every section
+    * Translation statistics by languages
+    * Navigate properties
+    * Search properties
+    * Compare translation statistics
+    * Wikdidata property discussion
+    * Wikdidata WikiProjects
+    * About
+7. Add description on every subpage
+    * Example: Supported languages: what does that mean?
+    * Example: WikiProjects: What does that mean?
+8. Add search/filter option on every subpage
+    * Example: User can type en or eng or english. 
+9. Languages:
+    * Group languages by
+        * Alphabetical order
+        * Language tree
+    * Show languages on World Map
+10. Properties:
+    * Display available information like label, description or alias on hovering
+    * Group properties by
+        * Usage count
+        * Property subclasses
+        * Possible visualisation: Hierarchical visualisation, treemap or heatmap
+11. Property classes
+    * Show paginated tables
+12. Show loading symbol in addition to 'Fetching data'
+13. WikiProjects
+    * Paginated tables
+14. Highlight
+    * Sidebar elements on click
+15. Use of subtabs for every subpage
+    * Load information on clicking of subtabs
