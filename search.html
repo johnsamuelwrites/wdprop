@@ -32,11 +32,18 @@
       <li><a href="./wdprop.html">About</a> </li>
     </div>
   </div>
-    <div class="content">
+    <div id="content">
      <div class="section">
       <h2>Search properties</h2>
       <form action="./search.html" onsubmit="findProperty(event, this)">
         <input id="search" name="search" type="text" placeholder="Software" ></input>
+        <input type="submit">
+      </form>
+    </div>
+    <div class="section">
+      <h2>Search Wikiprojects</h2>
+      <form action="./search.html" onsubmit="findWikiProjects(event, this)">
+        <input id="searchproject" name="searchproject" type="text" placeholder="heritage"></input>
         <input type="submit">
       </form>
     </div>
