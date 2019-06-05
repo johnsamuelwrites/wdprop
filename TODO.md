@@ -7,7 +7,6 @@
 4. Export statistics
      * JSON
      * CSV
-5. Add subtitle under the main page and every subpages: "Everything about Wikidata properties"
 6. Add description on the main page for every section
     * Translation statistics by languages
     * Navigate properties
@@ -41,3 +40,5 @@
     * Sidebar elements on click
 15. Use of subtabs for every subpage
     * Load information on clicking of subtabs
+16. Add comments to the scripts: wdprop.js and mwwdprop.js
+17. Refactor codes of wdprop.js and mwwdprop.js: Explore classes and better way to handle queries (mediawiki and wikidata).
