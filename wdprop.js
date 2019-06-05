@@ -8,6 +8,45 @@
 var limit = 500;
 var offset = 0;
 
+/*
+ * Show all properties in ascending order, including deleted ones.
+ */
+function createDivAllProperties(divId, json) {
+  const { head: { vars }, results } = json;
+  var properties = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  properties.appendChild(total);
+  propertySet = new Set();
+  maxPropertyId = 0; 
+  for ( const result of results.bindings ) {
+    for ( const variable of vars ) {
+      propertyId = Number(result['property'].value.replace("http://www.wikidata.org/entity/P", ""));
+      propertySet.add(propertyId);
+      if (propertyId > maxPropertyId) {
+        maxPropertyId = propertyId;
+      }
+    }
+  }
+  total.innerHTML = "Total " + maxPropertyId + " properties";
+  for (i = 1; i < maxPropertyId; i++) { 
+    var property = document.createElement("div"); 
+    var text = document.createTextNode("P"+String(i));
+    if (propertySet.has(i)) {
+      property.setAttribute('class', "property");
+      var a = document.createElement("a"); 
+      a.setAttribute('href', "property.html?property=P" + String(i));
+      a.appendChild(text);
+      property.appendChild(a);
+    }
+    else {
+      property.setAttribute('class', "deletedproperty");
+      property.appendChild(text);
+    }
+    properties.appendChild(property);
+  }
+  propertySet.clear();
+}
+
 function createDivProperties(divId, json) {
   const { head: { vars }, results } = json;
   var properties = document.getElementById(divId);
@@ -176,10 +215,7 @@ function createDivWikiProjects(divId, json) {
   var table = document.createElement("table"); 
   var th = document.createElement("tr"); 
   var td = document.createElement("th"); 
-  td.innerHTML = "Project";
-  th.appendChild(td);
-  td = document.createElement("th"); 
-  td.innerHTML = "Link";
+  td.innerHTML = "Projects";
   th.appendChild(td);
   table.appendChild(th);
   var tr = "";
@@ -187,18 +223,19 @@ function createDivWikiProjects(divId, json) {
     tr = document.createElement("tr");
 
     td = document.createElement("td"); 
-    td.innerHTML = result['title'].value;
-    tr.appendChild(td);
-
-    var project = document.createElement("td"); 
-    project.setAttribute('class', "property");
     var a = document.createElement("a"); 
-    a.setAttribute('href', "wikiproject.html?search=" + result['title'].value);
-    var text = document.createTextNode("https://www.wikidata.org/wiki/" + result['title'].value);
+    a.setAttribute('href', "https://www.wikidata.org/wiki/" + result['title'].value);
+    var text = document.createTextNode(result['title'].value);
     a.appendChild(text);
-    project.appendChild(a);
-    tr.appendChild(project);
-
+    td.appendChild(a);
+    var wdproject = document.createElement("a"); 
+    wdproject.setAttribute('href', "wikiproject.html?project=" + result['title'].value);
+    var emptytext = document.createTextNode(" ");
+    td.appendChild(emptytext);
+    var wdprojtext = document.createTextNode("(Details)");
+    wdproject.appendChild(wdprojtext);
+    td.appendChild(wdproject);
+    tr.appendChild(td);
     table.appendChild(tr);
   }
   if (results.bindings.length == 500) {
@@ -424,18 +461,30 @@ function createDivPropertyDetails(divId, json) {
   var total = document.createElement("h3"); 
   total.innerHTML = "Total " + results.bindings.length + " properties";
   properties.appendChild(total);
+  propertySet = new Set();
+  maxPropertyId = 0;
   for ( const result of results.bindings ) {
     for ( const variable of vars ) {
-      var property = document.createElement("div"); 
+      propertyId = Number(result['property'].value.replace("http://www.wikidata.org/entity/P", ""));
+      propertySet.add(propertyId);
+      if (propertyId > maxPropertyId) {
+        maxPropertyId = propertyId;
+      }
+    }
+  }
+  for (i = 1; i < maxPropertyId; i++) { 
+    var property = document.createElement("div"); 
+    var text = document.createTextNode("P"+String(i));
+    if (propertySet.has(i)) {
       property.setAttribute('class', "property");
       var a = document.createElement("a"); 
-      a.setAttribute('href', "property.html?property=" + result[variable].value.replace("http://www.wikidata.org/entity/", ""));
-      var text = document.createTextNode(result[variable].value.replace("http://www.wikidata.org/entity/", ""));
+      a.setAttribute('href', "property.html?property=P" + String(i));
       a.appendChild(text);
       property.appendChild(a);
       properties.appendChild(property);
     }
   }
+  propertySet.clear();
 }
 
 function queryWikidata(sparqlQuery, func, divId) {
@@ -1018,7 +1067,8 @@ function getProperties() {
     }
     ORDER by ?property
     `;
-  queryWikidata(sparqlQuery, createDivPropertyDetails, "allProperties");
+  queryWikidata(sparqlQuery, createDivPropertyDetails, "existingProperties");
+  queryWikidata(sparqlQuery, createDivAllProperties, "allProperties");
 }
 
 
@@ -1355,10 +1405,11 @@ function getWikiProjects() {
 
 function findWikiProjects(e, form) {
   e.preventDefault();
-  var search = '"' + document.getElementById("search").value + '"';
-  sparqlQuery = getSearchWikiProjectQuery(search);
-  queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+  var search = document.getElementById("searchproject").value;
+  sparqlQuery = getSearchWikiProjectQuery("'"+search+"'");
+  queryWikidata(sparqlQuery, createDivWikiProjects, "searchResults");
 }
+
 
 function findWikiProjectsOnLoad() {
   limit = 500;
