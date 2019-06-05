@@ -1,5 +1,16 @@
-# v0.11 (under progress)
+# v0.12 (under progress)
 ===============================================================================
+
+# v0.11
+===============================================================================
+* Show properties used or discussed on Wikidata Wikiprojects
+* Add subtitle to all pages
+* Update CSS for better responsive interface
+* Show all properties (including deleted ones)
+* Add option to search Wikiprojects on search page
+* Correct HTML tags
+* Add links to conference article, Zenodo, Software Heritage and Release notes
+* Add author and acknowledgement section
 
 # v0.10
 ===============================================================================
