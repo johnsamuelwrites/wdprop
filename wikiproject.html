@@ -4,10 +4,10 @@
   <meta charset="utf-8"/>
   <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
   <link rel="stylesheet" type="text/css" href="style.css">
-  <script type="text/javascript" src="wdprop.js">
+  <script type="text/javascript" src="mwwdprop.js">
   </script>
 </head>
-<body onload="findWikiProjectsOnLoad()">
+<body onload="showWikiProjectOnLoad()">
   <div id="header">
     <div id="logo"><a href="./index.html">WDProp</a></div>
     <div id="headersearch">
@@ -34,14 +34,9 @@
   </div>
   <div id="content">
     <div class="section">
-      <form action="./search.html" onsubmit="findWikiProjects(event, this)">
-        <input id="search" name="search" type="text" value="instance of"></input>
-        <input type="submit">
-      </form>
-    </div>
-    <div class="section">
-      <h2>Wikidata WikiProjects</h2>
-      <div id="allWikiProjects">
+      <h2>Wikidata WikiProject</h2>
+      <h2 id="WikiProject"></h2>
+      <div id="allProperties">
       </div>
     </div>
     <div class="section">

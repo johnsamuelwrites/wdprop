@@ -66,3 +66,47 @@ function getTemplateTranslationStatistics() {
            "translatedTemplateComment",
            "https://www.wikidata.org/wiki/Template:Comment");
 }
+
+function createDivPropertyList(divId, json, url) {
+  var properties = document.getElementById(divId);
+  var total = document.createElement("h3"); 
+  var count = 0;
+  properties.appendChild(total);
+  for ( const page of Object.keys(json.query.pages) ) {
+    var div = document.getElementById("WikiProject");
+    div.innerHTML = json.query.pages[page].title;
+    for ( const result of json.query.pages[page].links ) {
+      if(result.title.indexOf("Property:") !== -1 && result.title !== "Property:P") {
+        var property = document.createElement("div"); 
+        property.setAttribute('class', "property");
+        var a = document.createElement("a"); 
+        propertyid = result.title.replace("Property:", "");
+        a.setAttribute('href', "property.html?property=" + propertyid);
+        var text = document.createTextNode(propertyid);
+        a.appendChild(text);
+        property.appendChild(a);
+        properties.appendChild(property);
+        count ++;
+      }
+    }
+  }
+  total.innerHTML = "Total " + count + " properties";
+}
+
+
+function showWikiProjectOnLoad() {
+  limit = 500;
+  offset = 500;
+  var project = 'Wikidata:WikiProject Properties';
+  if(window.location.search.length > 0) {
+    var reg = new RegExp("project=([^&#=]*)");
+    var value = reg.exec(window.location.search);
+    if (value != null) {
+       project = decodeURIComponent(value[1]);
+    }
+  }
+  var queryparams = "query&prop=links&pllimit=500&origin=*&titles="+project;
+  queryMediaWiki(queryparams, createDivPropertyList,
+           "allProperties",
+           "");
+}
