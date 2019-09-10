@@ -7,7 +7,7 @@
 4. Export statistics
      * JSON
      * CSV
-6. Add description on the main page for every section
+6. Add one-line description on the main page for every section
     * Translation statistics by languages
     * Navigate properties
     * Search properties
