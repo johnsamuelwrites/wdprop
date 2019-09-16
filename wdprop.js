@@ -47,6 +47,82 @@ function createDivAllProperties(divId, json) {
   propertySet.clear();
 }
 
+function visualizePath(languageData) {
+   //Wikidata supported languages
+   //Reference: https://www.d3-graph-gallery.com/graph/arc_basic.html
+ 
+    languages = new Set();
+    languageData["labels"].forEach( function (l) {
+      languages.add(l);
+    });
+    languages = Array.from(languages);
+    languages.sort();
+    console.log(languages);
+
+    var height = languages.length > 50 ? languages.length*15: languages.length * 20;
+    var width = 800;
+    var svg = d3.select("#pathviz")
+              .append("svg")
+              .attr("width", width)
+              .attr("height", height)
+              .append("g")
+              .attr("transform",
+                 "translate( 10 , 10 )");
+    var x = d3.scalePoint()
+             .range([0, height-10])
+             .domain(languages);
+  nodes = svg
+    .selectAll("nodes")
+    .data(languages)
+    .enter()
+    .append("circle")
+      .attr("cy", function(d){return(x(d))})
+      .attr("cx", 90)
+      .attr("r", 4)
+      .style("fill", "#69b3a2");
+    svg.selectAll("language")
+       .data(languages)
+       .enter()
+       .append("text")
+       .attr("y", function(d){ return(x(d))})
+       .attr("x", 80)
+       .text(function(d){ return(d)})
+       .style("text-anchor", "end");
+
+  // Create links
+  links = []; 
+  if(languageData["labels"].length >1) {
+    links.push([languageData["labels"][0], languageData["labels"][1]]);
+    for (let i=1; i <languageData["labels"].length-1; i++) {
+      links.push([languageData["labels"][i], languageData["labels"][i+1]]);
+    }
+  }
+  console.log(languageData["labels"][0]);
+  languageData["labels"][0] = languageData["labels"][0].replace(" ","");
+  console.log(languageData["labels"][0].length);
+  console.log(x(languageData["labels"][0]));
+  slinks = svg
+    .selectAll('links')
+    .data(links)
+    .enter()
+    .append('path')
+    .attr('d', function (d) {
+      start = x(d[0]);
+      end = x(d[1]);
+      arcInflectionPoint = Math.abs(start-end)>400? (start-end)/1.2: (start-end)/2;
+      return ['M', 90, start, 
+        'A',                 
+        arcInflectionPoint, ',', 
+        arcInflectionPoint, 0, 0, ',',
+        start < end ? 1 : 0, 90, ',', end] 
+        .join(' ');
+    })
+    .style("fill", "none")
+    .attr("stroke", "red");
+ 
+
+}
+
 function createDivProperties(divId, json) {
   const { head: { vars }, results } = json;
   var properties = document.getElementById(divId);
@@ -1154,7 +1230,13 @@ function getPropertyDetails() {
   link.setAttribute('href', "path.html?property=" + property)
   var text = document.createTextNode("path.html?property="+property);
   link.appendChild(text);
+
+  vizlink = document.createElement("a"); 
+  vizlink.setAttribute('href', "pathviz.html?property=" + property)
+  var viztext = document.createTextNode(" (Visualization: "+property+ ") ");
+  vizlink.appendChild(viztext);
   td.appendChild(link)
+  td.appendChild(vizlink)
   tr.appendChild(td);
   table.appendChild(tr);
   div.appendChild(table);
@@ -1469,14 +1551,22 @@ function findProperty(e) {
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
 function createDivTranslationPathOptimized(divId, json) {
-  createDivTranslationPath(divId, json, true);
+  createDivTranslationPath(divId, json, true, false);
+}
+
+function createDivTranslationPathVizOptimized(divId, json) {
+  createDivTranslationPath(divId, json, true, true);
 }
 
 function createDivTranslationPathNonOptimized(divId, json) {
   createDivTranslationPath(divId, json, false);
 }
 
-function createDivTranslationPath(divId, json, optimized) {
+function createDivTranslationPath(divId, json, optimized, visualization) {
+  var languageData = {};
+  languageData["labels"] = [];
+  languageData["descriptions"] = [];
+  languageData["aliases"] = [];
   const { head: { vars }, results } = json;
   var path = document.getElementById(divId);
 
@@ -1575,6 +1665,8 @@ function createDivTranslationPath(divId, json, optimized) {
       comment = comment.replace(/\*\/.*/g, '') ;
       comment = comment.replace(/\/\* wbeditentity-create:[0-9]| /, '');
       comment = comment.replace('|', '');
+      comment = comment.replace(" ", "");
+      languageData["labels"].push(comment);
       text = document.createTextNode(comment);
       textDiv = document.createElement("div");
       textDiv.setAttribute('class', "pathlanguage");
@@ -1595,6 +1687,8 @@ function createDivTranslationPath(divId, json, optimized) {
       comment = comment.replace(/\*\/.*/g, '') ;
       comment = comment.replace(/\/\* special-create-property:[0-9]| /, '');
       comment = comment.replace('|', '');
+      comment = comment.replace(" ", "");
+      languageData["labels"].push(comment);
       text = document.createTextNode(comment);
       textDiv = document.createElement("div");
       textDiv.setAttribute('class', "pathlanguage");
@@ -1615,6 +1709,8 @@ function createDivTranslationPath(divId, json, optimized) {
       comment = comment.replace(/\*\/.*/g, '') ;
       comment = comment.replace(/\/\* wbsetlabel-add:[0-9]| /, '');
       comment = comment.replace('|', '');
+      comment = comment.replace(" ", "");
+      languageData["labels"].push(comment);
       if(!newEntry) {
         text = document.createTextNode(comment);
         textDiv = document.createElement("div");
@@ -1738,6 +1834,8 @@ function createDivTranslationPath(divId, json, optimized) {
       comment = comment.replace(/\*\/.*/g, '') ;
       comment = comment.replace(/\/\* wbsetlabel-set:[0-9]| /, '');
       comment = comment.replace('|', '');
+      comment = comment.replace(" ", "");
+      languageData["labels"].push(comment);
       if(!newEntry) {
         text = document.createTextNode(comment);
         textDiv = document.createElement("div");
@@ -1830,6 +1928,8 @@ function createDivTranslationPath(divId, json, optimized) {
       comment = comment.replace(/\*\/.*/g, '') ;
       comment = comment.replace(/\/\*.*wbsetlabeldescriptionaliases:[0-9]| /, '');
       comment = comment.replace('|', '');
+      comment = comment.replace(" ", "");
+      languageData["labels"].push(comment);
       if(!newEntry) {
         text1 = document.createTextNode(comment);
         text2 = document.createTextNode(comment);
@@ -1979,9 +2079,12 @@ function createDivTranslationPath(divId, json, optimized) {
    }
   }
   path.appendChild(table);
+  console.log(languageData["labels"]);
+  if(visualization)
+    visualizePath(languageData);
 }
 
-function getPathOptimized() {
+function getTranslationPathQueryOptimized() {
   var property = "P3966";
   if(window.location.search.length > 0) {
     var reg = new RegExp("property=([^&#=]*)");
@@ -2012,7 +2115,17 @@ function getPathOptimized() {
     }
     order by ?time1
     `;
+    return sparqlQuery;
+}
+
+function getTranslationPathTableOptimized() {
+    sparqlQuery = getTranslationPathQueryOptimized();
     queryWikidata(sparqlQuery, createDivTranslationPathOptimized, "translationPath");
+}
+
+function getTranslationPathVizOptimized() {
+    sparqlQuery = getTranslationPathQueryOptimized();
+    queryWikidata(sparqlQuery, createDivTranslationPathVizOptimized, "translationPath");
 }
 
 function getPath() {
