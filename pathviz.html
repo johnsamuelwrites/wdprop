@@ -5,8 +5,9 @@
   <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
   <link rel="stylesheet" type="text/css" href="style.css"/>
   <script type="text/javascript" src="wdprop.js"></script>
+  <script type="text/javascript" src="d3.v5.js"></script>
 </head>
-<body onload="getPathOptimized()">
+<body onload="getTranslationPathVizOptimized()">
   <div id="header">
     <div id="logo"><a href="./index.html">WDProp</a>
       <span id="subtitle">Everything about Wikidata properties</span>
@@ -36,7 +37,8 @@
   </div>
   <div id="content">
     <div class="section">
-      <h2>Path of Translation</h2>
+      <h2>Visualization of Path of Translation</h2>
+      <div id="pathviz"></div>
       <p >
        Color code: 
         <span style="color:white;line-height:4vh">
