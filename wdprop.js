@@ -2325,3 +2325,131 @@ document.onkeydown = function(event) {
     findProperty(event); 
   } 
 }
+
+/* Models*/
+class Language {
+  constructor() {
+  }
+}
+
+class DataType {
+  constructor() {
+  }
+}
+
+class Property {
+  constructor() {
+  }
+}
+
+class PropertyClass {
+  constructor() {
+  }
+}
+
+class PropertyDiscussion {
+  constructor() {
+  }
+}
+
+class Reference {
+  constructor() {
+  }
+}
+
+class WikiProject {
+  constructor() {
+  }
+}
+
+/* View*/
+class LanguageView {
+  constructor() {
+  }
+}
+
+class DataTypeView {
+  constructor() {
+  }
+}
+
+class PropertyView {
+  constructor() {
+  }
+}
+
+class PropertyClassView {
+  constructor() {
+  }
+}
+
+class PropertyDiscussionView {
+  constructor() {
+  }
+}
+
+class ReferenceView {
+  constructor() {
+  }
+}
+
+class SearchView {
+  constructor() {
+  }
+}
+
+class ComparisonView {
+  constructor() {
+  }
+}
+
+class WikiProjectView {
+  constructor() {
+  }
+}
+
+/* Controller*/
+class LanguageController {
+  constructor(model, view) {
+  }
+}
+
+class DataTypeController {
+  constructor() {
+  }
+}
+
+class PropertyController {
+  constructor() {
+  }
+}
+
+class PropertyClassController {
+  constructor() {
+  }
+}
+
+class PropertyDiscussionController {
+  constructor() {
+  }
+}
+
+class ReferenceController {
+  constructor() {
+  }
+}
+
+class SearchController {
+  constructor() {
+  }
+}
+
+class ComparisonController {
+  constructor() {
+  }
+}
+
+class WikiProjectController {
+  constructor() {
+  }
+}
