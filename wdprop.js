@@ -11,8 +11,9 @@ const endpointurl = 'https://query.wikidata.org/sparql';
 /*
  * For pagination
  */
-var limit = 500;
+var limit = 100;
 var offset = 0;
+var maxPropertyCount = 100;
 
 /*
  * All Queries
@@ -21,8 +22,8 @@ var offset = 0;
 /*
  * Get all supported datatypes
  */
-allDatatypesQuery = `
-PREFIX wikibase: <http://wikiba.se/ontology#>
+allDatatypesQuery = 
+`PREFIX wikibase: <http://wikiba.se/ontology#>
 
 SELECT DISTINCT ?datatype
 WHERE
@@ -31,36 +32,80 @@ WHERE
 }
 `;
 
+/*
+ * Get all supported languages
+ */
+allLanguagesQuery = 
+`SELECT DISTINCT ?language
+WHERE
+{
+   [] wdt:P31 wd:Q10876391;
+      wdt:P407 [wdt:P424 ?language]
+}
+ORDER by ?language
+`;
+
+/*
+ * Get all properties belonging to a particular datatype
+ */
+
+propertiesWithDatatypeQuery =
+`PREFIX wikibase: <http://wikiba.se/ontology#>
+
+SELECT DISTINCT ?property
+WHERE
+{
+    ?property rdf:type wikibase:Property;
+              wikibase:propertyType {{datatype}}
+}
+ORDER by ?property
+`;
+
+allWikiProjectsQuery = 
+`SELECT DISTINCT ?title WHERE {
+   SERVICE wikibase:mwapi {
+        bd:serviceParam wikibase:api "Search" .
+        bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+        bd:serviceParam mwapi:srsearch "Wikidata:WikiProject" .
+        ?title wikibase:apiOutput mwapi:title .
+   }
+      FILTER(contains(?title, "Wikidata:WikiProject" )).
+}
+LIMIT {{limit}}
+OFFSET {{offset}}
+`;
 
 /*
  * Show all properties in ascending order, including deleted ones.
  */
 function getValueFromURL(regexp) {
+  let reg, value;
   if (window.location.search.length > 0) {
-    var reg = new RegExp(regexp);
-    var value = reg.exec(window.location.search);
+    reg = new RegExp(regexp);
+    value = reg.exec(window.location.search);
     if (value != null) {
       value = decodeURIComponent(value[1]);
     }
   }
-  console.log(value);
   return (value);
 }
+
 function showQuery(sparqlQuery, divId) {
   fullurl = browserendpointurl + encodeURIComponent(sparqlQuery);
-  var queryLink = document.getElementById(divId + "Query");
+  let queryLink = document.getElementById(divId + "Query");
   if (queryLink != null) {
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', fullurl);
-    var text = document.createTextNode("Run Query on Wikidata");
+    let text = document.createTextNode("Run Query on Wikidata");
     a.appendChild(text);
     queryLink.appendChild(a);
   }
 }
+
 function createDivAllProperties(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
   properties.appendChild(total);
   propertySet = new Set();
   maxPropertyId = 0;
@@ -74,12 +119,12 @@ function createDivAllProperties(divId, json) {
     }
   }
   total.innerHTML = "Total " + maxPropertyId + " properties";
-  for (i = 1; i < maxPropertyId; i++) {
-    var property = document.createElement("div");
-    var text = document.createTextNode("P" + String(i));
+  for (let count = 0, i = 1; count < maxPropertyCount && i < maxPropertyId; i++, count++) {
+    let property = document.createElement("div");
+    let text = document.createTextNode("P" + String(i));
     if (propertySet.has(i)) {
       property.setAttribute('class', "property");
-      var a = document.createElement("a");
+      let a = document.createElement("a");
       a.setAttribute('href', "property.html?property=P" + String(i));
       a.appendChild(text);
       property.appendChild(a);
@@ -103,18 +148,17 @@ function visualizePath(languageData) {
   });
   languages = Array.from(languages);
   languages.sort();
-  console.log(languages);
 
-  var height = languages.length > 50 ? languages.length * 15 : languages.length * 20;
-  var width = 800;
-  var svg = d3.select("#pathviz")
+  let height = languages.length > 50 ? languages.length * 15 : languages.length * 20;
+  let width = 800;
+  let svg = d3.select("#pathviz")
     .append("svg")
     .attr("width", width)
     .attr("height", height)
     .append("g")
     .attr("transform",
       "translate( 10 , 10 )");
-  var x = d3.scalePoint()
+  let x = d3.scalePoint()
     .range([0, height - 10])
     .domain(languages);
   nodes = svg
@@ -143,10 +187,7 @@ function visualizePath(languageData) {
       links.push([languageData["labels"][i], languageData["labels"][i + 1]]);
     }
   }
-  console.log(languageData["labels"][0]);
   languageData["labels"][0] = languageData["labels"][0].replace(" ", "");
-  console.log(languageData["labels"][0].length);
-  console.log(x(languageData["labels"][0]));
   slinks = svg
     .selectAll('links')
     .data(links)
@@ -171,34 +212,40 @@ function visualizePath(languageData) {
 
 function createDivProperties(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
   total.innerHTML = "Total " + results.bindings.length + " properties";
   properties.appendChild(total);
+  
+  let count = 0;
   for (const result of results.bindings) {
     for (const variable of vars) {
-      var property = document.createElement("div");
+      let property = document.createElement("div");
       property.setAttribute('class', "property");
-      var a = document.createElement("a");
+      let a = document.createElement("a");
       a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-      var text = document.createTextNode(result[variable].value.replace("http://www.wikidata.org/entity/", ""));
+      let text = document.createTextNode(result[variable].value.replace("http://www.wikidata.org/entity/", ""));
       a.appendChild(text);
       property.appendChild(a);
       properties.appendChild(property);
+    }
+    count++;
+    if (count > maxPropertyCount) {
+	break;
     }
   }
 }
 
 function createDivClasses(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
   total.innerHTML = "Total " + results.bindings.length + " classes";
   properties.appendChild(total);
 
-  var table = document.createElement("table");
-  var th = document.createElement("tr");
-  var td = document.createElement("th");
+  let table = document.createElement("table");
+  let th = document.createElement("tr");
+  let td = document.createElement("th");
   td.innerHTML = "Item";
   th.appendChild(td);
   td = document.createElement("th");
@@ -211,9 +258,9 @@ function createDivClasses(divId, json) {
 
     td = document.createElement("td");
     td.setAttribute('class', "property");
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', "class.html?class=" + result['item'].value.replace("http://www.wikidata.org/entity/", ""));
-    var text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+    let text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
     a.append(text);
     td.appendChild(a);
     tr.appendChild(td);
@@ -235,14 +282,14 @@ function createDivClasses(divId, json) {
 
 function createDivClassProperties(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
   total.innerHTML = "Total " + results.bindings.length + " properties";
   properties.appendChild(total);
 
-  var table = document.createElement("table");
-  var th = document.createElement("tr");
-  var td = document.createElement("th");
+  let table = document.createElement("table");
+  let th = document.createElement("tr");
+  let td = document.createElement("th");
   td.innerHTML = "Item";
   th.appendChild(td);
   td = document.createElement("th");
@@ -255,9 +302,9 @@ function createDivClassProperties(divId, json) {
 
     td = document.createElement("td");
     td.setAttribute('class', "property");
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
     a.append(text);
     td.appendChild(a);
     tr.appendChild(td);
@@ -266,11 +313,11 @@ function createDivClassProperties(divId, json) {
     text = null;
 
     if (result.hasOwnProperty("label")) {
-      var text = document.createTextNode(result['label'].value);
+      let text = document.createTextNode(result['label'].value);
       a.appendChild(text);
     }
     else {
-      var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+      let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
       a.appendChild(text);
     }
     td.appendChild(text);
@@ -282,16 +329,16 @@ function createDivClassProperties(divId, json) {
 
 function createDivComparisonResults(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
   total.innerHTML = "Translation statistics";
   while (properties.hasChildNodes()) {
     properties.removeChild(properties.lastChild);
   }
   properties.appendChild(total);
-  var table = document.createElement("table");
-  var th = document.createElement("tr");
-  var td = document.createElement("th");
+  let table = document.createElement("table");
+  let th = document.createElement("tr");
+  let td = document.createElement("th");
   td.innerHTML = "Language";
   th.appendChild(td);
   td = document.createElement("th");
@@ -301,7 +348,7 @@ function createDivComparisonResults(divId, json) {
   td.innerHTML = "Label";
   th.appendChild(td);
   table.appendChild(th);
-  var tr = "";
+  let tr = "";
   for (const result of results.bindings) {
     tr = document.createElement("tr");
 
@@ -309,11 +356,11 @@ function createDivComparisonResults(divId, json) {
     td.innerHTML = result['language'].value;
     tr.appendChild(td);
 
-    var property = document.createElement("th");
+    let property = document.createElement("th");
     property.setAttribute('class', "property");
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
     a.appendChild(text);
     property.appendChild(a);
     tr.appendChild(property);
@@ -329,49 +376,49 @@ function createDivComparisonResults(divId, json) {
 
 function createDivWikiProjects(divId, json) {
   const { head: { vars }, results } = json;
-  var projects = document.getElementById(divId);
+  let projects = document.getElementById(divId);
   while (projects.hasChildNodes()) {
     projects.removeChild(projects.lastChild);
   }
 
-  var table = document.createElement("table");
-  var th = document.createElement("tr");
-  var td = document.createElement("th");
+  let table = document.createElement("table");
+  let th = document.createElement("tr");
+  let td = document.createElement("th");
   td.innerHTML = "Projects";
   th.appendChild(td);
   table.appendChild(th);
-  var tr = "";
+  let tr = "";
   for (const result of results.bindings) {
     tr = document.createElement("tr");
 
     td = document.createElement("td");
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', "https://www.wikidata.org/wiki/" + result['title'].value);
-    var text = document.createTextNode(result['title'].value);
+    let text = document.createTextNode(result['title'].value.replace("Wikidata:", ""));
     a.appendChild(text);
     td.appendChild(a);
-    var wdproject = document.createElement("a");
+    let wdproject = document.createElement("a");
     wdproject.setAttribute('href', "wikiproject.html?project=" + result['title'].value);
-    var emptytext = document.createTextNode(" ");
+    let emptytext = document.createTextNode(" ");
     td.appendChild(emptytext);
-    var wdprojtext = document.createTextNode("(Details)");
+    let wdprojtext = document.createTextNode("(Details)");
     wdproject.appendChild(wdprojtext);
     td.appendChild(wdproject);
     tr.appendChild(td);
     table.appendChild(tr);
   }
-  if (results.bindings.length == 500) {
-    offset = offset + 500;
-    var nextFirst = document.createElement("div");
-    var nextLast = document.createElement("div");
+  if (results.bindings.length == limit) {
+    offset = offset + limit;
+    let nextFirst = document.createElement("div");
+    let nextLast = document.createElement("div");
     nextFirst.setAttribute('class', "property");
     nextLast.setAttribute('class', "property");
-    var aF = document.createElement("a");
-    aF.setAttribute('href', "wikiprojects.html?limit=500&offset=" + offset);
-    var aL = document.createElement("a");
-    aL.setAttribute('href', "wikiprojects.html?limit=500&offset=" + offset);
-    var textF = document.createTextNode("Next");
-    var textL = document.createTextNode("Next");
+    let aF = document.createElement("a");
+    aF.setAttribute('href', "wikiprojects.html?limit=" + limit +"&offset=" + offset);
+    let aL = document.createElement("a");
+    aL.setAttribute('href', "wikiprojects.html?limit=" + limit + "&offset=" + offset);
+    let textF = document.createTextNode("Next");
+    let textL = document.createTextNode("Next");
     aF.appendChild(textF);
     aL.appendChild(textL);
     nextFirst.appendChild(aF);
@@ -387,31 +434,31 @@ function createDivWikiProjects(divId, json) {
 
 function createDivSearchProperties(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
   total.innerHTML = "Total " + results.bindings.length + " properties";
   while (properties.hasChildNodes()) {
     properties.removeChild(properties.lastChild);
   }
   properties.appendChild(total);
-  var table = document.createElement("table");
-  var th = document.createElement("tr");
-  var td = document.createElement("th");
+  let table = document.createElement("table");
+  let th = document.createElement("tr");
+  let td = document.createElement("th");
   td.innerHTML = "Property";
   th.appendChild(td);
   td = document.createElement("th");
   td.innerHTML = "Label";
   th.appendChild(td);
   table.appendChild(th);
-  var tr = "";
+  let tr = "";
   for (const result of results.bindings) {
     tr = document.createElement("tr");
 
-    var property = document.createElement("td");
+    let property = document.createElement("td");
     property.setAttribute('class', "property");
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
     a.appendChild(text);
     property.appendChild(a);
     tr.appendChild(property);
@@ -427,8 +474,8 @@ function createDivSearchProperties(divId, json) {
 }
 
 function getColor(colors, index, total) {
-  var colorCount = colors.length;
-  var groupSize = total / colorCount;
+  let colorCount = colors.length;
+  let groupSize = total / colorCount;
 
   for (i = 0; i * groupSize < total; i++) {
     if (index >= i * groupSize && index <= (i + 1) * groupSize) {
@@ -439,23 +486,23 @@ function getColor(colors, index, total) {
 
 function createDivTranslatedAliasesCount(divId, json) {
   const { head: { vars }, results } = json;
-  var languages = document.getElementById(divId);
-  var colors = ["#002171", "#004ba0",
+  let languages = document.getElementById(divId);
+  let colors = ["#002171", "#004ba0",
     "#0069c0", "#2286c3", "#bbdefb"];
-  var backgroundColors = ["#ffffff", "#ffffff",
+  let backgroundColors = ["#ffffff", "#ffffff",
     "#000000", "#000000", "#000000"];
 
-  var count = 0;
+  let count = 0;
   for (const result of results.bindings) {
-    var language = document.createElement("div");
+    let language = document.createElement("div");
     language.setAttribute('class', "language");
 
     language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', "language.html?language=" + result['languageCode'].value);
     a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
-    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
+    let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
     a.appendChild(text);
     language.appendChild(a);
     languages.appendChild(language);
@@ -467,14 +514,14 @@ function createDivTranslatedAliasesCount(divId, json) {
 function createDivTranslatedValues(divId, json) {
   const { head: { vars }, results } = json;
 
-  var properties = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
   total.innerHTML = "Total " + results.bindings.length + " properties";
   properties.appendChild(total);
 
-  var table = document.createElement("table");
-  var th = document.createElement("tr");
-  var td = document.createElement("th");
+  let table = document.createElement("table");
+  let th = document.createElement("tr");
+  let td = document.createElement("th");
   td.innerHTML = "Property";
   th.appendChild(td);
   td = document.createElement("th");
@@ -484,11 +531,11 @@ function createDivTranslatedValues(divId, json) {
   for (const result of results.bindings) {
     tr = document.createElement("tr");
 
-    var property = document.createElement("div");
+    let property = document.createElement("div");
     property.setAttribute('class', "property");
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', "https://www.wikidata.org/wiki/Property:" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    var text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+    let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
     a.appendChild(text);
     property.appendChild(a);
     td = document.createElement("td");
@@ -505,23 +552,23 @@ function createDivTranslatedValues(divId, json) {
 
 function createDivTranslatedLabelsCount(divId, json) {
   const { head: { vars }, results } = json;
-  var languages = document.getElementById(divId);
-  var colors = ["#002171", "#004ba0",
+  let languages = document.getElementById(divId);
+  let colors = ["#002171", "#004ba0",
     "#0069c0", "#2286c3", "#bbdefb"];
-  var backgroundColors = ["#ffffff", "#ffffff",
+  let backgroundColors = ["#ffffff", "#ffffff",
     "#000000", "#000000", "#000000"];
 
-  var count = 0;
+  let count = 0;
   for (const result of results.bindings) {
-    var language = document.createElement("div");
+    let language = document.createElement("div");
     language.setAttribute('class', "language");
 
     language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
     a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
-    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
+    let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
     a.appendChild(text);
     language.appendChild(a);
     languages.appendChild(language);
@@ -532,23 +579,23 @@ function createDivTranslatedLabelsCount(divId, json) {
 
 function createDivTranslatedDescriptionsCount(divId, json) {
   const { head: { vars }, results } = json;
-  var languages = document.getElementById(divId);
-  var colors = ["#002171", "#004ba0",
+  let languages = document.getElementById(divId);
+  let colors = ["#002171", "#004ba0",
     "#0069c0", "#2286c3", "#bbdefb"];
-  var backgroundColors = ["#ffffff", "#ffffff",
+  let backgroundColors = ["#ffffff", "#ffffff",
     "#000000", "#000000", "#000000"];
 
-  var count = 0;
+  let count = 0;
   for (const result of results.bindings) {
-    var language = document.createElement("div");
+    let language = document.createElement("div");
     language.setAttribute('class', "language");
 
     language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
     a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
-    var text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
+    let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
     a.appendChild(text);
     language.appendChild(a);
     languages.appendChild(language);
@@ -559,17 +606,17 @@ function createDivTranslatedDescriptionsCount(divId, json) {
 
 function createDivLanguage(divId, json) {
   const { head: { vars }, results } = json;
-  var languages = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let languages = document.getElementById(divId);
+  let total = document.createElement("h3");
   total.innerHTML = "Total " + results.bindings.length + " languages";
   languages.appendChild(total);
   for (const result of results.bindings) {
     for (const variable of vars) {
-      var language = document.createElement("div");
+      let language = document.createElement("div");
       language.setAttribute('class', "language");
-      var a = document.createElement("a");
+      let a = document.createElement("a");
       a.setAttribute('href', "./language.html?language=" + result[variable].value);
-      var text = document.createTextNode(result[variable].value);
+      let text = document.createTextNode(result[variable].value);
       a.appendChild(text);
       language.appendChild(a);
       languages.appendChild(language);
@@ -579,8 +626,8 @@ function createDivLanguage(divId, json) {
 
 function createDivPropertyDetails(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
   total.innerHTML = "Total " + results.bindings.length + " properties";
   properties.appendChild(total);
   propertySet = new Set();
@@ -594,16 +641,17 @@ function createDivPropertyDetails(divId, json) {
       }
     }
   }
-  for (i = 1; i < maxPropertyId; i++) {
-    var property = document.createElement("div");
-    var text = document.createTextNode("P" + String(i));
+  for (let count = 0, i = 1; count < maxPropertyCount && i <= maxPropertyId; i++) {
+    let property = document.createElement("div");
+    let text = document.createTextNode("P" + String(i));
     if (propertySet.has(i)) {
       property.setAttribute('class', "property");
-      var a = document.createElement("a");
+      let a = document.createElement("a");
       a.setAttribute('href', "property.html?property=P" + String(i));
       a.appendChild(text);
       property.appendChild(a);
       properties.appendChild(property);
+      count++;
     }
   }
   propertySet.clear();
@@ -614,8 +662,8 @@ function queryWikidata(sparqlQuery, func, divId) {
    * Following script is a modified form of automated
    * script generated from Wikidata Query services
    */
-  var div = document.getElementById(divId);
-  var fetchText = document.createElement("h4");
+  let div = document.getElementById(divId);
+  let fetchText = document.createElement("h4");
   fetchText.innerHTML = "Fetching data...";
   div.append(fetchText);
 
@@ -630,15 +678,7 @@ function queryWikidata(sparqlQuery, func, divId) {
 }
 
 function getLanguages() {
-  const sparqlQuery = `
-      SELECT DISTINCT ?language
-      WHERE
-      {
-        [] wdt:P31 wd:Q10876391;
-                 wdt:P407 [wdt:P424 ?language]
-      }
-      ORDER by ?language
-      `;
+  const sparqlQuery = allLanguagesQuery;
   queryWikidata(sparqlQuery, createDivLanguage, "languages");
 }
 
@@ -653,10 +693,10 @@ function getProperty(item, language) {
 }
 
 function getClasses() {
-  var language = "en";
+  let language = "en";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
@@ -690,11 +730,11 @@ function getClasses() {
 }
 
 function getClassProperties() {
-  var language = "en";
-  var item = "Q9143";
+  let language = "en";
+  let item = "Q9143";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
@@ -735,10 +775,10 @@ function getClassProperties() {
 }
 
 function getMissingPropertyAliases() {
-  var language = "en";
+  let language = "en";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
@@ -761,10 +801,10 @@ function getMissingPropertyAliases() {
 }
 
 function getPropertyLabelsNeedingTranslation() {
-  var language = "en";
+  let language = "en";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
@@ -789,7 +829,7 @@ function getPropertyLabelsNeedingTranslation() {
 
 function createDivProperty(divId, json) {
   const { head: { vars }, results } = json;
-  var languageText = document.getElementById(divId);
+  let languageText = document.getElementById(divId);
   if (results.bindings.length > 0) {
     languageText.innerHTML = results.bindings[0]['propertyLabel']['value'];
   }
@@ -797,7 +837,7 @@ function createDivProperty(divId, json) {
 
 function createDivLanguageCode(divId, json) {
   const { head: { vars }, results } = json;
-  var languageText = document.getElementById(divId);
+  let languageText = document.getElementById(divId);
   if (results.bindings.length > 0) {
     languageText.innerHTML = results.bindings[0]['languageLabel']['value'];
   }
@@ -820,10 +860,10 @@ function getLanguage(language) {
 }
 
 function getPropertyDescriptionsNeedingTranslation() {
-  var language = "en";
+  let language = "en";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
@@ -867,10 +907,10 @@ function getCountOfTranslatedLabels() {
 }
 
 function getComparisonResultsOnLoad() {
-  var search = "en, fr";
+  let search = "en, fr";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("languages=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("languages=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       search = decodeURIComponent(value[1]);
     }
@@ -884,10 +924,10 @@ function getComparisonResultsOnLoad() {
 
 function getComparisonResultsOnEvent(e, form) {
   e.preventDefault();
-  var search = "en, fr";
+  let search = "en, fr";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("languages=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("languages=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       search = decodeURIComponent(value[1]);
     }
@@ -899,7 +939,7 @@ function getComparisonResultsOnEvent(e, form) {
 }
 
 function getComparisonResult(search) {
-  var sparqlQuery = `
+  let sparqlQuery = `
       SELECT ?languageCode (COUNT(?label) as ?total)
       {
         VALUES (?languageCode) {` + search + `}
@@ -910,25 +950,25 @@ function getComparisonResult(search) {
       ORDER BY DESC(?total)
      `;
 
-  var compareDiv = document.getElementById("comparisonResults");
+  let compareDiv = document.getElementById("comparisonResults");
   while (compareDiv.hasChildNodes()) {
     compareDiv.removeChild(compareDiv.lastChild);
   }
 
   //URL to comparison page
-  var compareURLdiv = document.createElement("div");
-  var textURL = document.createTextNode("URL: ");
+  let compareURLdiv = document.createElement("div");
+  let textURL = document.createTextNode("URL: ");
   compareURLdiv.appendChild(textURL);
-  var compareURL = document.createElement("a");
+  let compareURL = document.createElement("a");
   compareURL.setAttribute("href", "./compare.html?languages=" + document.getElementById("languages").value);
-  var text = document.createTextNode("compare.html?languages=" + document.getElementById("languages").value);
+  let text = document.createTextNode("compare.html?languages=" + document.getElementById("languages").value);
   compareURL.appendChild(text);
   compareURLdiv.appendChild(compareURL);
   compareDiv.appendChild(compareURLdiv);
 
-  var labels = document.createElement("div");
+  let labels = document.createElement("div");
   labels.setAttribute("id", "comparisonResultsLabels");
-  var total = document.createElement("h3");
+  let total = document.createElement("h3");
   total.innerHTML = "Count of translated labels";
   compareDiv.appendChild(total);
   compareDiv.appendChild(labels);
@@ -945,7 +985,7 @@ function getComparisonResult(search) {
       ORDER BY DESC(?total)
      `;
 
-  var descriptions = document.createElement("div");
+  let descriptions = document.createElement("div");
   descriptions.setAttribute("id", "comparisonResultsDescriptions");
   total = document.createElement("h3");
   total.innerHTML = "Count of translated descriptions";
@@ -964,7 +1004,7 @@ function getComparisonResult(search) {
       ORDER BY DESC(?total)
      `;
 
-  var aliases = document.createElement("div");
+  let aliases = document.createElement("div");
   aliases.setAttribute("id", "comparisonResultsAliases");
   total = document.createElement("h3");
   total.innerHTML = "Count of available aliases";
@@ -974,10 +1014,10 @@ function getComparisonResult(search) {
 }
 
 function getTranslatedLabels() {
-  var language = "en";
+  let language = "en";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
@@ -998,10 +1038,10 @@ function getTranslatedLabels() {
 }
 
 function getTranslatedDescriptions() {
-  var language = "en";
+  let language = "en";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
@@ -1022,10 +1062,10 @@ function getTranslatedDescriptions() {
 }
 
 function getTranslatedAliases() {
-  var language = "en";
+  let language = "en";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
@@ -1145,17 +1185,17 @@ function getTranslationStatistics() {
 
 function createDivDataTypes(divId, json) {
   const { head: { vars }, results } = json;
-  var datatypes = document.getElementById(divId);
-  var total = document.createElement("h3");
+  let datatypes = document.getElementById(divId);
+  let total = document.createElement("h3");
   total.innerHTML = "Total " + results.bindings.length + " datatypes";
   datatypes.appendChild(total);
   for (const result of results.bindings) {
     for (const variable of vars) {
-      var datatype = document.createElement("div");
+      let datatype = document.createElement("div");
       datatype.setAttribute('class', "datatype");
-      var a = document.createElement("a");
-      var datatypeValue = result[variable].value.replace("http://wikiba.se/ontology#", "");
-      var text = document.createTextNode(datatypeValue);
+      let a = document.createElement("a");
+      let datatypeValue = result[variable].value.replace("http://wikiba.se/ontology#", "");
+      let text = document.createTextNode(datatypeValue);
       a.setAttribute('href', "datatype.html?datatype=wikibase:" + datatypeValue);
       a.appendChild(text);
       datatype.appendChild(a);
@@ -1224,35 +1264,35 @@ function getPropertiesNeedingTranslation() {
 
 
 function getPropertyDetails() {
-  var property = "P31";
+  let property = "P31";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("property=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("property=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       property = decodeURIComponent(value[1]);
     }
   }
-  var div = document.getElementById("propertyCode");
+  let div = document.getElementById("propertyCode");
   div.innerHTML = property;
 
   div = document.getElementById("propertyDetails");
-  var table = document.createElement("table");
-  var th = document.createElement("tr");
-  var td = document.createElement("th");
+  let table = document.createElement("table");
+  let th = document.createElement("tr");
+  let td = document.createElement("th");
   td.innerHTML = "Feature";
   th.appendChild(td);
   td = document.createElement("th");
   td.innerHTML = "Value";
   th.appendChild(td);
   table.appendChild(th);
-  var tr = document.createElement("tr");
-  var td = document.createElement("td");
+  tr = document.createElement("tr");
+  td = document.createElement("td");
   td.innerHTML = "Link";
   tr.appendChild(td);
   td = document.createElement("td");
   link = document.createElement("a");
   link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
-  var text = document.createTextNode("https://www.wikidata.org/entity/" + property);
+  let text = document.createTextNode("https://www.wikidata.org/entity/" + property);
   link.appendChild(text);
   td.appendChild(link)
   tr.appendChild(td);
@@ -1265,12 +1305,12 @@ function getPropertyDetails() {
   td = document.createElement("td");
   link = document.createElement("a");
   link.setAttribute('href', "path.html?property=" + property)
-  var text = document.createTextNode("path.html?property=" + property);
+  text = document.createTextNode("path.html?property=" + property);
   link.appendChild(text);
 
   vizlink = document.createElement("a");
   vizlink.setAttribute('href', "pathviz.html?property=" + property)
-  var viztext = document.createTextNode(" (Visualization: " + property + ") ");
+  let viztext = document.createTextNode(" (Visualization: " + property + ") ");
   vizlink.appendChild(viztext);
   td.appendChild(link)
   td.appendChild(vizlink)
@@ -1285,14 +1325,14 @@ function getPropertyDetails() {
   td = document.createElement("td");
   link = document.createElement("a");
   link.setAttribute('href', "propertyprovenance.html?property=" + property)
-  var text = document.createTextNode("provenance.html?property=" + property);
+  text = document.createTextNode("provenance.html?property=" + property);
   link.appendChild(text);
   td.appendChild(link)
   tr.appendChild(td);
   table.appendChild(tr);
   div.appendChild(table);
 
-  sparqlQuery = `
+  let sparqlQuery = `
     SELECT DISTINCT ?language
     WHERE
     {
@@ -1328,7 +1368,7 @@ function getPropertyDetails() {
     `;
 
   queryWikidata(sparqlQuery, createDivLanguage, "untranslatedAliasesInLanguages");
-  var sparqlQuery = `
+  sparqlQuery = `
     SELECT DISTINCT ?language
     {
       wd:`+ property + ` rdfs:label ?label.
@@ -1358,43 +1398,31 @@ function getPropertyDetails() {
 }
 
 function getPropertiesWithDatatype() {
-  var datatype = "wikibase:WikibaseItem";
-  if (window.location.search.length > 0) {
-    var reg = new RegExp("datatype=([^&#=]*)");
-    var value = reg.exec(window.location.search);
-    if (value != null) {
-      datatype = decodeURIComponent(value[1]);
-    }
+  let datatype = getValueFromURL("datatype=([^&#=]*)");
+  if (datatype === "") {
+    datatype = "wikibase:WikibaseItem";
   }
 
-  var datatypeCode = document.getElementById("datatypeCode");
+  let datatypeCode = document.getElementById("datatypeCode");
   datatypeCode.innerHTML = "Properties with datatype- " + datatype;
 
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
-
-    SELECT DISTINCT ?property
-    WHERE
-    {
-      ?property rdf:type wikibase:Property;
-                wikibase:propertyType ` + datatype + `
-    }
-    ORDER by ?property
-
-    `;
+  let sparqlQuery = propertiesWithDatatypeQuery;
+  sparqlQuery = propertiesWithDatatypeQuery.replace(
+	  "{{datatype}}", datatype);
   queryWikidata(sparqlQuery, createDivPropertyDetails, "propertiesWithDatatype");
 }
 
 function createDivPropertyDescriptors(divId, json) {
   const { head: { vars }, results } = json;
-  var properties = document.getElementById(divId);
-  var total = document.createElement("h3");
-  var count = 0;
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
+  let count = 0;
   properties.appendChild(total);
   for (const result of results.bindings) {
     for (const variable of vars) {
-      var property = document.createElement("div");
+      let property = document.createElement("div");
       property.setAttribute('class', "property");
-      var a = document.createElement("a");
+      let a = document.createElement("a");
       if (result[variable].value.indexOf("/direct") != -1 ||
         result[variable].value.indexOf("wikiba.se") != -1 ||
         result[variable].value.indexOf("schema.org") != -1 ||
@@ -1404,7 +1432,7 @@ function createDivPropertyDescriptors(divId, json) {
       count = count + 1;
       //a.setAttribute('href', result[variable].value);
       a.setAttribute('href', "property.html?property=" + result[variable].value.replace("http://www.wikidata.org/prop/", ""));
-      var text = document.createTextNode(result[variable].value.replace(new RegExp(".*/"), ""));
+      let text = document.createTextNode(result[variable].value.replace(new RegExp(".*/"), ""));
       a.appendChild(text);
       property.appendChild(a);
       properties.appendChild(property);
@@ -1490,41 +1518,29 @@ function getSearchWikiProjectQuery(search) {
   return sparqlQuery;
 }
 function getWikiProjects() {
-  if (window.location.search.length > 0) {
-    var reg = new RegExp("limit=([^&#=]*)");
-    var value = reg.exec(window.location.search);
-    if (value != null) {
-      limit = decodeURIComponent(value[1]);
-      limit = Number(limit);
-    }
+  console.log(offset);
+  let limitString = getValueFromURL("limit=([^&#=]*)");
+  console.log(limitString);
+  if (limitString) {
+      limit = Number(limitString);
   }
-  if (window.location.search.length > 0) {
-    var reg = new RegExp("offset=([^&#=]*)");
-    var value = reg.exec(window.location.search);
-    if (value != null) {
-      offset = decodeURIComponent(value[1]);
-      offset = Number(offset);
-    }
+  let offsetString = getValueFromURL("offset=([^&#=]*)");
+  if (offsetString) {
+      offset = Number(offsetString);
   }
-  const sparqlQuery = `
-    SELECT DISTINCT ?title WHERE {
-      SERVICE wikibase:mwapi {
-        bd:serviceParam wikibase:api "Search" .
-        bd:serviceParam wikibase:endpoint "www.wikidata.org" .
-        bd:serviceParam mwapi:srsearch "Wikidata:WikiProject" .
-        ?title wikibase:apiOutput mwapi:title .
-      }
-      FILTER(contains(?title, "Wikidata:WikiProject" )).
-    }
-    LIMIT ` + limit + `
-    OFFSET `+ offset + `
-  `;
+  console.log(offset);
+  console.log(offsetString);
+
+  allWikiProjectsQuery = allWikiProjectsQuery.replace("{{limit}}", limit);
+  allWikiProjectsQuery = allWikiProjectsQuery.replace("{{offset}}", offset);
+  const sparqlQuery = allWikiProjectsQuery;
+  console.log(allWikiProjectsQuery);
   queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
 }
 
 function findWikiProjects(e, form) {
   e.preventDefault();
-  var search = document.getElementById("searchproject").value;
+  let search = document.getElementById("searchproject").value;
   sparqlQuery = getSearchWikiProjectQuery("'" + search + "'");
   queryWikidata(sparqlQuery, createDivWikiProjects, "searchResults");
 }
@@ -1533,10 +1549,10 @@ function findWikiProjects(e, form) {
 function findWikiProjectsOnLoad() {
   limit = 500;
   offset = 500;
-  var search = 'heritage';
+  let search = 'heritage';
   if (window.location.search.length > 0) {
-    var reg = new RegExp("search=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("search=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       search = decodeURIComponent(value[1]);
     }
@@ -1547,18 +1563,18 @@ function findWikiProjectsOnLoad() {
 }
 
 function findPropertyOnLoad() {
-  var language = "en";
+  let language = "en";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
   }
-  var search = '';
+  let search = '';
   if (window.location.search.length > 0) {
-    var reg = new RegExp("search=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("search=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       search = decodeURIComponent(value[1]);
     }
@@ -1575,15 +1591,15 @@ function findPropertyOnLoad() {
 
 function findProperty(e) {
   e.preventDefault();
-  var language = "en";
+  let language = "en";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("language=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("language=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       language = decodeURIComponent(value[1]);
     }
   }
-  var search = '"' + document.getElementById("search").value + '"';
+  let search = '"' + document.getElementById("search").value + '"';
   sparqlQuery = getSearchQuery(language, search);
   queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
@@ -1600,16 +1616,16 @@ function createDivTranslationPathNonOptimized(divId, json) {
 }
 
 function createDivTranslationPath(divId, json, optimized, visualization) {
-  var languageData = {};
+  let languageData = {};
   languageData["labels"] = [];
   languageData["descriptions"] = [];
   languageData["aliases"] = [];
   const { head: { vars }, results } = json;
-  var path = document.getElementById(divId);
+  let path = document.getElementById(divId);
 
-  var table = document.createElement("table");
-  var th = document.createElement("tr");
-  var td = document.createElement("th");
+  let table = document.createElement("table");
+  let th = document.createElement("tr");
+  let td = document.createElement("th");
   table.setAttribute("class", "path");
   td.innerHTML = "Time";
   th.appendChild(td);
@@ -1628,15 +1644,15 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
 
   count = 0;
   for (const result of results.bindings) {
-    var totalCount = 1;
+    let totalCount = 1;
     if (optimized) {
       totalCount = 15;
     }
     for (count = 1; count <= totalCount; count++) {
-      var newEntry = false;
+      let newEntry = false;
       tr = null;
-      var comment = "";
-      var time = "";
+      let comment = "";
+      let time = "";
       if (optimized) {
         if ('comment' + count in result) {
           comment = result['comment' + count].value;
@@ -2116,23 +2132,22 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
     }
   }
   path.appendChild(table);
-  console.log(languageData["labels"]);
   if (visualization)
     visualizePath(languageData);
 }
 
 function getTranslationPathQueryOptimized() {
-  var property = "P3966";
+  let property = "P3966";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("property=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("property=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       property = decodeURIComponent(value[1]);
     }
   }
 
 
-  var sparqlQuery = `SELECT * {
+  let sparqlQuery = `SELECT * {
      SERVICE wikibase:mwapi {
       bd:serviceParam wikibase:endpoint "www.wikidata.org" .
       bd:serviceParam wikibase:api "Generator" .
@@ -2166,10 +2181,10 @@ function getTranslationPathVizOptimized() {
 }
 
 function getPath() {
-  var property = "P3966";
+  let property = "P3966";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("property=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("property=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       property = decodeURIComponent(value[1]);
     }
@@ -2197,9 +2212,9 @@ function getPath() {
 }
 function createDivReferencesCount(divId, json) {
   const { head: { vars }, results } = json;
-  var referencesCount = document.getElementById(divId);
+  let referencesCount = document.getElementById(divId);
   percentage = parseFloat(results.bindings[0]["percentage"]["value"]).toFixed(2);
-  var percentageDiv = document.createElement("h3");
+  let percentageDiv = document.createElement("h3");
   percentageDiv.innerHTML = "Total " +
     results.bindings[0]["referencecount"]["value"] +
     " referenced statements from a total of " +
@@ -2209,15 +2224,15 @@ function createDivReferencesCount(divId, json) {
 }
 
 function getReferencesCount() {
-  var item = "P31";
+  let item = "P31";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("property=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("property=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       item = decodeURIComponent(value[1]);
     }
   }
-  var div = document.getElementById("itemCode");
+  let div = document.getElementById("itemCode");
   div.innerHTML = item;
 
   const sparqlQuery = `
@@ -2237,15 +2252,15 @@ function getReferencesCount() {
 }
 
 function getReferences() {
-  var item = "P31";
+  let item = "P31";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("property=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("property=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       item = decodeURIComponent(value[1]);
     }
   }
-  var div = document.getElementById("itemCode");
+  let div = document.getElementById("itemCode");
   div.innerHTML = item;
 
   const sparqlQuery = `
@@ -2262,7 +2277,7 @@ function getReferences() {
 
 function createDivReferences(divId, json) {
   const { head: { vars }, results } = json;
-  var references = document.getElementById(divId);
+  let references = document.getElementById(divId);
   refs = {};
   for (const result of results.bindings) {
     if (result["reference"] != undefined) {
@@ -2274,7 +2289,7 @@ function createDivReferences(divId, json) {
       }
     }
   }
-  var statementTotal = document.createElement("h3");
+  let statementTotal = document.createElement("h3");
   statementTotal.innerHTML = "Total " + Object.keys(refs).length + " reference statements" +
     " for a total of " + results.bindings.length + " statements";
   if (results.bindings.length != 0) {
@@ -2287,9 +2302,9 @@ function createDivReferences(divId, json) {
     return;
   }
 
-  var table = document.createElement("table");
-  var th = document.createElement("tr");
-  var td = document.createElement("th");
+  let table = document.createElement("table");
+  let th = document.createElement("tr");
+  let td = document.createElement("th");
   td.innerHTML = "Property";
   th.appendChild(td);
   td = document.createElement("th");
@@ -2302,9 +2317,9 @@ function createDivReferences(divId, json) {
 
     td = document.createElement("td");
     td.setAttribute('class', "property");
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     a.setAttribute('href', data[i]);
-    var text = document.createTextNode(data[i].replace("http://www.wikidata.org/prop/", ""));
+    let text = document.createTextNode(data[i].replace("http://www.wikidata.org/prop/", ""));
     a.append(text);
     td.appendChild(a);
     tr.appendChild(td);
@@ -2321,10 +2336,10 @@ function createDivReferences(divId, json) {
 }
 
 function getEquivalentProperties() {
-  var item = "P31";
+  let item = "P31";
   if (window.location.search.length > 0) {
-    var reg = new RegExp("property=([^&#=]*)");
-    var value = reg.exec(window.location.search);
+    let reg = new RegExp("property=([^&#=]*)");
+    let value = reg.exec(window.location.search);
     if (value != null) {
       item = decodeURIComponent(value[1]);
     }
@@ -2342,9 +2357,9 @@ function getEquivalentProperties() {
 
 function createDivExternalLinks(divId, json) {
   const { head: { vars }, results } = json;
-  var references = document.getElementById(divId);
+  let references = document.getElementById(divId);
   refs = {};
-  var statementTotal = document.createElement("h3");
+  let statementTotal = document.createElement("h3");
   statementTotal.innerHTML = "Total " + results.bindings.length + " equivalent properties on external sources";
   references.appendChild(statementTotal);
 }
@@ -2357,7 +2372,7 @@ function getLinks() {
 document.onkeydown = function (event) {
   event = event || window.event;
   if (event.keyCode == '13') {
-    var search = document.getElementById("headersearchtext").value;
+    let search = document.getElementById("headersearchtext").value;
     window.location = "./search.html?search=" + search;
     findProperty(event);
   }
