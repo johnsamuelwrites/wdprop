@@ -93,6 +93,12 @@ function createDivPropertyList(divId, json, url) {
   total.innerHTML = "Total " + count + " properties";
 }
 
+function showWikiProjectProperties(project, divId) {
+  var queryparams = "query&prop=links&pllimit=500&origin=*&titles="+project;
+  queryMediaWiki(queryparams, createDivPropertyList,
+           divId,
+           "");
+}
 
 function showWikiProjectOnLoad() {
   limit = 500;
@@ -105,8 +111,9 @@ function showWikiProjectOnLoad() {
        project = decodeURIComponent(value[1]);
     }
   }
-  var queryparams = "query&prop=links&pllimit=500&origin=*&titles="+project;
-  queryMediaWiki(queryparams, createDivPropertyList,
-           "allProperties",
-           "");
+  showWikiProjectProperties(project, "allProperties");
+  //var queryparams = "query&prop=links&pllimit=500&origin=*&titles="+project;
+  //queryMediaWiki(queryparams, createDivPropertyList,
+  //         "allProperties",
+  //         "");
 }
