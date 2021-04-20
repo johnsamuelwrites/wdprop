@@ -6,8 +6,10 @@
   <link rel="stylesheet" type="text/css" href="style.css"/>
   <script type="text/javascript" src="wdprop.js">
   </script>
+  <script type="text/javascript" src="mwwdprop.js">
+  </script>
 </head>
-<body onload="getProperties()">
+<body onload="getProperties();showWikiProjectProperties('Wikidata:Database_reports/List_of_properties/Top100', 'tophundredProperties')">
   <div id="header">
     <div id="logo"><a href="./index.html">WDProp</a>
       <span id="subtitle">Everything about Wikidata properties</span>
@@ -41,6 +43,7 @@
       <ul>
        <li><a href="#existingProperties">Existing Wikidata Properties</a></li>
        <li><a href="#allProperties">Wikidata Properties (including deleted properties)</a></li>
+       <li><a href="#tophundredProperties">Top Properties</a></li>
       </ul>
     </div>
     <div class="section">
@@ -54,6 +57,13 @@
       </div>
     </div>
   </div>
+    <div class="section">
+      <h2>Top Properties on Wikidata</h2>
+      <div id="tophundredProperties">
+      </div>
+      <h3>Reference</h3>
+      <p>Wikidata maintains a list of of <a href="https://www.wikidata.org/wiki/Wikidata:Database_reports/List_of_properties/Top100">Top 100 properties (<span id="WikiProject"></span>)</a></p>
+    </div>
   <div id="footer">
     <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
   </div>
