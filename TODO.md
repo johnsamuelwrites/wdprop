@@ -1,7 +1,7 @@
-1. Which properties are highly used and their translation status
-2. Language
-     * Top used properties that still miss translation
-     * Show language labels
+1. ~~Which properties are highly used and their translation status~~
+2. ~~Language~~
+     * ~~Top used properties that still miss translation~~
+     * ~~Show language labels~~
 3. Statistics
      * Visualize language translation statistics (labels, descriptions and aliases)
 4. Export statistics
