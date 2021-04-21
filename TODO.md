@@ -42,3 +42,10 @@
     * Load information on clicking of subtabs
 16. Add comments to the scripts: wdprop.js and mwwdprop.js
 17. Refactor codes of wdprop.js and mwwdprop.js: Explore classes and better way to handle queries (mediawiki and wikidata).
+18. Show additional information on property page
+    * property creation date
+    * property data type
+19. ~~Show Wikidata query and Mediawiki API along with the results~~
+20. Download SVG option for path visualization
+21. Link to property discussion page
+    * Support, Oppose, Neutral and Oppose count
