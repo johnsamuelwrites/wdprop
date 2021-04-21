@@ -88,6 +88,31 @@ SELECT ?property ?label {
 }
 `;
 
+let allClassesQuery=
+`PREFIX wikibase: <http://wikiba.se/ontology#>
+SELECT DISTINCT ?item ?label
+{
+  {
+    SELECT ?item ?label
+    WHERE
+    {
+      ?item wdt:P1963 [].
+      OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="{{language}}").}.
+    }
+  }
+  UNION
+  {
+    SELECT ?item ?label
+    WHERE
+    {
+      ?property a wikibase:Property;
+                wdt:P31 ?item.
+      OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="{{language}}").}.
+    }
+  }
+}
+ORDER by ?label
+`;
 function getValueFromURL(regexp) {
   let reg, value;
   if (window.location.search.length > 0) {
@@ -179,7 +204,7 @@ function visualizePath(languageData) {
     .attr("cy", function (d) { return (x(d)) })
     .attr("cx", 90)
     .attr("r", 4)
-    .style("fill", "#69b3a2");
+    .style("fill", "#00549d");
   svg.selectAll("language")
     .data(languages)
     .enter()
@@ -215,7 +240,7 @@ function visualizePath(languageData) {
         .join(' ');
     })
     .style("fill", "none")
-    .attr("stroke", "red");
+    .attr("stroke", "#1B80CF");
 
 
 }
@@ -712,30 +737,8 @@ function getClasses() {
     }
   }
 
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
-    SELECT DISTINCT ?item ?label
-    {
-      {
-        SELECT ?item ?label
-        WHERE
-        {
-          ?item wdt:P1963 [].
-          OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="` + language + `").}.
-        }
-      }
-      UNION
-      {
-        SELECT ?item ?label
-        WHERE
-        {
-          ?property a wikibase:Property;
-                    wdt:P31 ?item.
-          OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="` + language + `").}.
-        }
-      }
-    }
-    ORDER by ?label
-    `;
+  allClassesQuery = allClassesQuery.replace("{{language}}", language);
+  const sparqlQuery = allClassesQuery;
   queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
 }
 
