@@ -290,7 +290,7 @@ function createDivClassProperties(divId, json) {
   let table = document.createElement("table");
   let th = document.createElement("tr");
   let td = document.createElement("th");
-  td.innerHTML = "Item";
+  td.innerHTML = "Property";
   th.appendChild(td);
   td = document.createElement("th");
   td.innerHTML = "Property label";
@@ -313,11 +313,11 @@ function createDivClassProperties(divId, json) {
     text = null;
 
     if (result.hasOwnProperty("label")) {
-      let text = document.createTextNode(result['label'].value);
+      text = document.createTextNode(result['label'].value);
       a.appendChild(text);
     }
     else {
-      let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+      text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
       a.appendChild(text);
     }
     td.appendChild(text);
