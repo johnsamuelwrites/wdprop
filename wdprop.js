@@ -76,8 +76,18 @@ OFFSET {{offset}}
 `;
 
 /*
- * Show all properties in ascending order, including deleted ones.
+ * Get property labels
  */
+propertyLabelsQuery = 
+`
+SELECT ?property ?label {
+  VALUES ?property { {{wdproperties}} }
+  ?property rdfs:label ?label.
+
+  FILTER(lang(?label)="{{language}}")
+}
+`;
+
 function getValueFromURL(regexp) {
   let reg, value;
   if (window.location.search.length > 0) {
@@ -96,7 +106,7 @@ function showQuery(sparqlQuery, divId) {
   if (queryLink != null) {
     let a = document.createElement("a");
     a.setAttribute('href', fullurl);
-    let text = document.createTextNode("Run Query on Wikidata");
+    let text = document.createTextNode("Run Query on Wikidata. ");
     a.appendChild(text);
     queryLink.appendChild(a);
   }
@@ -1536,6 +1546,14 @@ function getWikiProjects() {
   const sparqlQuery = allWikiProjectsQuery;
   console.log(allWikiProjectsQuery);
   queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+}
+
+function addDivPropertyLabels(divId, wdproperties) {
+  propertyLabelsQuery = propertyLabelsQuery.replace("{{wdproperties}}", wdproperties);
+  propertyLabelsQuery = propertyLabelsQuery.replace("{{language}}", "en");
+  const sparqlQuery = propertyLabelsQuery; 
+  console.log(sparqlQuery);
+  queryWikidata(sparqlQuery, createDivClassProperties, divId);
 }
 
 function findWikiProjects(e, form) {

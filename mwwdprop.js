@@ -5,7 +5,7 @@ function showQuery(fullurl, divId) {
   if (queryLink != null) {
     let a = document.createElement("a");
     a.setAttribute('href', fullurl);
-    let text = document.createTextNode("Run Query using Wikidata Mediawiki API");
+    let text = document.createTextNode("Run Query using Wikidata Mediawiki API. ");
     a.appendChild(text);
     queryLink.appendChild(a);
   }
@@ -80,7 +80,31 @@ function getTemplateTranslationStatistics() {
            "https://www.wikidata.org/wiki/Template:Comment");
 }
 
+function createDivWikprojectProperties(divId, json) {
+  let properties = document.getElementById(divId);
+  let total = document.createElement("h3");
+
+  let count = 0;
+  let wdproperties = [];
+
+  for ( const page of Object.keys(json.query.pages) ) {
+   for ( const result of json.query.pages[page].links ) {
+    if (!result.title.startsWith("Property:")) {
+       continue;
+    }
+    let text = result.title.replace("Property", "wd");
+    console.log(text);
+    wdproperties = wdproperties + " " + text + " ";
+    count++;
+   }
+  }
+  total.innerHTML = "Total " + count + " properties";
+
+  addDivPropertyLabels(divId, wdproperties);
+}
+
 function createDivPropertyList(divId, json, url) {
+  console.log(json);
   var properties = document.getElementById(divId);
   var total = document.createElement("h3"); 
   var count = 0;
@@ -108,7 +132,7 @@ function createDivPropertyList(divId, json, url) {
 
 function showWikiProjectProperties(project, divId) {
   var queryparams = "query&prop=links&pllimit=500&origin=*&titles="+project;
-  queryMediaWiki(queryparams, createDivPropertyList,
+  queryMediaWiki(queryparams, createDivWikprojectProperties,
            divId,
            "");
 }
@@ -125,8 +149,4 @@ function showWikiProjectOnLoad() {
     }
   }
   showWikiProjectProperties(project, "allProperties");
-  //var queryparams = "query&prop=links&pllimit=500&origin=*&titles="+project;
-  //queryMediaWiki(queryparams, createDivPropertyList,
-  //         "allProperties",
-  //         "");
 }
