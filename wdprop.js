@@ -97,7 +97,6 @@ SELECT DISTINCT ?item ?label
     WHERE
     {
       ?item wdt:P1963 [].
-      OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="{{language}}").}.
     }
   }
   UNION
@@ -106,12 +105,44 @@ SELECT DISTINCT ?item ?label
     WHERE
     {
       ?property a wikibase:Property;
-                wdt:P31 ?item.
-      OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="{{language}}").}.
+                (wdt:P31|wdt:P279) ?item.
     }
   }
+  OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="{{language}}").}.
 }
 ORDER by ?label
+`;
+
+translationStatisticsForClassQuery = 
+`SELECT ?languageCode (SUM(?count) as ?total)
+WHERE
+{
+  SELECT ?property ?languageCode (count(?translation) as ?count)
+  WHERE
+  {
+    {
+      SELECT DISTINCT ?property ?translation ?languageCode
+      {
+        ?property a wikibase:Property;
+              (wdt:P31|wdt:P279) wd:{{class}};
+	      {{translationType}} ?translation.
+        BIND(lang(?translation) as ?languageCode)
+      }
+    }
+    UNION
+    {
+         SELECT DISTINCT ?property  ?translation ?languageCode
+         {
+		  wd:{{class}} wdt:P1963 ?property.
+                  ?property {{translationType}} ?translation.
+                  BIND(lang(?translation) as ?languageCode)
+         }
+     }
+  }
+  GROUP BY ?property ?languageCode
+}
+GROUP BY ?languageCode
+ORDER BY DESC(?total)
 `;
 function getValueFromURL(regexp) {
   let reg, value;
@@ -737,7 +768,7 @@ function getClasses() {
     }
   }
 
-  allClassesQuery = allClassesQuery.replace("{{language}}", language);
+  allClassesQuery = allClassesQuery.replaceAll("{{language}}", language);
   const sparqlQuery = allClassesQuery;
   queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
 }
@@ -785,6 +816,7 @@ function getClassProperties() {
     ORDER by ?label
     `;
   queryWikidata(sparqlQuery, createDivClassProperties, "classProperties");
+  getTranslationStatisticsForClass(item);
 }
 
 function getMissingPropertyAliases() {
@@ -1136,6 +1168,18 @@ function getCountOfTranslatedAliases() {
    GROUP BY ?languageCode
    ORDER BY DESC(?total) `;
 
+  queryWikidata(sparqlQuery, createDivTranslatedAliasesCount, "translatedAliasesCount");
+}
+
+function getTranslationStatisticsForClass(className) {
+  translationStatisticsForClassQuery = translationStatisticsForClassQuery.replaceAll("{{class}}", className);
+  let sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "rdfs:label");
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
+
+  sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "schema:description");
+  queryWikidata(sparqlQuery, createDivTranslatedDescriptionsCount, "translatedDescriptionsCount");
+
+  sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "skos:altLabel");
   queryWikidata(sparqlQuery, createDivTranslatedAliasesCount, "translatedAliasesCount");
 }
 
