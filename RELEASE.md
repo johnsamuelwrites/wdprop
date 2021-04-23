@@ -1,4 +1,8 @@
-# v0.12 (under progress)
+# v0.13 (under progress)
+===============================================================================
+*
+
+# v0.12 
 ===============================================================================
 * Display translation statistics for selected properties
 * Display translation statistics for property classes and WikiProjects
