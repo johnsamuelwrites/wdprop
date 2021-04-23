@@ -144,13 +144,42 @@ WHERE
 GROUP BY ?languageCode
 ORDER BY DESC(?total)
 `;
-function getValueFromURL(regexp) {
+
+propertiesForClassRequiringTranslationQuery =`
+SELECT DISTINCT ?property
+{
+  {
+    SELECT ?property
+    WHERE
+    {
+      wd:{{class}} wdt:P1963 ?property.
+      OPTIONAL{?property {{translationType}} ?translation FILTER (lang(?translation)="{{language}}")}
+      FILTER (!BOUND(?translation)).
+    }
+  }
+  UNION
+  {
+    SELECT ?property
+    WHERE
+    {
+      ?property a wikibase:Property;
+                wdt:P31  wd:{{class}}.
+      OPTIONAL{?property {{translationType}} ?translation FILTER (lang(?translation)="{{language}}")}
+      FILTER (!BOUND(?translation)).
+    }
+  }
+}`;
+
+function getValueFromURL(regexp, defaultValue) {
   let reg, value;
   if (window.location.search.length > 0) {
     reg = new RegExp(regexp);
     value = reg.exec(window.location.search);
     if (value != null) {
       value = decodeURIComponent(value[1]);
+    }
+    else {
+      value = defaultValue;
     }
   }
   return (value);
@@ -557,6 +586,7 @@ function createDivTranslatedAliasesCount(divId, json) {
     "#0069c0", "#2286c3", "#bbdefb"];
   let backgroundColors = ["#ffffff", "#ffffff",
     "#000000", "#000000", "#000000"];
+  let propertyClass = getValueFromURL("class=([^&#=]*)", "");
 
   let count = 0;
   for (const result of results.bindings) {
@@ -566,7 +596,13 @@ function createDivTranslatedAliasesCount(divId, json) {
     language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
     let a = document.createElement("a");
-    a.setAttribute('href', "language.html?language=" + result['languageCode'].value);
+    if (propertyClass != "") {
+      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
+                      "&class=" + propertyClass);
+    }
+    else {
+      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
+    }
     a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
     let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
     a.appendChild(text);
@@ -623,6 +659,7 @@ function createDivTranslatedLabelsCount(divId, json) {
     "#0069c0", "#2286c3", "#bbdefb"];
   let backgroundColors = ["#ffffff", "#ffffff",
     "#000000", "#000000", "#000000"];
+  let propertyClass = getValueFromURL("class=([^&#=]*)", "");
 
   let count = 0;
   for (const result of results.bindings) {
@@ -632,7 +669,13 @@ function createDivTranslatedLabelsCount(divId, json) {
     language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
     let a = document.createElement("a");
-    a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
+    if (propertyClass != "") {
+      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
+                      "&class=" + propertyClass);
+    }
+    else {
+      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
+    }
     a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
     let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
     a.appendChild(text);
@@ -650,6 +693,7 @@ function createDivTranslatedDescriptionsCount(divId, json) {
     "#0069c0", "#2286c3", "#bbdefb"];
   let backgroundColors = ["#ffffff", "#ffffff",
     "#000000", "#000000", "#000000"];
+  let propertyClass = getValueFromURL("class=([^&#=]*)", "");
 
   let count = 0;
   for (const result of results.bindings) {
@@ -659,7 +703,13 @@ function createDivTranslatedDescriptionsCount(divId, json) {
     language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
     let a = document.createElement("a");
-    a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
+    if (propertyClass != "") {
+      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
+                      "&class=" + propertyClass);
+    }
+    else {
+      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
+    }
     a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
     let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
     a.appendChild(text);
@@ -1262,7 +1312,7 @@ function createDivDataTypes(divId, json) {
 }
 
 function getDatatypes() {
-  language = getValueFromURL("lang=([^&#=]*)");
+  language = getValueFromURL("lang=([^&#=]*)", "en");
   const sparqlQuery = allDatatypesQuery;
   queryWikidata(sparqlQuery, createDivDataTypes, "propertyDatatypes");
 }
@@ -1313,10 +1363,30 @@ function getOverallProvenance() {
   getPropertyWithReference();
 }
 
+function getPropertiesForClassRequiringTranslationQuery (propertyClass){
+  language = getValueFromURL("language=([^&#=]*)", "en")
+  propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{class}}", propertyClass);
+  propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{language}}", language);
+  let sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "rdfs:label");
+  queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
+
+  sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "schema:description");
+  queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
+
+  sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "skos:altLabel");
+  queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
+}
+
 function getPropertiesNeedingTranslation() {
-  getPropertyLabelsNeedingTranslation();
-  getPropertyDescriptionsNeedingTranslation();
-  getMissingPropertyAliases();
+  propertyClass = getValueFromURL("class=([^&#=]*)", "");
+  if (propertyClass != "") {
+    getPropertiesForClassRequiringTranslationQuery(propertyClass)
+  }
+  else {
+    getPropertyLabelsNeedingTranslation();
+    getPropertyDescriptionsNeedingTranslation();
+    getMissingPropertyAliases();
+  }
 }
 
 
@@ -1455,10 +1525,7 @@ function getPropertyDetails() {
 }
 
 function getPropertiesWithDatatype() {
-  let datatype = getValueFromURL("datatype=([^&#=]*)");
-  if (datatype === "") {
-    datatype = "wikibase:WikibaseItem";
-  }
+  let datatype = getValueFromURL("datatype=([^&#=]*)", "wikibase:WikibaseItem");
 
   let datatypeCode = document.getElementById("datatypeCode");
   datatypeCode.innerHTML = "Properties with datatype- " + datatype;
@@ -1575,23 +1642,18 @@ function getSearchWikiProjectQuery(search) {
   return sparqlQuery;
 }
 function getWikiProjects() {
-  console.log(offset);
-  let limitString = getValueFromURL("limit=([^&#=]*)");
-  console.log(limitString);
+  let limitString = getValueFromURL("limit=([^&#=]*)", 100);
   if (limitString) {
       limit = Number(limitString);
   }
-  let offsetString = getValueFromURL("offset=([^&#=]*)");
+  let offsetString = getValueFromURL("offset=([^&#=]*)", 100);
   if (offsetString) {
       offset = Number(offsetString);
   }
-  console.log(offset);
-  console.log(offsetString);
 
   allWikiProjectsQuery = allWikiProjectsQuery.replace("{{limit}}", limit);
   allWikiProjectsQuery = allWikiProjectsQuery.replace("{{offset}}", offset);
   const sparqlQuery = allWikiProjectsQuery;
-  console.log(allWikiProjectsQuery);
   queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
 }
 
@@ -1599,7 +1661,6 @@ function addDivPropertyLabels(divId, wdproperties) {
   propertyLabelsQuery = propertyLabelsQuery.replace("{{wdproperties}}", wdproperties);
   propertyLabelsQuery = propertyLabelsQuery.replace("{{language}}", "en");
   const sparqlQuery = propertyLabelsQuery; 
-  console.log(sparqlQuery);
   queryWikidata(sparqlQuery, createDivClassProperties, divId);
 }
 
