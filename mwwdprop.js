@@ -1,6 +1,6 @@
 const endpointUrl = 'https://www.wikidata.org/w/api.php';
 
-function showQuery(fullurl, divId) {
+function showMediaWikiQuery(fullurl, divId) {
   let queryLink = document.getElementById(divId + "Query");
   if (queryLink != null) {
     let a = document.createElement("a");
@@ -18,7 +18,7 @@ function queryMediaWiki(queryparams, func, divId, url) {
      div.append(fetchText);
 
      fullUrl = endpointUrl + '?action=' + queryparams+"&format=json";
-     showQuery(fullUrl, divId);
+     showMediaWikiQuery(fullUrl, divId);
    
      fetch( fullUrl, { } ).then( body => body.json() ).then( json => {
        div.removeChild(fetchText);
@@ -93,7 +93,6 @@ function createDivWikprojectProperties(divId, json) {
        continue;
     }
     let text = result.title.replace("Property", "wd");
-    console.log(text);
     wdproperties = wdproperties + " " + text + " ";
     count++;
    }
@@ -104,7 +103,6 @@ function createDivWikprojectProperties(divId, json) {
 }
 
 function createDivPropertyList(divId, json, url) {
-  console.log(json);
   var properties = document.getElementById(divId);
   var total = document.createElement("h3"); 
   var count = 0;

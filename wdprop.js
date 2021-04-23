@@ -14,6 +14,7 @@ const endpointurl = 'https://query.wikidata.org/sparql';
 var limit = 100;
 var offset = 0;
 var maxPropertyCount = 100;
+var wikiprojectProperties=null;
 
 /*
  * All Queries
@@ -169,6 +170,30 @@ SELECT DISTINCT ?property
     }
   }
 }`;
+translationStatisticsForWikiProjectQuery =`
+SELECT ?languageCode (SUM(?count) as ?total)
+WHERE
+{
+  SELECT ?property ?languageCode (count(?translation) as ?count)
+  WHERE
+  {
+      VALUES ?property { {{wdproperties}} }
+      ?property {{translationType}} ?translation.
+      BIND(lang(?translation) as ?languageCode)
+  }
+  GROUP BY ?property ?languageCode
+}
+GROUP BY ?languageCode
+ORDER BY DESC(?total)
+`;
+specifiedPropertiesRequiringTranslationQuery =`
+SELECT DISTINCT ?property
+{
+   VALUES ?property { {{property}} }
+   OPTIONAL{?property rdfs:label ?translation FILTER (lang(?translation)="{{language}}")}
+   FILTER (!BOUND(?translation)).
+}
+`;
 
 function getValueFromURL(regexp, defaultValue) {
   let reg, value;
@@ -579,40 +604,6 @@ function getColor(colors, index, total) {
   }
 }
 
-function createDivTranslatedAliasesCount(divId, json) {
-  const { head: { vars }, results } = json;
-  let languages = document.getElementById(divId);
-  let colors = ["#002171", "#004ba0",
-    "#0069c0", "#2286c3", "#bbdefb"];
-  let backgroundColors = ["#ffffff", "#ffffff",
-    "#000000", "#000000", "#000000"];
-  let propertyClass = getValueFromURL("class=([^&#=]*)", "");
-
-  let count = 0;
-  for (const result of results.bindings) {
-    let language = document.createElement("div");
-    language.setAttribute('class', "language");
-
-    language.style['background-color'] = getColor(colors, count, results.bindings.length);
-
-    let a = document.createElement("a");
-    if (propertyClass != "") {
-      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
-                      "&class=" + propertyClass);
-    }
-    else {
-      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
-    }
-    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
-    let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
-    a.appendChild(text);
-    language.appendChild(a);
-    languages.appendChild(language);
-
-    count++;
-  }
-}
-
 function createDivTranslatedValues(divId, json) {
   const { head: { vars }, results } = json;
 
@@ -669,41 +660,11 @@ function createDivTranslatedLabelsCount(divId, json) {
     language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
     let a = document.createElement("a");
-    if (propertyClass != "") {
+    if (wikiprojectProperties != null) {
       a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
-                      "&class=" + propertyClass);
+                      "&property=" + wikiprojectProperties);
     }
-    else {
-      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
-    }
-    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
-    let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
-    a.appendChild(text);
-    language.appendChild(a);
-    languages.appendChild(language);
-
-    count++;
-  }
-}
-
-function createDivTranslatedDescriptionsCount(divId, json) {
-  const { head: { vars }, results } = json;
-  let languages = document.getElementById(divId);
-  let colors = ["#002171", "#004ba0",
-    "#0069c0", "#2286c3", "#bbdefb"];
-  let backgroundColors = ["#ffffff", "#ffffff",
-    "#000000", "#000000", "#000000"];
-  let propertyClass = getValueFromURL("class=([^&#=]*)", "");
-
-  let count = 0;
-  for (const result of results.bindings) {
-    let language = document.createElement("div");
-    language.setAttribute('class', "language");
-
-    language.style['background-color'] = getColor(colors, count, results.bindings.length);
-
-    let a = document.createElement("a");
-    if (propertyClass != "") {
+     else if (propertyClass != "") {
       a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
                       "&class=" + propertyClass);
     }
@@ -1198,7 +1159,7 @@ function getCountOfTranslatedDescriptions() {
     GROUP BY ?languageCode
     ORDER BY DESC(?total) `;
 
-  queryWikidata(sparqlQuery, createDivTranslatedDescriptionsCount, "translatedDescriptionsCount");
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
 }
 
 function getCountOfTranslatedAliases() {
@@ -1218,7 +1179,7 @@ function getCountOfTranslatedAliases() {
    GROUP BY ?languageCode
    ORDER BY DESC(?total) `;
 
-  queryWikidata(sparqlQuery, createDivTranslatedAliasesCount, "translatedAliasesCount");
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
 }
 
 function getTranslationStatisticsForClass(className) {
@@ -1227,10 +1188,23 @@ function getTranslationStatisticsForClass(className) {
   queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
 
   sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "schema:description");
-  queryWikidata(sparqlQuery, createDivTranslatedDescriptionsCount, "translatedDescriptionsCount");
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
 
   sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "skos:altLabel");
-  queryWikidata(sparqlQuery, createDivTranslatedAliasesCount, "translatedAliasesCount");
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
+}
+
+function getTranslationStatisticsForWikiProject(wdproperties) {
+  wikiprojectProperties = wdproperties;
+  translationStatisticsForWikiProjectQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{wdproperties}}", wdproperties);
+  let sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "rdfs:label"); 
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
+
+  sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "schema:description");
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
+
+  sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "skos:altLabel");
+  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
 }
 
 function getLanguagesWithUntranslatedLabels() {
@@ -1365,6 +1339,8 @@ function getOverallProvenance() {
 
 function getPropertiesForClassRequiringTranslationQuery (propertyClass){
   language = getValueFromURL("language=([^&#=]*)", "en")
+  getLanguage(language);
+  getProperty(propertyClass, language);
   propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{class}}", propertyClass);
   propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{language}}", language);
   let sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "rdfs:label");
@@ -1377,9 +1353,28 @@ function getPropertiesForClassRequiringTranslationQuery (propertyClass){
   queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
 }
 
+function getSpecifiedPropertiesRequiringTranslation (property){
+  language = getValueFromURL("language=([^&#=]*)", "en")
+  getLanguage(language);
+  specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{property}}", property);
+  specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{language}}", language);
+  let sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "rdfs:label");
+  queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
+
+  sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "schema:description");
+  queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
+
+  sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "skos:altLabel");
+  queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
+}
+
 function getPropertiesNeedingTranslation() {
   propertyClass = getValueFromURL("class=([^&#=]*)", "");
-  if (propertyClass != "") {
+  property = getValueFromURL("property=([^&#=]*)", "");
+  if (property != "") {
+    getSpecifiedPropertiesRequiringTranslation(property)
+  }
+  else if (propertyClass != "") {
     getPropertiesForClassRequiringTranslationQuery(propertyClass)
   }
   else {
@@ -1662,6 +1657,10 @@ function addDivPropertyLabels(divId, wdproperties) {
   propertyLabelsQuery = propertyLabelsQuery.replace("{{language}}", "en");
   const sparqlQuery = propertyLabelsQuery; 
   queryWikidata(sparqlQuery, createDivClassProperties, divId);
+  let project = getValueFromURL("project=([^&#=]*)", "");
+  if (project != undefined) {
+    getTranslationStatisticsForWikiProject(wdproperties);
+  }
 }
 
 function findWikiProjects(e, form) {
