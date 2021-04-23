@@ -1,5 +1,7 @@
 # v0.12 (under progress)
 ===============================================================================
+* Display translation statistics for selected properties
+* Display translation statistics for property classes and WikiProjects
 * Display Wikidata or Wikidata Mediawiki query for all pages
 
 # v0.11
