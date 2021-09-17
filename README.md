@@ -5,7 +5,7 @@
 * Provide bookmarkable links for different statistics
 
 ## Demo
-* [https://tools.wmflabs.org/wdprop](https://tools.wmflabs.org/wdprop/index.html)
+* [https://wdprop.wmflabs.org/wdprop](https://wdprop.wmflabs.org/index.html)
 * [WDProp (on https://rawgit.com)](https://rawgit.com/johnsamuelwrites/wdprop/master/index.html)
 * [WDProp](http://johnsamuel.info/wdprop/index.html)
 
