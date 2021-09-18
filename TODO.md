@@ -12,8 +12,8 @@
     * Navigate properties
     * Search properties
     * Compare translation statistics
-    * Wikdidata property discussion
-    * Wikdidata WikiProjects
+    * Wikidata property discussion
+    * Wikidata WikiProjects
     * About
 7. Add description on every subpage
     * Example: Supported languages: what does that mean?
