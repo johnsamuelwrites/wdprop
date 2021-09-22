@@ -6,7 +6,6 @@
 
 ## Demo
 * [https://wdprop.toolforge.org/](https://wdprop.toolforge.org/)
-* [https://wdprop.wmflabs.org/](https://wdprop.wmflabs.org/index.html)
 * [WDProp (on https://rawgit.com)](https://rawgit.com/johnsamuelwrites/wdprop/master/index.html)
 * [WDProp](http://johnsamuel.info/wdprop/index.html)
 
@@ -29,6 +28,9 @@
 ## Author
 * John Samuel
 * [List of all contributors](https://github.com/johnsamuelwrites/wdprop/graphs/contributors)
+
+## Conference Proceedings
+WDProp: Web Application to Analyse Multilingual Aspects of Wikidata Properties, John Samuel, OpenSym 2021, 15-17 September 2021, Madrid ([Slides](https://figshare.com/articles/presentation/WDProp_Web_Application_to_Analyse_Multilingual_Aspects_of_Wikidata_Properties/16641502))
 
 ## Acknowledgements
 * Wikidata Community
