@@ -28,6 +28,7 @@
 
 ## Author
 * John Samuel
+* [List of all contributors](https://github.com/johnsamuelwrites/wdprop/graphs/contributors)
 
 ## Acknowledgements
 * Wikidata Community
