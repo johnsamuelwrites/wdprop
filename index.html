@@ -1,96 +1,99 @@
 <!DOCTYPE HTML>
 <html>
+
 <head>
-  <meta charset="utf-8"/>
-  <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
-  <link rel="stylesheet" type="text/css" href="style.css"/>
-  <script type="text/javascript" src="wdprop.js">
-  </script>
+    <meta charset="utf-8" />
+    <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script type="text/javascript" src="wdprop.js">
+    </script>
 </head>
+
 <body>
-  <div id="header">
-    <div id="logo"><a href="./index.html">WDProp</a>
-      <span id="subtitle">Everything about Wikidata properties</span>
+    <div id="header">
+        <div id="logo"><a href="./index.html">WDProp</a>
+            <span id="subtitle">Everything about Wikidata properties</span>
+        </div>
+        <div id="headersearch">
+            <form action="./search.html" method="get">
+                <input id="headersearchtext" type="text" name="search" placeholder="Software, heritage" />
+                <button id="headersearchbutton" type="submit" value="Search">Search</button>
+            </form>
+        </div>
     </div>
-    <div id="headersearch">
-      <form action="./search.html" method="get">
-        <input id="headersearchtext" type="text" name="search" placeholder="Software, heritage" />
-        <button id="headersearchbutton" type="submit" value="Search">Search</button>
-      </form>
+    <div id="sidebar">
+        <div id="sidebarlinks">
+            <ul>
+                <li><a href="./languages.html">Languages</a></li>
+                <li><a href="./datatypes.html">Data types</a></li>
+                <li><a href="./properties.html">Properties</a></li>
+                <li><a href="./classes.html">Property Classes</a></li>
+                <li><a href="./provenance.html">Provenance</a></li>
+                <li><a href="./search.html">Search</a></li>
+                <li><a href="./compare.html">Compare</a></li>
+                <li><a href="templates/translated.html">Property Discussion</a></li>
+                <li><a href="./wikiprojects.html">Wikiprojects</a></li>
+                <li><a href="./wdprop.html">About</a> </li>
+            </ul>
+        </div>
     </div>
-  </div>
-  <div id="sidebar">
-   <div id="sidebarlinks">
-     <ul>
-      <li><a href="./languages.html">Languages</a></li>
-      <li><a href="./datatypes.html">Data types</a></li>
-      <li><a href="./properties.html">Properties</a></li>
-      <li><a href="./classes.html">Property Classes</a></li>
-      <li><a href="./provenance.html">Provenance</a></li>
-      <li><a href="./search.html">Search</a></li>
-      <li><a href="./compare.html">Compare</a></li>
-      <li><a href="templates/translated.html">Property Discussion</a></li>
-      <li><a href="./wikiprojects.html">Wikiprojects</a></li>
-      <li><a href="./wdprop.html">About</a> </li>
-     </ul> 
+    <div id="content">
+        <div class="section">
+            <h2>Translation statistics by languages</h2>
+            <ul>
+                <li><a href="./languages.html">Supported languages</a></li>
+                <li><a href="./labels/translated.html">Translated Labels</a></li>
+                <li><a href="./descriptions/translated.html">Translated Descriptions</a></li>
+                <li><a href="./aliases/translated.html">Translated Alias</a></li>
+                <li><a href="./translated.html">Overall Translation Statistics</a></li>
+                <li><a href="./untranslated.html">Missing Translation Statistics</a></li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>Navigate properties</h2>
+            <ul>
+                <li><a href="./properties.html">Browse all properties</a></li>
+                <li><a href="./datatypes.html">Browse by datatype</a></li>
+                <li><a href="./classes.html">Browse all classes</a></li>
+                <li><a href="./propertydesc.html">Browse by properties describing properties</a></li>
+                <li><a href="./provenance.html">Browse properties with provenance information</a></li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>Search properties</h2>
+            <ul>
+                <li><a href="./search.html?search=software&language=en">Search</a></li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>Compare translation statistics</h2>
+            <ul>
+                <li><a href="./compare.html?languages=en, fr">Compare</a></li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>Wikidata property discussion</h2>
+            <ul>
+                <li><a href="./templates/translated.html">Translated Templates</a></li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>Wikidata WikiProjects</h2>
+            <ul>
+                <li><a href="./wikiprojects.html">WikiProjects</a></li>
+                <li><a href="./wikiproject.html?search=heritage">Search WikiProjects</a> (e.g., heritage)</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>About</h2>
+            <ul>
+                <li><a href="./wdprop.html">About</a></li>
+            </ul>
+        </div>
     </div>
-  </div>
-  <div id="content">
-    <div class="section">
-      <h2>Translation statistics by languages</h2>
-      <ul>
-        <li><a href="./languages.html">Supported languages</a></li>
-        <li><a href="./labels/translated.html">Translated Labels</a></li>
-        <li><a href="./descriptions/translated.html">Translated Descriptions</a></li>
-        <li><a href="./aliases/translated.html">Translated Alias</a></li>
-        <li><a href="./translated.html">Overall Translation Statistics</a></li>
-        <li><a href="./untranslated.html">Missing Translation Statistics</a></li>
-      </ul>
+    <div id="footer">
+        <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
-    <div class="section">
-      <h2>Navigate properties</h2>
-      <ul>
-        <li><a href="./properties.html">Browse all properties</a></li>
-        <li><a href="./datatypes.html">Browse by datatype</a></li>
-        <li><a href="./classes.html">Browse all classes</a></li>
-        <li><a href="./propertydesc.html">Browse by properties describing properties</a></li>
-        <li><a href="./provenance.html">Browse properties with provenance information</a></li>
-      </ul>
-    </div>
-    <div class="section">
-      <h2>Search properties</h2>
-      <ul>
-        <li><a href="./search.html?search=software&language=en">Search</a></li>
-      </ul>
-    </div>
-    <div class="section">
-      <h2>Compare translation statistics</h2>
-      <ul>
-        <li><a href="./compare.html?languages=en, fr">Compare</a></li>
-      </ul>
-    </div>
-    <div class="section">
-      <h2>Wikidata property discussion</h2>
-      <ul>
-        <li><a href="./templates/translated.html">Translated Templates</a></li>
-      </ul>
-    </div>
-    <div class="section">
-      <h2>Wikidata WikiProjects</h2>
-      <ul>
-        <li><a href="./wikiprojects.html">WikiProjects</a></li>
-        <li><a href="./wikiproject.html?search=heritage">Search WikiProjects</a> (e.g., heritage)</li>
-      </ul>
-    </div>
-    <div class="section">
-      <h2>About</h2>
-      <ul>
-        <li><a href="./wdprop.html">About</a></li>
-      </ul>
-    </div>
-  </div>
-  <div id="footer">
-    <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
-  </div>
 </body>
+
 </html>

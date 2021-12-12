@@ -14,7 +14,7 @@ const endpointurl = 'https://query.wikidata.org/sparql';
 var limit = 100;
 var offset = 0;
 var maxPropertyCount = 100;
-var wikiprojectProperties=null;
+var wikiprojectProperties = null;
 
 /*
  * All Queries
@@ -23,8 +23,8 @@ var wikiprojectProperties=null;
 /*
  * Get all supported datatypes
  */
-allDatatypesQuery = 
-`PREFIX wikibase: <http://wikiba.se/ontology#>
+allDatatypesQuery =
+    `PREFIX wikibase: <http://wikiba.se/ontology#>
 
 SELECT DISTINCT ?datatype
 WHERE
@@ -36,8 +36,8 @@ WHERE
 /*
  * Get all supported languages
  */
-allLanguagesQuery = 
-`SELECT DISTINCT ?language
+allLanguagesQuery =
+    `SELECT DISTINCT ?language
 WHERE
 {
    [] wdt:P31 wd:Q10876391;
@@ -51,7 +51,7 @@ ORDER by ?language
  */
 
 propertiesWithDatatypeQuery =
-`PREFIX wikibase: <http://wikiba.se/ontology#>
+    `PREFIX wikibase: <http://wikiba.se/ontology#>
 
 SELECT DISTINCT ?property
 WHERE
@@ -62,8 +62,8 @@ WHERE
 ORDER by ?property
 `;
 
-allWikiProjectsQuery = 
-`SELECT DISTINCT ?title WHERE {
+allWikiProjectsQuery =
+    `SELECT DISTINCT ?title WHERE {
    SERVICE wikibase:mwapi {
         bd:serviceParam wikibase:api "Search" .
         bd:serviceParam wikibase:endpoint "www.wikidata.org" .
@@ -79,8 +79,8 @@ OFFSET {{offset}}
 /*
  * Get property labels
  */
-propertyLabelsQuery = 
-`
+propertyLabelsQuery =
+    `
 SELECT ?property ?label {
   VALUES ?property { {{wdproperties}} }
   ?property rdfs:label ?label.
@@ -89,8 +89,8 @@ SELECT ?property ?label {
 }
 `;
 
-let allClassesQuery=
-`PREFIX wikibase: <http://wikiba.se/ontology#>
+let allClassesQuery =
+    `PREFIX wikibase: <http://wikiba.se/ontology#>
 SELECT DISTINCT ?item ?label
 {
   {
@@ -114,8 +114,8 @@ SELECT DISTINCT ?item ?label
 ORDER by ?label
 `;
 
-translationStatisticsForClassQuery = 
-`SELECT ?languageCode (SUM(?count) as ?total)
+translationStatisticsForClassQuery =
+    `SELECT ?languageCode (SUM(?count) as ?total)
 WHERE
 {
   SELECT ?property ?languageCode (count(?translation) as ?count)
@@ -146,7 +146,7 @@ GROUP BY ?languageCode
 ORDER BY DESC(?total)
 `;
 
-propertiesForClassRequiringTranslationQuery =`
+propertiesForClassRequiringTranslationQuery = `
 SELECT DISTINCT ?property
 {
   {
@@ -170,7 +170,7 @@ SELECT DISTINCT ?property
     }
   }
 }`;
-translationStatisticsForWikiProjectQuery =`
+translationStatisticsForWikiProjectQuery = `
 SELECT ?languageCode (SUM(?count) as ?total)
 WHERE
 {
@@ -186,7 +186,7 @@ WHERE
 GROUP BY ?languageCode
 ORDER BY DESC(?total)
 `;
-specifiedPropertiesRequiringTranslationQuery =`
+specifiedPropertiesRequiringTranslationQuery = `
 SELECT DISTINCT ?property
 {
    VALUES ?property { {{property}} }
@@ -196,621 +196,617 @@ SELECT DISTINCT ?property
 `;
 
 function getValueFromURL(regexp, defaultValue) {
-  let reg, value;
-  if (window.location.search.length > 0) {
-    reg = new RegExp(regexp);
-    value = reg.exec(window.location.search);
-    if (value != null) {
-      value = decodeURIComponent(value[1]);
+    let reg, value;
+    if (window.location.search.length > 0) {
+        reg = new RegExp(regexp);
+        value = reg.exec(window.location.search);
+        if (value != null) {
+            value = decodeURIComponent(value[1]);
+        } else {
+            value = defaultValue;
+        }
     }
-    else {
-      value = defaultValue;
-    }
-  }
-  return (value);
+    return (value);
 }
 
 function showQuery(sparqlQuery, divId) {
-  fullurl = browserendpointurl + encodeURIComponent(sparqlQuery);
-  let queryLink = document.getElementById(divId + "Query");
-  if (queryLink != null) {
-    let a = document.createElement("a");
-    a.setAttribute('href', fullurl);
-    let text = document.createTextNode("Run Query on Wikidata. ");
-    a.appendChild(text);
-    queryLink.appendChild(a);
-  }
+    fullurl = browserendpointurl + encodeURIComponent(sparqlQuery);
+    let queryLink = document.getElementById(divId + "Query");
+    if (queryLink != null) {
+        let a = document.createElement("a");
+        a.setAttribute('href', fullurl);
+        let text = document.createTextNode("Run Query on Wikidata. ");
+        a.appendChild(text);
+        queryLink.appendChild(a);
+    }
 }
 
 function createDivAllProperties(divId, json) {
-  const { head: { vars }, results } = json;
-  let properties = document.getElementById(divId);
-  let total = document.createElement("h3");
-  properties.appendChild(total);
-  propertySet = new Set();
-  maxPropertyId = 0;
-  for (const result of results.bindings) {
-    for (const variable of vars) {
-      propertyId = Number(result['property'].value.replace("http://www.wikidata.org/entity/P", ""));
-      propertySet.add(propertyId);
-      if (propertyId > maxPropertyId) {
-        maxPropertyId = propertyId;
-      }
+    const { head: { vars }, results } = json;
+    let properties = document.getElementById(divId);
+    let total = document.createElement("h3");
+    properties.appendChild(total);
+    propertySet = new Set();
+    maxPropertyId = 0;
+    for (const result of results.bindings) {
+        for (const variable of vars) {
+            propertyId = Number(result['property'].value.replace("http://www.wikidata.org/entity/P", ""));
+            propertySet.add(propertyId);
+            if (propertyId > maxPropertyId) {
+                maxPropertyId = propertyId;
+            }
+        }
     }
-  }
-  total.innerHTML = "Total " + maxPropertyId + " properties";
-  for (let count = 0, i = 1; count < maxPropertyCount && i < maxPropertyId; i++, count++) {
-    let property = document.createElement("div");
-    let text = document.createTextNode("P" + String(i));
-    if (propertySet.has(i)) {
-      property.setAttribute('class', "property");
-      let a = document.createElement("a");
-      a.setAttribute('href', "property.html?property=P" + String(i));
-      a.appendChild(text);
-      property.appendChild(a);
+    total.innerHTML = "Total " + maxPropertyId + " properties";
+    for (let count = 0, i = 1; count < maxPropertyCount && i < maxPropertyId; i++, count++) {
+        let property = document.createElement("div");
+        let text = document.createTextNode("P" + String(i));
+        if (propertySet.has(i)) {
+            property.setAttribute('class', "property");
+            let a = document.createElement("a");
+            a.setAttribute('href', "property.html?property=P" + String(i));
+            a.appendChild(text);
+            property.appendChild(a);
+        } else {
+            property.setAttribute('class', "deletedproperty");
+            property.appendChild(text);
+        }
+        properties.appendChild(property);
     }
-    else {
-      property.setAttribute('class', "deletedproperty");
-      property.appendChild(text);
-    }
-    properties.appendChild(property);
-  }
-  propertySet.clear();
+    propertySet.clear();
 }
 
 function visualizePath(languageData) {
-  //Wikidata supported languages
-  //Reference: https://www.d3-graph-gallery.com/graph/arc_basic.html
+    //Wikidata supported languages
+    //Reference: https://www.d3-graph-gallery.com/graph/arc_basic.html
 
-  languages = new Set();
-  languageData["labels"].forEach(function (l) {
-    languages.add(l);
-  });
-  languages = Array.from(languages);
-  languages.sort();
+    languages = new Set();
+    languageData["labels"].forEach(function(l) {
+        languages.add(l);
+    });
+    languages = Array.from(languages);
+    languages.sort();
 
-  let height = languages.length > 50 ? languages.length * 15 : languages.length * 20;
-  let width = 800;
-  let svg = d3.select("#pathviz")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .append("g")
-    .attr("transform",
-      "translate( 10 , 10 )");
-  let x = d3.scalePoint()
-    .range([0, height - 10])
-    .domain(languages);
-  nodes = svg
-    .selectAll("nodes")
-    .data(languages)
-    .enter()
-    .append("circle")
-    .attr("cy", function (d) { return (x(d)) })
-    .attr("cx", 90)
-    .attr("r", 4)
-    .style("fill", "#00549d");
-  svg.selectAll("language")
-    .data(languages)
-    .enter()
-    .append("text")
-    .attr("y", function (d) { return (x(d)) })
-    .attr("x", 80)
-    .text(function (d) { return (d) })
-    .style("text-anchor", "end");
+    let height = languages.length > 50 ? languages.length * 15 : languages.length * 20;
+    let width = 800;
+    let svg = d3.select("#pathviz")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform",
+            "translate( 10 , 10 )");
+    let x = d3.scalePoint()
+        .range([0, height - 10])
+        .domain(languages);
+    nodes = svg
+        .selectAll("nodes")
+        .data(languages)
+        .enter()
+        .append("circle")
+        .attr("cy", function(d) { return (x(d)) })
+        .attr("cx", 90)
+        .attr("r", 4)
+        .style("fill", "#00549d");
+    svg.selectAll("language")
+        .data(languages)
+        .enter()
+        .append("text")
+        .attr("y", function(d) { return (x(d)) })
+        .attr("x", 80)
+        .text(function(d) { return (d) })
+        .style("text-anchor", "end");
 
-  // Create links
-  links = [];
-  if (languageData["labels"].length > 1) {
-    links.push([languageData["labels"][0], languageData["labels"][1]]);
-    for (let i = 1; i < languageData["labels"].length - 1; i++) {
-      links.push([languageData["labels"][i], languageData["labels"][i + 1]]);
+    // Create links
+    links = [];
+    if (languageData["labels"].length > 1) {
+        links.push([languageData["labels"][0], languageData["labels"][1]]);
+        for (let i = 1; i < languageData["labels"].length - 1; i++) {
+            links.push([languageData["labels"][i], languageData["labels"][i + 1]]);
+        }
     }
-  }
-  languageData["labels"][0] = languageData["labels"][0].replace(" ", "");
-  slinks = svg
-    .selectAll('links')
-    .data(links)
-    .enter()
-    .append('path')
-    .attr('d', function (d) {
-      start = x(d[0]);
-      end = x(d[1]);
-      arcInflectionPoint = Math.abs(start - end) > 400 ? (start - end) / 1.2 : (start - end) / 2;
-      return ['M', 90, start,
-        'A',
-        arcInflectionPoint, ',',
-        arcInflectionPoint, 0, 0, ',',
-        start < end ? 1 : 0, 90, ',', end]
-        .join(' ');
-    })
-    .style("fill", "none")
-    .attr("stroke", "#1B80CF");
+    languageData["labels"][0] = languageData["labels"][0].replace(" ", "");
+    slinks = svg
+        .selectAll('links')
+        .data(links)
+        .enter()
+        .append('path')
+        .attr('d', function(d) {
+            start = x(d[0]);
+            end = x(d[1]);
+            arcInflectionPoint = Math.abs(start - end) > 400 ? (start - end) / 1.2 : (start - end) / 2;
+            return ['M', 90, start,
+                    'A',
+                    arcInflectionPoint, ',',
+                    arcInflectionPoint, 0, 0, ',',
+                    start < end ? 1 : 0, 90, ',', end
+                ]
+                .join(' ');
+        })
+        .style("fill", "none")
+        .attr("stroke", "#1B80CF");
 
 
 }
 
 function createDivProperties(divId, json) {
-  const { head: { vars }, results } = json;
-  let properties = document.getElementById(divId);
-  let total = document.createElement("h3");
-  total.innerHTML = "Total " + results.bindings.length + " properties";
-  properties.appendChild(total);
-  
-  let count = 0;
-  for (const result of results.bindings) {
-    for (const variable of vars) {
-      let property = document.createElement("div");
-      property.setAttribute('class', "property");
-      let a = document.createElement("a");
-      a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-      let text = document.createTextNode(result[variable].value.replace("http://www.wikidata.org/entity/", ""));
-      a.appendChild(text);
-      property.appendChild(a);
-      properties.appendChild(property);
+    const { head: { vars }, results } = json;
+    let properties = document.getElementById(divId);
+    let total = document.createElement("h3");
+    total.innerHTML = "Total " + results.bindings.length + " properties";
+    properties.appendChild(total);
+
+    let count = 0;
+    for (const result of results.bindings) {
+        for (const variable of vars) {
+            let property = document.createElement("div");
+            property.setAttribute('class', "property");
+            let a = document.createElement("a");
+            a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+            let text = document.createTextNode(result[variable].value.replace("http://www.wikidata.org/entity/", ""));
+            a.appendChild(text);
+            property.appendChild(a);
+            properties.appendChild(property);
+        }
+        count++;
+        if (count > maxPropertyCount) {
+            break;
+        }
     }
-    count++;
-    if (count > maxPropertyCount) {
-	break;
-    }
-  }
 }
 
 function createDivClasses(divId, json) {
-  const { head: { vars }, results } = json;
-  let properties = document.getElementById(divId);
-  let total = document.createElement("h3");
-  total.innerHTML = "Total " + results.bindings.length + " classes";
-  properties.appendChild(total);
+    const { head: { vars }, results } = json;
+    let properties = document.getElementById(divId);
+    let total = document.createElement("h3");
+    total.innerHTML = "Total " + results.bindings.length + " classes";
+    properties.appendChild(total);
 
-  let table = document.createElement("table");
-  let th = document.createElement("tr");
-  let td = document.createElement("th");
-  td.innerHTML = "Item";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "Class label";
-  th.appendChild(td);
-  table.append(th);
+    let table = document.createElement("table");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    td.innerHTML = "Item";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "Class label";
+    th.appendChild(td);
+    table.append(th);
 
-  for (const result of results.bindings) {
-    tr = document.createElement("tr");
+    for (const result of results.bindings) {
+        tr = document.createElement("tr");
 
-    td = document.createElement("td");
-    td.setAttribute('class', "property");
-    let a = document.createElement("a");
-    a.setAttribute('href', "class.html?class=" + result['item'].value.replace("http://www.wikidata.org/entity/", ""));
-    let text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
-    a.append(text);
-    td.appendChild(a);
-    tr.appendChild(td);
+        td = document.createElement("td");
+        td.setAttribute('class', "property");
+        let a = document.createElement("a");
+        a.setAttribute('href', "class.html?class=" + result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+        let text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+        a.append(text);
+        td.appendChild(a);
+        tr.appendChild(td);
 
-    td = document.createElement("td");
-    text = null;
-    if (result.hasOwnProperty("label")) {
-      text = document.createTextNode(result['label'].value);
+        td = document.createElement("td");
+        text = null;
+        if (result.hasOwnProperty("label")) {
+            text = document.createTextNode(result['label'].value);
+        } else {
+            text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
+        }
+        td.appendChild(text);
+        tr.appendChild(td);
+        table.appendChild(tr);
     }
-    else {
-      text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
-    }
-    td.appendChild(text);
-    tr.appendChild(td);
-    table.appendChild(tr);
-  }
-  properties.appendChild(table);
+    properties.appendChild(table);
 }
 
 function createDivClassProperties(divId, json) {
-  const { head: { vars }, results } = json;
-  let properties = document.getElementById(divId);
-  let total = document.createElement("h3");
-  total.innerHTML = "Total " + results.bindings.length + " properties";
-  properties.appendChild(total);
+    const { head: { vars }, results } = json;
+    let properties = document.getElementById(divId);
+    let total = document.createElement("h3");
+    total.innerHTML = "Total " + results.bindings.length + " properties";
+    properties.appendChild(total);
 
-  let table = document.createElement("table");
-  let th = document.createElement("tr");
-  let td = document.createElement("th");
-  td.innerHTML = "Property";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "Property label";
-  th.appendChild(td);
-  table.append(th);
+    let table = document.createElement("table");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    td.innerHTML = "Property";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "Property label";
+    th.appendChild(td);
+    table.append(th);
 
-  for (const result of results.bindings) {
-    tr = document.createElement("tr");
+    for (const result of results.bindings) {
+        tr = document.createElement("tr");
 
-    td = document.createElement("td");
-    td.setAttribute('class', "property");
-    let a = document.createElement("a");
-    a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    a.append(text);
-    td.appendChild(a);
-    tr.appendChild(td);
+        td = document.createElement("td");
+        td.setAttribute('class', "property");
+        let a = document.createElement("a");
+        a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+        let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+        a.append(text);
+        td.appendChild(a);
+        tr.appendChild(td);
 
-    td = document.createElement("td");
-    text = null;
+        td = document.createElement("td");
+        text = null;
 
-    if (result.hasOwnProperty("label")) {
-      text = document.createTextNode(result['label'].value);
-      a.appendChild(text);
+        if (result.hasOwnProperty("label")) {
+            text = document.createTextNode(result['label'].value);
+            a.appendChild(text);
+        } else {
+            text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+            a.appendChild(text);
+        }
+        td.appendChild(text);
+        tr.appendChild(td);
+        table.appendChild(tr);
     }
-    else {
-      text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-      a.appendChild(text);
-    }
-    td.appendChild(text);
-    tr.appendChild(td);
-    table.appendChild(tr);
-  }
-  properties.appendChild(table);
+    properties.appendChild(table);
 }
 
 function createDivComparisonResults(divId, json) {
-  const { head: { vars }, results } = json;
-  let properties = document.getElementById(divId);
-  let total = document.createElement("h3");
-  total.innerHTML = "Translation statistics";
-  while (properties.hasChildNodes()) {
-    properties.removeChild(properties.lastChild);
-  }
-  properties.appendChild(total);
-  let table = document.createElement("table");
-  let th = document.createElement("tr");
-  let td = document.createElement("th");
-  td.innerHTML = "Language";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "Property";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "Label";
-  th.appendChild(td);
-  table.appendChild(th);
-  let tr = "";
-  for (const result of results.bindings) {
-    tr = document.createElement("tr");
+    const { head: { vars }, results } = json;
+    let properties = document.getElementById(divId);
+    let total = document.createElement("h3");
+    total.innerHTML = "Translation statistics";
+    while (properties.hasChildNodes()) {
+        properties.removeChild(properties.lastChild);
+    }
+    properties.appendChild(total);
+    let table = document.createElement("table");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    td.innerHTML = "Language";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "Property";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "Label";
+    th.appendChild(td);
+    table.appendChild(th);
+    let tr = "";
+    for (const result of results.bindings) {
+        tr = document.createElement("tr");
 
-    td = document.createElement("td");
-    td.innerHTML = result['language'].value;
-    tr.appendChild(td);
+        td = document.createElement("td");
+        td.innerHTML = result['language'].value;
+        tr.appendChild(td);
 
-    let property = document.createElement("th");
-    property.setAttribute('class', "property");
-    let a = document.createElement("a");
-    a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    a.appendChild(text);
-    property.appendChild(a);
-    tr.appendChild(property);
+        let property = document.createElement("th");
+        property.setAttribute('class', "property");
+        let a = document.createElement("a");
+        a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+        let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+        a.appendChild(text);
+        property.appendChild(a);
+        tr.appendChild(property);
 
-    td = document.createElement("td");
-    td.innerHTML = result['label'].value;
-    tr.appendChild(td);
+        td = document.createElement("td");
+        td.innerHTML = result['label'].value;
+        tr.appendChild(td);
 
-    table.appendChild(tr);
-  }
-  properties.appendChild(table);
+        table.appendChild(tr);
+    }
+    properties.appendChild(table);
 }
 
 function createDivWikiProjects(divId, json) {
-  const { head: { vars }, results } = json;
-  let projects = document.getElementById(divId);
-  while (projects.hasChildNodes()) {
-    projects.removeChild(projects.lastChild);
-  }
+    const { head: { vars }, results } = json;
+    let projects = document.getElementById(divId);
+    while (projects.hasChildNodes()) {
+        projects.removeChild(projects.lastChild);
+    }
 
-  let table = document.createElement("table");
-  let th = document.createElement("tr");
-  let td = document.createElement("th");
-  td.innerHTML = "Projects";
-  th.appendChild(td);
-  table.appendChild(th);
-  let tr = "";
-  for (const result of results.bindings) {
-    tr = document.createElement("tr");
+    let table = document.createElement("table");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    td.innerHTML = "Projects";
+    th.appendChild(td);
+    table.appendChild(th);
+    let tr = "";
+    for (const result of results.bindings) {
+        tr = document.createElement("tr");
 
-    td = document.createElement("td");
-    let a = document.createElement("a");
-    a.setAttribute('href', "https://www.wikidata.org/wiki/" + result['title'].value);
-    let text = document.createTextNode(result['title'].value.replace("Wikidata:", ""));
-    a.appendChild(text);
-    td.appendChild(a);
-    let wdproject = document.createElement("a");
-    wdproject.setAttribute('href', "wikiproject.html?project=" + result['title'].value);
-    let emptytext = document.createTextNode(" ");
-    td.appendChild(emptytext);
-    let wdprojtext = document.createTextNode("(Details)");
-    wdproject.appendChild(wdprojtext);
-    td.appendChild(wdproject);
-    tr.appendChild(td);
-    table.appendChild(tr);
-  }
-  if (results.bindings.length == limit) {
-    offset = offset + limit;
-    let nextFirst = document.createElement("div");
-    let nextLast = document.createElement("div");
-    nextFirst.setAttribute('class', "property");
-    nextLast.setAttribute('class', "property");
-    let aF = document.createElement("a");
-    aF.setAttribute('href', "wikiprojects.html?limit=" + limit +"&offset=" + offset);
-    let aL = document.createElement("a");
-    aL.setAttribute('href', "wikiprojects.html?limit=" + limit + "&offset=" + offset);
-    let textF = document.createTextNode("Next");
-    let textL = document.createTextNode("Next");
-    aF.appendChild(textF);
-    aL.appendChild(textL);
-    nextFirst.appendChild(aF);
-    nextLast.appendChild(aL);
-    projects.appendChild(nextFirst);
-    projects.appendChild(table);
-    projects.appendChild(nextLast);
-  }
-  else {
-    projects.appendChild(table);
-  }
+        td = document.createElement("td");
+        let a = document.createElement("a");
+        a.setAttribute('href', "https://www.wikidata.org/wiki/" + result['title'].value);
+        let text = document.createTextNode(result['title'].value.replace("Wikidata:", ""));
+        a.appendChild(text);
+        td.appendChild(a);
+        let wdproject = document.createElement("a");
+        wdproject.setAttribute('href', "wikiproject.html?project=" + result['title'].value);
+        let emptytext = document.createTextNode(" ");
+        td.appendChild(emptytext);
+        let wdprojtext = document.createTextNode("(Details)");
+        wdproject.appendChild(wdprojtext);
+        td.appendChild(wdproject);
+        tr.appendChild(td);
+        table.appendChild(tr);
+    }
+    if (results.bindings.length == limit) {
+        offset = offset + limit;
+        let nextFirst = document.createElement("div");
+        let nextLast = document.createElement("div");
+        nextFirst.setAttribute('class', "property");
+        nextLast.setAttribute('class', "property");
+        let aF = document.createElement("a");
+        aF.setAttribute('href', "wikiprojects.html?limit=" + limit + "&offset=" + offset);
+        let aL = document.createElement("a");
+        aL.setAttribute('href', "wikiprojects.html?limit=" + limit + "&offset=" + offset);
+        let textF = document.createTextNode("Next");
+        let textL = document.createTextNode("Next");
+        aF.appendChild(textF);
+        aL.appendChild(textL);
+        nextFirst.appendChild(aF);
+        nextLast.appendChild(aL);
+        projects.appendChild(nextFirst);
+        projects.appendChild(table);
+        projects.appendChild(nextLast);
+    } else {
+        projects.appendChild(table);
+    }
 }
 
 function createDivSearchProperties(divId, json) {
-  const { head: { vars }, results } = json;
-  let properties = document.getElementById(divId);
-  let total = document.createElement("h3");
-  total.innerHTML = "Total " + results.bindings.length + " properties";
-  while (properties.hasChildNodes()) {
-    properties.removeChild(properties.lastChild);
-  }
-  properties.appendChild(total);
-  let table = document.createElement("table");
-  let th = document.createElement("tr");
-  let td = document.createElement("th");
-  td.innerHTML = "Property";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "Label";
-  th.appendChild(td);
-  table.appendChild(th);
-  let tr = "";
-  for (const result of results.bindings) {
-    tr = document.createElement("tr");
+    const { head: { vars }, results } = json;
+    let properties = document.getElementById(divId);
+    let total = document.createElement("h3");
+    total.innerHTML = "Total " + results.bindings.length + " properties";
+    while (properties.hasChildNodes()) {
+        properties.removeChild(properties.lastChild);
+    }
+    properties.appendChild(total);
+    let table = document.createElement("table");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    td.innerHTML = "Property";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "Label";
+    th.appendChild(td);
+    table.appendChild(th);
+    let tr = "";
+    for (const result of results.bindings) {
+        tr = document.createElement("tr");
 
-    let property = document.createElement("td");
-    property.setAttribute('class', "property");
-    let a = document.createElement("a");
-    a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    a.appendChild(text);
-    property.appendChild(a);
-    tr.appendChild(property);
+        let property = document.createElement("td");
+        property.setAttribute('class', "property");
+        let a = document.createElement("a");
+        a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+        let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+        a.appendChild(text);
+        property.appendChild(a);
+        tr.appendChild(property);
 
-    td = document.createElement("td");
-    td.setAttribute('class', "searchresultvalue");
-    td.innerHTML = result['label'].value;
-    tr.appendChild(td);
+        td = document.createElement("td");
+        td.setAttribute('class', "searchresultvalue");
+        td.innerHTML = result['label'].value;
+        tr.appendChild(td);
 
-    table.appendChild(tr);
-  }
-  properties.appendChild(table);
+        table.appendChild(tr);
+    }
+    properties.appendChild(table);
 }
 
 function getColor(colors, index, total) {
-  let colorCount = colors.length;
-  let groupSize = total / colorCount;
+    let colorCount = colors.length;
+    let groupSize = total / colorCount;
 
-  for (i = 0; i * groupSize < total; i++) {
-    if (index >= i * groupSize && index <= (i + 1) * groupSize) {
-      return colors[i];
+    for (i = 0; i * groupSize < total; i++) {
+        if (index >= i * groupSize && index <= (i + 1) * groupSize) {
+            return colors[i];
+        }
     }
-  }
 }
 
 function createDivTranslatedValues(divId, json) {
-  const { head: { vars }, results } = json;
+    const { head: { vars }, results } = json;
 
-  let properties = document.getElementById(divId);
-  let total = document.createElement("h3");
-  total.innerHTML = "Total " + results.bindings.length + " properties";
-  properties.appendChild(total);
+    let properties = document.getElementById(divId);
+    let total = document.createElement("h3");
+    total.innerHTML = "Total " + results.bindings.length + " properties";
+    properties.appendChild(total);
 
-  let table = document.createElement("table");
-  let th = document.createElement("tr");
-  let td = document.createElement("th");
-  td.innerHTML = "Property";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "Value";
-  th.appendChild(td);
-  table.appendChild(th);
-  for (const result of results.bindings) {
-    tr = document.createElement("tr");
+    let table = document.createElement("table");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    td.innerHTML = "Property";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "Value";
+    th.appendChild(td);
+    table.appendChild(th);
+    for (const result of results.bindings) {
+        tr = document.createElement("tr");
 
-    let property = document.createElement("div");
-    property.setAttribute('class', "property");
-    let a = document.createElement("a");
-    a.setAttribute('href', "https://www.wikidata.org/wiki/Property:" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-    a.appendChild(text);
-    property.appendChild(a);
-    td = document.createElement("td");
-    td.appendChild(property);
-    tr.appendChild(td);
+        let property = document.createElement("div");
+        property.setAttribute('class', "property");
+        let a = document.createElement("a");
+        a.setAttribute('href', "https://www.wikidata.org/wiki/Property:" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+        let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
+        a.appendChild(text);
+        property.appendChild(a);
+        td = document.createElement("td");
+        td.appendChild(property);
+        tr.appendChild(td);
 
-    td = document.createElement("td");
-    td.innerHTML = result['label'].value;
-    tr.appendChild(td);
-    table.appendChild(tr);
-  }
-  properties.appendChild(table);
+        td = document.createElement("td");
+        td.innerHTML = result['label'].value;
+        tr.appendChild(td);
+        table.appendChild(tr);
+    }
+    properties.appendChild(table);
 }
 
 function createDivTranslatedLabelsCount(divId, json) {
-  const { head: { vars }, results } = json;
-  let languages = document.getElementById(divId);
-  let colors = ["#002171", "#004ba0",
-    "#0069c0", "#2286c3", "#bbdefb"];
-  let backgroundColors = ["#ffffff", "#ffffff",
-    "#000000", "#000000", "#000000"];
-  let propertyClass = getValueFromURL("class=([^&#=]*)", "");
+    const { head: { vars }, results } = json;
+    let languages = document.getElementById(divId);
+    let colors = ["#002171", "#004ba0",
+        "#0069c0", "#2286c3", "#bbdefb"
+    ];
+    let backgroundColors = ["#ffffff", "#ffffff",
+        "#000000", "#000000", "#000000"
+    ];
+    let propertyClass = getValueFromURL("class=([^&#=]*)", "");
 
-  let count = 0;
-  for (const result of results.bindings) {
-    let language = document.createElement("div");
-    language.setAttribute('class', "language");
+    let count = 0;
+    for (const result of results.bindings) {
+        let language = document.createElement("div");
+        language.setAttribute('class', "language");
 
-    language.style['background-color'] = getColor(colors, count, results.bindings.length);
+        language.style['background-color'] = getColor(colors, count, results.bindings.length);
 
-    let a = document.createElement("a");
-    if (wikiprojectProperties != null) {
-      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
-                      "&property=" + wikiprojectProperties);
+        let a = document.createElement("a");
+        if (wikiprojectProperties != null) {
+            a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
+                "&property=" + wikiprojectProperties);
+        } else if (propertyClass != "") {
+            a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
+                "&class=" + propertyClass);
+        } else {
+            a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
+        }
+        a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
+        let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
+        a.appendChild(text);
+        language.appendChild(a);
+        languages.appendChild(language);
+
+        count++;
     }
-     else if (propertyClass != "") {
-      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
-                      "&class=" + propertyClass);
-    }
-    else {
-      a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
-    }
-    a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
-    let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
-    a.appendChild(text);
-    language.appendChild(a);
-    languages.appendChild(language);
-
-    count++;
-  }
 }
 
 function createDivLanguage(divId, json) {
-  const { head: { vars }, results } = json;
-  let languages = document.getElementById(divId);
-  let total = document.createElement("h3");
-  total.innerHTML = "Total " + results.bindings.length + " languages";
-  languages.appendChild(total);
-  for (const result of results.bindings) {
-    for (const variable of vars) {
-      let language = document.createElement("div");
-      language.setAttribute('class', "language");
-      let a = document.createElement("a");
-      a.setAttribute('href', "./language.html?language=" + result[variable].value);
-      let text = document.createTextNode(result[variable].value);
-      a.appendChild(text);
-      language.appendChild(a);
-      languages.appendChild(language);
+    const { head: { vars }, results } = json;
+    let languages = document.getElementById(divId);
+    let total = document.createElement("h3");
+    total.innerHTML = "Total " + results.bindings.length + " languages";
+    languages.appendChild(total);
+    for (const result of results.bindings) {
+        for (const variable of vars) {
+            let language = document.createElement("div");
+            language.setAttribute('class', "language");
+            let a = document.createElement("a");
+            a.setAttribute('href', "./language.html?language=" + result[variable].value);
+            let text = document.createTextNode(result[variable].value);
+            a.appendChild(text);
+            language.appendChild(a);
+            languages.appendChild(language);
+        }
     }
-  }
 }
 
 function createDivPropertyDetails(divId, json) {
-  const { head: { vars }, results } = json;
-  let properties = document.getElementById(divId);
-  let total = document.createElement("h3");
-  total.innerHTML = "Total " + results.bindings.length + " properties";
-  properties.appendChild(total);
-  propertySet = new Set();
-  maxPropertyId = 0;
-  for (const result of results.bindings) {
-    for (const variable of vars) {
-      propertyId = Number(result['property'].value.replace("http://www.wikidata.org/entity/P", ""));
-      propertySet.add(propertyId);
-      if (propertyId > maxPropertyId) {
-        maxPropertyId = propertyId;
-      }
+    const { head: { vars }, results } = json;
+    let properties = document.getElementById(divId);
+    let total = document.createElement("h3");
+    total.innerHTML = "Total " + results.bindings.length + " properties";
+    properties.appendChild(total);
+    propertySet = new Set();
+    maxPropertyId = 0;
+    for (const result of results.bindings) {
+        for (const variable of vars) {
+            propertyId = Number(result['property'].value.replace("http://www.wikidata.org/entity/P", ""));
+            propertySet.add(propertyId);
+            if (propertyId > maxPropertyId) {
+                maxPropertyId = propertyId;
+            }
+        }
     }
-  }
-  for (let count = 0, i = 1; count < maxPropertyCount && i <= maxPropertyId; i++) {
-    let property = document.createElement("div");
-    let text = document.createTextNode("P" + String(i));
-    if (propertySet.has(i)) {
-      property.setAttribute('class', "property");
-      let a = document.createElement("a");
-      a.setAttribute('href', "property.html?property=P" + String(i));
-      a.appendChild(text);
-      property.appendChild(a);
-      properties.appendChild(property);
-      count++;
+    for (let count = 0, i = 1; count < maxPropertyCount && i <= maxPropertyId; i++) {
+        let property = document.createElement("div");
+        let text = document.createTextNode("P" + String(i));
+        if (propertySet.has(i)) {
+            property.setAttribute('class', "property");
+            let a = document.createElement("a");
+            a.setAttribute('href', "property.html?property=P" + String(i));
+            a.appendChild(text);
+            property.appendChild(a);
+            properties.appendChild(property);
+            count++;
+        }
     }
-  }
-  propertySet.clear();
+    propertySet.clear();
 }
 
 function queryWikidata(sparqlQuery, func, divId) {
-  /*
-   * Following script is a modified form of automated
-   * script generated from Wikidata Query services
-   */
-  let div = document.getElementById(divId);
-  let fetchText = document.createElement("h4");
-  fetchText.innerHTML = "Fetching data...";
-  div.append(fetchText);
+    /*
+     * Following script is a modified form of automated
+     * script generated from Wikidata Query services
+     */
+    let div = document.getElementById(divId);
+    let fetchText = document.createElement("h4");
+    fetchText.innerHTML = "Fetching data...";
+    div.append(fetchText);
 
-  fullUrl = endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json";
-  showQuery(sparqlQuery, divId);
-  headers = { 'Accept': 'application/sparql-results+json' };
+    fullUrl = endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json";
+    showQuery(sparqlQuery, divId);
+    headers = { 'Accept': 'application/sparql-results+json' };
 
-  fetch(fullUrl, { headers }).then(body => body.json()).then(json => {
-    div.removeChild(fetchText);
-    func(divId, json)
-  });
+    fetch(fullUrl, { headers }).then(body => body.json()).then(json => {
+        div.removeChild(fetchText);
+        func(divId, json)
+    });
 }
 
 function getLanguages() {
-  const sparqlQuery = allLanguagesQuery;
-  queryWikidata(sparqlQuery, createDivLanguage, "languages");
+    const sparqlQuery = allLanguagesQuery;
+    queryWikidata(sparqlQuery, createDivLanguage, "languages");
 }
 
 function getProperty(item, language) {
-  const sparqlQuery = `
+    const sparqlQuery = `
       SELECT ?propertyLabel
       {
-        wd:`+ item + ` rdfs:label ?propertyLabel FILTER (lang(?propertyLabel) = "` + language + `").
+        wd:` + item + ` rdfs:label ?propertyLabel FILTER (lang(?propertyLabel) = "` + language + `").
       }
       `;
-  queryWikidata(sparqlQuery, createDivProperty, "property");
+    queryWikidata(sparqlQuery, createDivProperty, "property");
 }
 
 function getClasses() {
-  let language = "en";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
     }
-  }
 
-  allClassesQuery = allClassesQuery.replaceAll("{{language}}", language);
-  const sparqlQuery = allClassesQuery;
-  queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
+    allClassesQuery = allClassesQuery.replaceAll("{{language}}", language);
+    const sparqlQuery = allClassesQuery;
+    queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
 }
 
 function getClassProperties() {
-  let language = "en";
-  let item = "Q9143";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    let language = "en";
+    let item = "Q9143";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
+        reg = new RegExp("class=([^&#=]*)");
+        value = reg.exec(window.location.search);
+        if (value != null) {
+            item = decodeURIComponent(value[1]);
+        }
     }
-    reg = new RegExp("class=([^&#=]*)");
-    value = reg.exec(window.location.search);
-    if (value != null) {
-      item = decodeURIComponent(value[1]);
-    }
-  }
 
-  getProperty(item, language);
+    getProperty(item, language);
 
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
     SELECT DISTINCT ?property ?label
     {
       {
         SELECT ?property ?label
         WHERE
         {
-          wd:`+ item + ` wdt:P1963 ?property.
-          OPTIONAL{ ?property rdfs:label ?label FILTER (lang(?label)="`+ language + `").}
+          wd:` + item + ` wdt:P1963 ?property.
+          OPTIONAL{ ?property rdfs:label ?label FILTER (lang(?label)="` + language + `").}
         }
       }
       UNION
@@ -819,88 +815,88 @@ function getClassProperties() {
         WHERE
         {
           ?property a wikibase:Property;
-                    wdt:P31  wd:`+ item + `.
-          OPTIONAL{ ?property rdfs:label ?label FILTER (lang(?label)="`+ language + `").}
+                    wdt:P31  wd:` + item + `.
+          OPTIONAL{ ?property rdfs:label ?label FILTER (lang(?label)="` + language + `").}
         }
       } 
     }
     ORDER by ?label
     `;
-  queryWikidata(sparqlQuery, createDivClassProperties, "classProperties");
-  getTranslationStatisticsForClass(item);
+    queryWikidata(sparqlQuery, createDivClassProperties, "classProperties");
+    getTranslationStatisticsForClass(item);
 }
 
 function getMissingPropertyAliases() {
-  let language = "en";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
     }
-  }
 
-  getLanguage(language);
+    getLanguage(language);
 
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
     SELECT DISTINCT ?property
     WHERE
     {
       ?property rdf:type wikibase:Property.
-      OPTIONAL{?property skos:altLabel ?alias FILTER (lang(?alias)="`
-    + language + `")}
+      OPTIONAL{?property skos:altLabel ?alias FILTER (lang(?alias)="` +
+        language + `")}
       FILTER (!BOUND(?alias)).
     }
     ORDER by ?alias
     `;
-  queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
+    queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
 }
 
 function getPropertyLabelsNeedingTranslation() {
-  let language = "en";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
     }
-  }
 
-  getLanguage(language);
+    getLanguage(language);
 
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
     SELECT DISTINCT ?property
     WHERE
     {
       ?property rdf:type wikibase:Property.
-      OPTIONAL{?property rdfs:label ?label FILTER (lang(?label)="`
-    + language + `")}
+      OPTIONAL{?property rdfs:label ?label FILTER (lang(?label)="` +
+        language + `")}
       FILTER (!BOUND(?label)).
     }
     ORDER by ?property
     `;
-  queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
+    queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
 }
 
 function createDivProperty(divId, json) {
-  const { head: { vars }, results } = json;
-  let languageText = document.getElementById(divId);
-  if (results.bindings.length > 0) {
-    languageText.innerHTML = results.bindings[0]['propertyLabel']['value'];
-  }
+    const { head: { vars }, results } = json;
+    let languageText = document.getElementById(divId);
+    if (results.bindings.length > 0) {
+        languageText.innerHTML = results.bindings[0]['propertyLabel']['value'];
+    }
 }
 
 function createDivLanguageCode(divId, json) {
-  const { head: { vars }, results } = json;
-  let languageText = document.getElementById(divId);
-  if (results.bindings.length > 0) {
-    languageText.innerHTML = results.bindings[0]['languageLabel']['value'];
-  }
+    const { head: { vars }, results } = json;
+    let languageText = document.getElementById(divId);
+    if (results.bindings.length > 0) {
+        languageText.innerHTML = results.bindings[0]['languageLabel']['value'];
+    }
 }
 
 function getLanguage(language) {
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
     SELECT DISTINCT ?languageLabel
     WHERE
@@ -912,38 +908,38 @@ function getLanguage(language) {
        
     }
     LIMIT 1`;
-  queryWikidata(sparqlQuery, createDivLanguageCode, "languageCode");
+    queryWikidata(sparqlQuery, createDivLanguageCode, "languageCode");
 }
 
 function getPropertyDescriptionsNeedingTranslation() {
-  let language = "en";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
     }
-  }
 
-  getLanguage(language);
+    getLanguage(language);
 
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
     SELECT DISTINCT ?property
     WHERE
     {
       ?property rdf:type wikibase:Property.
-      OPTIONAL{?property schema:description ?description FILTER (lang(?description)="`
-    + language + `")}
+      OPTIONAL{?property schema:description ?description FILTER (lang(?description)="` +
+        language + `")}
       FILTER (!BOUND(?description)).
     }
     ORDER by ?description
     `;
-  queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
+    queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
 }
 
 function getCountOfTranslatedLabels() {
-  const sparqlQuery = `
+    const sparqlQuery = `
      SELECT ?languageCode (SUM(?count) as ?total)
      WHERE
      {
@@ -959,43 +955,43 @@ function getCountOfTranslatedLabels() {
      GROUP BY ?languageCode
      ORDER BY DESC(?total)    `;
 
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
 }
 
 function getComparisonResultsOnLoad() {
-  let search = "en, fr";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("languages=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      search = decodeURIComponent(value[1]);
+    let search = "en, fr";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("languages=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            search = decodeURIComponent(value[1]);
+        }
     }
-  }
-  document.getElementById("languages").value = search;
-  search = "('" + search + "')";
-  search = search.replace(/ /g, "");
-  search = search.replace(/,/g, "') ('");
-  getComparisonResult(search);
+    document.getElementById("languages").value = search;
+    search = "('" + search + "')";
+    search = search.replace(/ /g, "");
+    search = search.replace(/,/g, "') ('");
+    getComparisonResult(search);
 }
 
 function getComparisonResultsOnEvent(e, form) {
-  e.preventDefault();
-  let search = "en, fr";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("languages=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      search = decodeURIComponent(value[1]);
+    e.preventDefault();
+    let search = "en, fr";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("languages=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            search = decodeURIComponent(value[1]);
+        }
     }
-  }
-  search = "('" + document.getElementById("languages").value + "')";
-  search = search.replace(/ /g, "");
-  search = search.replace(/,/g, "') ('");
-  getComparisonResult(search);
+    search = "('" + document.getElementById("languages").value + "')";
+    search = search.replace(/ /g, "");
+    search = search.replace(/,/g, "') ('");
+    getComparisonResult(search);
 }
 
 function getComparisonResult(search) {
-  let sparqlQuery = `
+    let sparqlQuery = `
       SELECT ?languageCode (COUNT(?label) as ?total)
       {
         VALUES (?languageCode) {` + search + `}
@@ -1006,31 +1002,31 @@ function getComparisonResult(search) {
       ORDER BY DESC(?total)
      `;
 
-  let compareDiv = document.getElementById("comparisonResults");
-  while (compareDiv.hasChildNodes()) {
-    compareDiv.removeChild(compareDiv.lastChild);
-  }
+    let compareDiv = document.getElementById("comparisonResults");
+    while (compareDiv.hasChildNodes()) {
+        compareDiv.removeChild(compareDiv.lastChild);
+    }
 
-  //URL to comparison page
-  let compareURLdiv = document.createElement("div");
-  let textURL = document.createTextNode("URL: ");
-  compareURLdiv.appendChild(textURL);
-  let compareURL = document.createElement("a");
-  compareURL.setAttribute("href", "./compare.html?languages=" + document.getElementById("languages").value);
-  let text = document.createTextNode("compare.html?languages=" + document.getElementById("languages").value);
-  compareURL.appendChild(text);
-  compareURLdiv.appendChild(compareURL);
-  compareDiv.appendChild(compareURLdiv);
+    //URL to comparison page
+    let compareURLdiv = document.createElement("div");
+    let textURL = document.createTextNode("URL: ");
+    compareURLdiv.appendChild(textURL);
+    let compareURL = document.createElement("a");
+    compareURL.setAttribute("href", "./compare.html?languages=" + document.getElementById("languages").value);
+    let text = document.createTextNode("compare.html?languages=" + document.getElementById("languages").value);
+    compareURL.appendChild(text);
+    compareURLdiv.appendChild(compareURL);
+    compareDiv.appendChild(compareURLdiv);
 
-  let labels = document.createElement("div");
-  labels.setAttribute("id", "comparisonResultsLabels");
-  let total = document.createElement("h3");
-  total.innerHTML = "Count of translated labels";
-  compareDiv.appendChild(total);
-  compareDiv.appendChild(labels);
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsLabels");
+    let labels = document.createElement("div");
+    labels.setAttribute("id", "comparisonResultsLabels");
+    let total = document.createElement("h3");
+    total.innerHTML = "Count of translated labels";
+    compareDiv.appendChild(total);
+    compareDiv.appendChild(labels);
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsLabels");
 
-  sparqlQuery = `
+    sparqlQuery = `
       SELECT ?languageCode (COUNT(?label) as ?total)
       {
         VALUES (?languageCode) {` + search + `}
@@ -1041,15 +1037,15 @@ function getComparisonResult(search) {
       ORDER BY DESC(?total)
      `;
 
-  let descriptions = document.createElement("div");
-  descriptions.setAttribute("id", "comparisonResultsDescriptions");
-  total = document.createElement("h3");
-  total.innerHTML = "Count of translated descriptions";
-  compareDiv.appendChild(total);
-  compareDiv.appendChild(descriptions);
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsDescriptions");
+    let descriptions = document.createElement("div");
+    descriptions.setAttribute("id", "comparisonResultsDescriptions");
+    total = document.createElement("h3");
+    total.innerHTML = "Count of translated descriptions";
+    compareDiv.appendChild(total);
+    compareDiv.appendChild(descriptions);
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsDescriptions");
 
-  sparqlQuery = `
+    sparqlQuery = `
       SELECT ?languageCode (COUNT(?label) as ?total)
       {
         VALUES (?languageCode) {` + search + `}
@@ -1060,90 +1056,90 @@ function getComparisonResult(search) {
       ORDER BY DESC(?total)
      `;
 
-  let aliases = document.createElement("div");
-  aliases.setAttribute("id", "comparisonResultsAliases");
-  total = document.createElement("h3");
-  total.innerHTML = "Count of available aliases";
-  compareDiv.appendChild(total);
-  compareDiv.appendChild(aliases);
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsAliases");
+    let aliases = document.createElement("div");
+    aliases.setAttribute("id", "comparisonResultsAliases");
+    total = document.createElement("h3");
+    total.innerHTML = "Count of available aliases";
+    compareDiv.appendChild(total);
+    compareDiv.appendChild(aliases);
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsAliases");
 }
 
 function getTranslatedLabels() {
-  let language = "en";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
     }
-  }
-  getLanguage(language);
+    getLanguage(language);
 
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT ?property ?label
     WHERE
     {
       ?property a wikibase:Property;
               rdfs:label ?label.
-      FILTER(lang(?label) = "`+ language + `")            
+      FILTER(lang(?label) = "` + language + `")            
     }
     ORDER by ?property
    `;
-  queryWikidata(sparqlQuery, createDivTranslatedValues, "translatedLabels");
+    queryWikidata(sparqlQuery, createDivTranslatedValues, "translatedLabels");
 }
 
 function getTranslatedDescriptions() {
-  let language = "en";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
     }
-  }
-  getLanguage(language);
+    getLanguage(language);
 
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT ?property ?label
     WHERE
     {
       ?property a wikibase:Property;
               schema:description ?label.
-      FILTER(lang(?label) = "`+ language + `")            
+      FILTER(lang(?label) = "` + language + `")            
     }
     ORDER by ?property
    `;
-  queryWikidata(sparqlQuery, createDivTranslatedValues, "translatedDescription");
+    queryWikidata(sparqlQuery, createDivTranslatedValues, "translatedDescription");
 }
 
 function getTranslatedAliases() {
-  let language = "en";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
     }
-  }
-  getLanguage(language);
+    getLanguage(language);
 
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT ?property ?label
     WHERE
     {
       ?property a wikibase:Property;
               skos:altLabel ?label.
-      FILTER(lang(?label) = "`+ language + `")            
+      FILTER(lang(?label) = "` + language + `")            
     }
     ORDER by ?property
    `;
-  queryWikidata(sparqlQuery, createDivTranslatedValues, "translatedAliases");
+    queryWikidata(sparqlQuery, createDivTranslatedValues, "translatedAliases");
 }
 
 
 function getCountOfTranslatedDescriptions() {
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT ?languageCode (SUM(?count) as ?total)
     WHERE
     {
@@ -1159,11 +1155,11 @@ function getCountOfTranslatedDescriptions() {
     GROUP BY ?languageCode
     ORDER BY DESC(?total) `;
 
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
 }
 
 function getCountOfTranslatedAliases() {
-  const sparqlQuery = `
+    const sparqlQuery = `
    SELECT ?languageCode (SUM(?count) as ?total)
    WHERE
    {
@@ -1179,36 +1175,36 @@ function getCountOfTranslatedAliases() {
    GROUP BY ?languageCode
    ORDER BY DESC(?total) `;
 
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
 }
 
 function getTranslationStatisticsForClass(className) {
-  translationStatisticsForClassQuery = translationStatisticsForClassQuery.replaceAll("{{class}}", className);
-  let sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "rdfs:label");
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
+    translationStatisticsForClassQuery = translationStatisticsForClassQuery.replaceAll("{{class}}", className);
+    let sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "rdfs:label");
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
 
-  sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "schema:description");
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
+    sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "schema:description");
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
 
-  sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "skos:altLabel");
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
+    sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "skos:altLabel");
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
 }
 
 function getTranslationStatisticsForWikiProject(wdproperties) {
-  wikiprojectProperties = wdproperties;
-  translationStatisticsForWikiProjectQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{wdproperties}}", wdproperties);
-  let sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "rdfs:label"); 
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
+    wikiprojectProperties = wdproperties;
+    translationStatisticsForWikiProjectQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{wdproperties}}", wdproperties);
+    let sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "rdfs:label");
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
 
-  sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "schema:description");
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
+    sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "schema:description");
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
 
-  sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "skos:altLabel");
-  queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
+    sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "skos:altLabel");
+    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
 }
 
 function getLanguagesWithUntranslatedLabels() {
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT DISTINCT ?language
     WHERE
     {
@@ -1219,11 +1215,11 @@ function getLanguagesWithUntranslatedLabels() {
     ORDER by ?language
    `;
 
-  queryWikidata(sparqlQuery, createDivLanguage, "untranslatedLabelsInLanguages");
+    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedLabelsInLanguages");
 }
 
 function getLanguagesWithUntranslatedDescriptions() {
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT DISTINCT ?language
     WHERE
     {
@@ -1234,11 +1230,11 @@ function getLanguagesWithUntranslatedDescriptions() {
     ORDER by ?language
    `;
 
-  queryWikidata(sparqlQuery, createDivLanguage, "untranslatedDescriptionsInLanguages");
+    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedDescriptionsInLanguages");
 }
 
 function getLanguagesWithUntranslatedAliases() {
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT DISTINCT ?language
     WHERE
     {
@@ -1249,50 +1245,50 @@ function getLanguagesWithUntranslatedAliases() {
     ORDER by ?language
    `;
 
-  queryWikidata(sparqlQuery, createDivLanguage, "untranslatedAliasesInLanguages");
+    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedAliasesInLanguages");
 }
 
 function getMissingTranslationStatistics() {
-  getLanguagesWithUntranslatedLabels();
-  getLanguagesWithUntranslatedDescriptions();
-  getLanguagesWithUntranslatedAliases();
+    getLanguagesWithUntranslatedLabels();
+    getLanguagesWithUntranslatedDescriptions();
+    getLanguagesWithUntranslatedAliases();
 }
 
 function getTranslationStatistics() {
-  getCountOfTranslatedLabels();
-  getCountOfTranslatedDescriptions();
-  getCountOfTranslatedAliases();
+    getCountOfTranslatedLabels();
+    getCountOfTranslatedDescriptions();
+    getCountOfTranslatedAliases();
 }
 
 function createDivDataTypes(divId, json) {
-  const { head: { vars }, results } = json;
-  let datatypes = document.getElementById(divId);
-  let total = document.createElement("h3");
-  total.innerHTML = "Total " + results.bindings.length + " datatypes";
-  datatypes.appendChild(total);
-  for (const result of results.bindings) {
-    for (const variable of vars) {
-      let datatype = document.createElement("div");
-      datatype.setAttribute('class', "datatype");
-      let a = document.createElement("a");
-      let datatypeValue = result[variable].value.replace("http://wikiba.se/ontology#", "");
-      let text = document.createTextNode(datatypeValue);
-      a.setAttribute('href', "datatype.html?datatype=wikibase:" + datatypeValue);
-      a.appendChild(text);
-      datatype.appendChild(a);
-      datatypes.appendChild(datatype);
+    const { head: { vars }, results } = json;
+    let datatypes = document.getElementById(divId);
+    let total = document.createElement("h3");
+    total.innerHTML = "Total " + results.bindings.length + " datatypes";
+    datatypes.appendChild(total);
+    for (const result of results.bindings) {
+        for (const variable of vars) {
+            let datatype = document.createElement("div");
+            datatype.setAttribute('class', "datatype");
+            let a = document.createElement("a");
+            let datatypeValue = result[variable].value.replace("http://wikiba.se/ontology#", "");
+            let text = document.createTextNode(datatypeValue);
+            a.setAttribute('href', "datatype.html?datatype=wikibase:" + datatypeValue);
+            a.appendChild(text);
+            datatype.appendChild(a);
+            datatypes.appendChild(datatype);
+        }
     }
-  }
 }
 
 function getDatatypes() {
-  language = getValueFromURL("lang=([^&#=]*)", "en");
-  const sparqlQuery = allDatatypesQuery;
-  queryWikidata(sparqlQuery, createDivDataTypes, "propertyDatatypes");
+    language = getValueFromURL("lang=([^&#=]*)", "en");
+    const sparqlQuery = allDatatypesQuery;
+    queryWikidata(sparqlQuery, createDivDataTypes, "propertyDatatypes");
 }
 
 function getProperties() {
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
     SELECT DISTINCT ?property
     WHERE
@@ -1301,13 +1297,13 @@ function getProperties() {
     }
     ORDER by ?property
     `;
-  queryWikidata(sparqlQuery, createDivPropertyDetails, "existingProperties");
-  queryWikidata(sparqlQuery, createDivAllProperties, "allProperties");
+    queryWikidata(sparqlQuery, createDivPropertyDetails, "existingProperties");
+    queryWikidata(sparqlQuery, createDivAllProperties, "allProperties");
 }
 
 
 function getPropertyWithReference() {
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
    SELECT DISTINCT ?property 
     {
       ?property a wikibase:Property;
@@ -1317,11 +1313,11 @@ function getPropertyWithReference() {
     }
     ORDER by ?property
     `;
-  queryWikidata(sparqlQuery, createDivPropertyDetails, "propertywithreference");
+    queryWikidata(sparqlQuery, createDivPropertyDetails, "propertywithreference");
 }
 
 function getPropertyWithEquivPropertySet() {
-  const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
    SELECT DISTINCT ?property 
     {
       ?property a wikibase:Property;
@@ -1330,238 +1326,237 @@ function getPropertyWithEquivPropertySet() {
     }
     ORDER by ?property
     `;
-  queryWikidata(sparqlQuery, createDivPropertyDetails, "propertywithequivpropertyset");
+    queryWikidata(sparqlQuery, createDivPropertyDetails, "propertywithequivpropertyset");
 }
+
 function getOverallProvenance() {
-  getPropertyWithEquivPropertySet();
-  getPropertyWithReference();
+    getPropertyWithEquivPropertySet();
+    getPropertyWithReference();
 }
 
-function getPropertiesForClassRequiringTranslationQuery (propertyClass){
-  language = getValueFromURL("language=([^&#=]*)", "en")
-  getLanguage(language);
-  getProperty(propertyClass, language);
-  propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{class}}", propertyClass);
-  propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{language}}", language);
-  let sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "rdfs:label");
-  queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
+function getPropertiesForClassRequiringTranslationQuery(propertyClass) {
+    language = getValueFromURL("language=([^&#=]*)", "en")
+    getLanguage(language);
+    getProperty(propertyClass, language);
+    propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{class}}", propertyClass);
+    propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{language}}", language);
+    let sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "rdfs:label");
+    queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
 
-  sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "schema:description");
-  queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
+    sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "schema:description");
+    queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
 
-  sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "skos:altLabel");
-  queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
+    sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "skos:altLabel");
+    queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
 }
 
-function getSpecifiedPropertiesRequiringTranslation (property){
-  language = getValueFromURL("language=([^&#=]*)", "en")
-  getLanguage(language);
-  specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{property}}", property);
-  specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{language}}", language);
-  let sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "rdfs:label");
-  queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
+function getSpecifiedPropertiesRequiringTranslation(property) {
+    language = getValueFromURL("language=([^&#=]*)", "en")
+    getLanguage(language);
+    specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{property}}", property);
+    specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{language}}", language);
+    let sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "rdfs:label");
+    queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
 
-  sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "schema:description");
-  queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
+    sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "schema:description");
+    queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
 
-  sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "skos:altLabel");
-  queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
+    sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "skos:altLabel");
+    queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
 }
 
 function getPropertiesNeedingTranslation() {
-  propertyClass = getValueFromURL("class=([^&#=]*)", "");
-  property = getValueFromURL("property=([^&#=]*)", "");
-  if (property != "") {
-    getSpecifiedPropertiesRequiringTranslation(property)
-  }
-  else if (propertyClass != "") {
-    getPropertiesForClassRequiringTranslationQuery(propertyClass)
-  }
-  else {
-    getPropertyLabelsNeedingTranslation();
-    getPropertyDescriptionsNeedingTranslation();
-    getMissingPropertyAliases();
-  }
+    propertyClass = getValueFromURL("class=([^&#=]*)", "");
+    property = getValueFromURL("property=([^&#=]*)", "");
+    if (property != "") {
+        getSpecifiedPropertiesRequiringTranslation(property)
+    } else if (propertyClass != "") {
+        getPropertiesForClassRequiringTranslationQuery(propertyClass)
+    } else {
+        getPropertyLabelsNeedingTranslation();
+        getPropertyDescriptionsNeedingTranslation();
+        getMissingPropertyAliases();
+    }
 }
 
 
 function getPropertyDetails() {
-  let property = "P31";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("property=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      property = decodeURIComponent(value[1]);
+    let property = "P31";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("property=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            property = decodeURIComponent(value[1]);
+        }
     }
-  }
-  let div = document.getElementById("propertyCode");
-  div.innerHTML = property;
+    let div = document.getElementById("propertyCode");
+    div.innerHTML = property;
 
-  div = document.getElementById("propertyDetails");
-  let table = document.createElement("table");
-  let th = document.createElement("tr");
-  let td = document.createElement("th");
-  td.innerHTML = "Feature";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "Value";
-  th.appendChild(td);
-  table.appendChild(th);
-  tr = document.createElement("tr");
-  td = document.createElement("td");
-  td.innerHTML = "Link";
-  tr.appendChild(td);
-  td = document.createElement("td");
-  link = document.createElement("a");
-  link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
-  let text = document.createTextNode("https://www.wikidata.org/entity/" + property);
-  link.appendChild(text);
-  td.appendChild(link)
-  tr.appendChild(td);
-  table.appendChild(tr);
+    div = document.getElementById("propertyDetails");
+    let table = document.createElement("table");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    td.innerHTML = "Feature";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "Value";
+    th.appendChild(td);
+    table.appendChild(th);
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.innerHTML = "Link";
+    tr.appendChild(td);
+    td = document.createElement("td");
+    link = document.createElement("a");
+    link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
+    let text = document.createTextNode("https://www.wikidata.org/entity/" + property);
+    link.appendChild(text);
+    td.appendChild(link)
+    tr.appendChild(td);
+    table.appendChild(tr);
 
-  tr = document.createElement("tr");
-  td = document.createElement("td");
-  td.innerHTML = "Translation Path";
-  tr.appendChild(td);
-  td = document.createElement("td");
-  link = document.createElement("a");
-  link.setAttribute('href', "path.html?property=" + property)
-  text = document.createTextNode("path.html?property=" + property);
-  link.appendChild(text);
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.innerHTML = "Translation Path";
+    tr.appendChild(td);
+    td = document.createElement("td");
+    link = document.createElement("a");
+    link.setAttribute('href', "path.html?property=" + property)
+    text = document.createTextNode("path.html?property=" + property);
+    link.appendChild(text);
 
-  vizlink = document.createElement("a");
-  vizlink.setAttribute('href', "pathviz.html?property=" + property)
-  let viztext = document.createTextNode(" (Visualization: " + property + ") ");
-  vizlink.appendChild(viztext);
-  td.appendChild(link)
-  td.appendChild(vizlink)
-  tr.appendChild(td);
-  table.appendChild(tr);
-  div.appendChild(table);
+    vizlink = document.createElement("a");
+    vizlink.setAttribute('href', "pathviz.html?property=" + property)
+    let viztext = document.createTextNode(" (Visualization: " + property + ") ");
+    vizlink.appendChild(viztext);
+    td.appendChild(link)
+    td.appendChild(vizlink)
+    tr.appendChild(td);
+    table.appendChild(tr);
+    div.appendChild(table);
 
-  tr = document.createElement("tr");
-  td = document.createElement("td");
-  td.innerHTML = "Provenance information";
-  tr.appendChild(td);
-  td = document.createElement("td");
-  link = document.createElement("a");
-  link.setAttribute('href', "propertyprovenance.html?property=" + property)
-  text = document.createTextNode("provenance.html?property=" + property);
-  link.appendChild(text);
-  td.appendChild(link)
-  tr.appendChild(td);
-  table.appendChild(tr);
-  div.appendChild(table);
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.innerHTML = "Provenance information";
+    tr.appendChild(td);
+    td = document.createElement("td");
+    link = document.createElement("a");
+    link.setAttribute('href', "propertyprovenance.html?property=" + property)
+    text = document.createTextNode("provenance.html?property=" + property);
+    link.appendChild(text);
+    td.appendChild(link)
+    tr.appendChild(td);
+    table.appendChild(tr);
+    div.appendChild(table);
 
-  let sparqlQuery = `
+    let sparqlQuery = `
     SELECT DISTINCT ?language
     WHERE
     {
       [] wdt:P31 wd:Q10876391;
                  wdt:P407 [wdt:P424 ?language]
-      MINUS {wd:`+ property + ` rdfs:label ?label. BIND(lang(?label) as ?language)}
+      MINUS {wd:` + property + ` rdfs:label ?label. BIND(lang(?label) as ?language)}
     }
     ORDER by ?language
     `;
-  queryWikidata(sparqlQuery, createDivLanguage, "untranslatedLabelsInLanguages");
+    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedLabelsInLanguages");
 
-  sparqlQuery = `
+    sparqlQuery = `
     SELECT DISTINCT ?language
     WHERE
     {
       [] wdt:P31 wd:Q10876391;
                  wdt:P407 [wdt:P424 ?language]
-      MINUS {wd:`+ property + ` schema:description ?description. BIND(lang(?description) as ?language)}
+      MINUS {wd:` + property + ` schema:description ?description. BIND(lang(?description) as ?language)}
     }
     ORDER by ?language
     `;
-  queryWikidata(sparqlQuery, createDivLanguage, "untranslatedDescriptionsInLanguages");
+    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedDescriptionsInLanguages");
 
-  sparqlQuery = `
+    sparqlQuery = `
     SELECT DISTINCT ?language
     WHERE
     {
       [] wdt:P31 wd:Q10876391;
                  wdt:P407 [wdt:P424 ?language]
-      MINUS {wd:`+ property + ` skos:altLabel ?alias. BIND(lang(?alias) as ?language)}
+      MINUS {wd:` + property + ` skos:altLabel ?alias. BIND(lang(?alias) as ?language)}
     }
     ORDER by ?language
     `;
 
-  queryWikidata(sparqlQuery, createDivLanguage, "untranslatedAliasesInLanguages");
-  sparqlQuery = `
+    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedAliasesInLanguages");
+    sparqlQuery = `
     SELECT DISTINCT ?language
     {
-      wd:`+ property + ` rdfs:label ?label.
+      wd:` + property + ` rdfs:label ?label.
       BIND(lang(?label) as ?language)
     }
     ORDER by ?language`;
-  queryWikidata(sparqlQuery, createDivLanguage, "translatedLabelsInLanguages");
+    queryWikidata(sparqlQuery, createDivLanguage, "translatedLabelsInLanguages");
 
-  sparqlQuery = `
+    sparqlQuery = `
     SELECT DISTINCT ?language
     {
-      wd:`+ property + ` schema:description ?description.
+      wd:` + property + ` schema:description ?description.
       BIND(lang(?description) as ?language)
     } 
     ORDER by ?language`;
-  queryWikidata(sparqlQuery, createDivLanguage, "translatedDescriptionsInLanguages");
+    queryWikidata(sparqlQuery, createDivLanguage, "translatedDescriptionsInLanguages");
 
-  sparqlQuery = `
+    sparqlQuery = `
     SELECT DISTINCT ?language
     {
-      wd:`+ property + ` skos:altLabel ?alias.
+      wd:` + property + ` skos:altLabel ?alias.
       BIND(lang(?alias) as ?language)
     }
     ORDER by ?language`;
-  queryWikidata(sparqlQuery, createDivLanguage, "translatedAliasesInLanguages");
+    queryWikidata(sparqlQuery, createDivLanguage, "translatedAliasesInLanguages");
 
 }
 
 function getPropertiesWithDatatype() {
-  let datatype = getValueFromURL("datatype=([^&#=]*)", "wikibase:WikibaseItem");
+    let datatype = getValueFromURL("datatype=([^&#=]*)", "wikibase:WikibaseItem");
 
-  let datatypeCode = document.getElementById("datatypeCode");
-  datatypeCode.innerHTML = "Properties with datatype- " + datatype;
+    let datatypeCode = document.getElementById("datatypeCode");
+    datatypeCode.innerHTML = "Properties with datatype- " + datatype;
 
-  let sparqlQuery = propertiesWithDatatypeQuery;
-  sparqlQuery = propertiesWithDatatypeQuery.replace(
-	  "{{datatype}}", datatype);
-  queryWikidata(sparqlQuery, createDivPropertyDetails, "propertiesWithDatatype");
+    let sparqlQuery = propertiesWithDatatypeQuery;
+    sparqlQuery = propertiesWithDatatypeQuery.replace(
+        "{{datatype}}", datatype);
+    queryWikidata(sparqlQuery, createDivPropertyDetails, "propertiesWithDatatype");
 }
 
 function createDivPropertyDescriptors(divId, json) {
-  const { head: { vars }, results } = json;
-  let properties = document.getElementById(divId);
-  let total = document.createElement("h3");
-  let count = 0;
-  properties.appendChild(total);
-  for (const result of results.bindings) {
-    for (const variable of vars) {
-      let property = document.createElement("div");
-      property.setAttribute('class', "property");
-      let a = document.createElement("a");
-      if (result[variable].value.indexOf("/direct") != -1 ||
-        result[variable].value.indexOf("wikiba.se") != -1 ||
-        result[variable].value.indexOf("schema.org") != -1 ||
-        result[variable].value.indexOf("w3.org") != -1) {
-        continue; //To avoid properties  
-      }
-      count = count + 1;
-      //a.setAttribute('href', result[variable].value);
-      a.setAttribute('href', "property.html?property=" + result[variable].value.replace("http://www.wikidata.org/prop/", ""));
-      let text = document.createTextNode(result[variable].value.replace(new RegExp(".*/"), ""));
-      a.appendChild(text);
-      property.appendChild(a);
-      properties.appendChild(property);
+    const { head: { vars }, results } = json;
+    let properties = document.getElementById(divId);
+    let total = document.createElement("h3");
+    let count = 0;
+    properties.appendChild(total);
+    for (const result of results.bindings) {
+        for (const variable of vars) {
+            let property = document.createElement("div");
+            property.setAttribute('class', "property");
+            let a = document.createElement("a");
+            if (result[variable].value.indexOf("/direct") != -1 ||
+                result[variable].value.indexOf("wikiba.se") != -1 ||
+                result[variable].value.indexOf("schema.org") != -1 ||
+                result[variable].value.indexOf("w3.org") != -1) {
+                continue; //To avoid properties  
+            }
+            count = count + 1;
+            //a.setAttribute('href', result[variable].value);
+            a.setAttribute('href', "property.html?property=" + result[variable].value.replace("http://www.wikidata.org/prop/", ""));
+            let text = document.createTextNode(result[variable].value.replace(new RegExp(".*/"), ""));
+            a.appendChild(text);
+            property.appendChild(a);
+            properties.appendChild(property);
+        }
     }
-  }
-  total.innerHTML = "Total " + count + " properties";
+    total.innerHTML = "Total " + count + " properties";
 }
 
 function getPropertyDescriptors() {
-  const sparqlQuery = `
+    const sparqlQuery = `
     PREFIX wikibase: <http://wikiba.se/ontology#>
 
     SELECT DISTINCT ?subproperty
@@ -1573,11 +1568,11 @@ function getPropertyDescriptors() {
     ORDER by ?subproperty
 
     `;
-  queryWikidata(sparqlQuery, createDivPropertyDescriptors, "propertyDescriptors");
+    queryWikidata(sparqlQuery, createDivPropertyDescriptors, "propertyDescriptors");
 }
 
 function getSearchQuery(language, search) {
-  const sparqlQuery = `
+    const sparqlQuery = `
     PREFIX wikibase: <http://wikiba.se/ontology#>
     SELECT DISTINCT ?property ?label
     {
@@ -1586,8 +1581,8 @@ function getSearchQuery(language, search) {
         WHERE
         {
           ?property a wikibase:Property;
-                      rdfs:label ?label FILTER (lang(?label) = "`+ language + `").
-          FILTER(contains(lcase(?label), lcase(`+ search + `)))
+                      rdfs:label ?label FILTER (lang(?label) = "` + language + `").
+          FILTER(contains(lcase(?label), lcase(` + search + `)))
         }
       }
       UNION
@@ -1596,8 +1591,8 @@ function getSearchQuery(language, search) {
         WHERE
         {
           [rdfs:label ?ilabel] wdt:P1963 ?property.
-          ?property rdfs:label ?label FILTER(lang(?label)="`+ language + `").
-          FILTER (lang(?ilabel)="en" && contains(lcase(?ilabel), lcase(`+ search + `)))
+          ?property rdfs:label ?label FILTER(lang(?label)="` + language + `").
+          FILTER (lang(?ilabel)="en" && contains(lcase(?ilabel), lcase(` + search + `)))
         }
       }
       UNION
@@ -1607,18 +1602,18 @@ function getSearchQuery(language, search) {
         {
           ?property a wikibase:Property;
                     wdt:P31  [rdfs:label ?ilabel];
-                    rdfs:label ?label FILTER (lang(?label)="`+ language + `").
-          FILTER (lang(?ilabel)="en" && contains(lcase(?ilabel), lcase(`+ search + `)))
+                    rdfs:label ?label FILTER (lang(?label)="` + language + `").
+          FILTER (lang(?ilabel)="en" && contains(lcase(?ilabel), lcase(` + search + `)))
         }
       } 
     }
     ORDER by ?label
     `;
-  return (sparqlQuery);
+    return (sparqlQuery);
 }
 
 function getSearchWikiProjectQuery(search) {
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT ?title WHERE{
      FILTER (contains(lcase(?title), lcase(` + search + `))).
      {
@@ -1634,645 +1629,631 @@ function getSearchWikiProjectQuery(search) {
       }
     }
   `;
-  return sparqlQuery;
+    return sparqlQuery;
 }
-function getWikiProjects() {
-  let limitString = getValueFromURL("limit=([^&#=]*)", 100);
-  if (limitString) {
-      limit = Number(limitString);
-  }
-  let offsetString = getValueFromURL("offset=([^&#=]*)", 100);
-  if (offsetString) {
-      offset = Number(offsetString);
-  }
 
-  allWikiProjectsQuery = allWikiProjectsQuery.replace("{{limit}}", limit);
-  allWikiProjectsQuery = allWikiProjectsQuery.replace("{{offset}}", offset);
-  const sparqlQuery = allWikiProjectsQuery;
-  queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+function getWikiProjects() {
+    let limitString = getValueFromURL("limit=([^&#=]*)", 100);
+    if (limitString) {
+        limit = Number(limitString);
+    }
+    let offsetString = getValueFromURL("offset=([^&#=]*)", 100);
+    if (offsetString) {
+        offset = Number(offsetString);
+    }
+
+    allWikiProjectsQuery = allWikiProjectsQuery.replace("{{limit}}", limit);
+    allWikiProjectsQuery = allWikiProjectsQuery.replace("{{offset}}", offset);
+    const sparqlQuery = allWikiProjectsQuery;
+    queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
 }
 
 function addDivPropertyLabels(divId, wdproperties) {
-  propertyLabelsQuery = propertyLabelsQuery.replace("{{wdproperties}}", wdproperties);
-  propertyLabelsQuery = propertyLabelsQuery.replace("{{language}}", "en");
-  const sparqlQuery = propertyLabelsQuery; 
-  queryWikidata(sparqlQuery, createDivClassProperties, divId);
-  let project = getValueFromURL("project=([^&#=]*)", "");
-  if (project != undefined) {
-    getTranslationStatisticsForWikiProject(wdproperties);
-  }
+    propertyLabelsQuery = propertyLabelsQuery.replace("{{wdproperties}}", wdproperties);
+    propertyLabelsQuery = propertyLabelsQuery.replace("{{language}}", "en");
+    const sparqlQuery = propertyLabelsQuery;
+    queryWikidata(sparqlQuery, createDivClassProperties, divId);
+    let project = getValueFromURL("project=([^&#=]*)", "");
+    if (project != undefined) {
+        getTranslationStatisticsForWikiProject(wdproperties);
+    }
 }
 
 function findWikiProjects(e, form) {
-  e.preventDefault();
-  let search = document.getElementById("searchproject").value;
-  sparqlQuery = getSearchWikiProjectQuery("'" + search + "'");
-  queryWikidata(sparqlQuery, createDivWikiProjects, "searchResults");
+    e.preventDefault();
+    let search = document.getElementById("searchproject").value;
+    sparqlQuery = getSearchWikiProjectQuery("'" + search + "'");
+    queryWikidata(sparqlQuery, createDivWikiProjects, "searchResults");
 }
 
 
 function findWikiProjectsOnLoad() {
-  limit = 500;
-  offset = 500;
-  let search = 'heritage';
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("search=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      search = decodeURIComponent(value[1]);
+    limit = 500;
+    offset = 500;
+    let search = 'heritage';
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("search=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            search = decodeURIComponent(value[1]);
+        }
     }
-  }
-  sparqlQuery = getSearchWikiProjectQuery('"' + search + '"');
-  document.getElementById("search").value = search;
-  queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+    sparqlQuery = getSearchWikiProjectQuery('"' + search + '"');
+    document.getElementById("search").value = search;
+    queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
 }
 
 function findPropertyOnLoad() {
-  let language = "en";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
     }
-  }
-  let search = '';
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("search=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      search = decodeURIComponent(value[1]);
+    let search = '';
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("search=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            search = decodeURIComponent(value[1]);
+        }
     }
-  }
 
-  if (search == "") {
-    return;
-  }
+    if (search == "") {
+        return;
+    }
 
-  sparqlQuery = getSearchQuery(language, '"' + search + '"');
-  document.getElementById("search").value = search;
-  queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
+    sparqlQuery = getSearchQuery(language, '"' + search + '"');
+    document.getElementById("search").value = search;
+    queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
 
 function findProperty(e) {
-  e.preventDefault();
-  let language = "en";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("language=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      language = decodeURIComponent(value[1]);
+    e.preventDefault();
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
     }
-  }
-  let search = '"' + document.getElementById("search").value + '"';
-  sparqlQuery = getSearchQuery(language, search);
-  queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
+    let search = '"' + document.getElementById("search").value + '"';
+    sparqlQuery = getSearchQuery(language, search);
+    queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
 }
+
 function createDivTranslationPathOptimized(divId, json) {
-  createDivTranslationPath(divId, json, true, false);
+    createDivTranslationPath(divId, json, true, false);
 }
 
 function createDivTranslationPathVizOptimized(divId, json) {
-  createDivTranslationPath(divId, json, true, true);
+    createDivTranslationPath(divId, json, true, true);
 }
 
 function createDivTranslationPathNonOptimized(divId, json) {
-  createDivTranslationPath(divId, json, false);
+    createDivTranslationPath(divId, json, false);
 }
 
 function createDivTranslationPath(divId, json, optimized, visualization) {
-  let languageData = {};
-  languageData["labels"] = [];
-  languageData["descriptions"] = [];
-  languageData["aliases"] = [];
-  const { head: { vars }, results } = json;
-  let path = document.getElementById(divId);
+    let languageData = {};
+    languageData["labels"] = [];
+    languageData["descriptions"] = [];
+    languageData["aliases"] = [];
+    const { head: { vars }, results } = json;
+    let path = document.getElementById(divId);
 
-  let table = document.createElement("table");
-  let th = document.createElement("tr");
-  let td = document.createElement("th");
-  table.setAttribute("class", "path");
-  td.innerHTML = "Time";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "L";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "D";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "A";
-  th.appendChild(td);
-  table.append(th);
+    let table = document.createElement("table");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    table.setAttribute("class", "path");
+    td.innerHTML = "Time";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "L";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "D";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "A";
+    th.appendChild(td);
+    table.append(th);
 
-  trMap = {};
+    trMap = {};
 
-  count = 0;
-  for (const result of results.bindings) {
-    let totalCount = 1;
-    if (optimized) {
-      totalCount = 15;
+    count = 0;
+    for (const result of results.bindings) {
+        let totalCount = 1;
+        if (optimized) {
+            totalCount = 15;
+        }
+        for (count = 1; count <= totalCount; count++) {
+            let newEntry = false;
+            tr = null;
+            let comment = "";
+            let time = "";
+            if (optimized) {
+                if ('comment' + count in result) {
+                    comment = result['comment' + count].value;
+                    time = result['time' + count].value;
+                } else {
+                    continue;
+                }
+            } else {
+                comment = result['comment'].value;
+                time = result['time'].value;
+            }
+            comment = comment.replace(/\*\/.*/g, '');
+            comment = comment.replace(/\/\* wb.*[0-9]| /, '');
+            if (time + comment in trMap) {
+                tr = trMap[time + comment];
+            }
+            alanguagedifflink = document.createElement("a");
+            if (optimized) {
+                alanguagedifflink.setAttribute('href',
+                    "https://www.wikidata.org/wiki/Special:Diff/" +
+                    result['revision' + count].value);
+            } else {
+                alanguagedifflink.setAttribute('href',
+                    "https://www.wikidata.org/wiki/Special:Diff/" +
+                    result['revision'].value);
+            }
+
+            atimepermalink = document.createElement("a");
+            if (optimized) {
+                atimepermalink.setAttribute('href',
+                    "https://www.wikidata.org/wiki/Special:PermaLink/" +
+                    result['revision' + count].value);
+            } else {
+                atimepermalink.setAttribute('href',
+                    "https://www.wikidata.org/wiki/Special:PermaLink/" +
+                    result['revision'].value);
+            }
+            if (tr == null) {
+                tr = document.createElement("tr");
+                tr.setAttribute('id', time + comment);
+                trMap[time + comment] = tr;
+                td = document.createElement("td");
+                text = document.createTextNode(time);
+                atimepermalink.append(text);
+                td.appendChild(atimepermalink);
+                tr.appendChild(td);
+                newEntry = true;
+            }
+
+            if (optimized) {
+                comment = result['comment' + count].value;
+            } else {
+                comment = result['comment'].value;
+            }
+
+            if (comment.indexOf('wbeditentity-create') != -1) {
+                td = document.createElement("td");
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\* wbeditentity-create:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                comment = comment.replace(" ", "");
+                languageData["labels"].push(comment);
+                text = document.createTextNode(comment);
+                textDiv = document.createElement("div");
+                textDiv.setAttribute('class', "pathlanguage");
+                textDiv.style['background-color'] = '#002171';
+                alanguagedifflink.append(text);
+                textDiv.append(alanguagedifflink);
+                td.appendChild(textDiv);
+                tr.appendChild(td);
+                td = document.createElement("td");
+                tr.appendChild(td);
+                td = document.createElement("td");
+                tr.appendChild(td);
+                table.appendChild(tr);
+            }
+
+            if (comment.indexOf('special-create-property') != -1) {
+                td = document.createElement("td");
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\* special-create-property:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                comment = comment.replace(" ", "");
+                languageData["labels"].push(comment);
+                text = document.createTextNode(comment);
+                textDiv = document.createElement("div");
+                textDiv.setAttribute('class', "pathlanguage");
+                textDiv.style['background-color'] = '#002171';
+                alanguagedifflink.append(text);
+                textDiv.append(alanguagedifflink);
+                td.appendChild(textDiv);
+                tr.appendChild(td);
+                td = document.createElement("td");
+                tr.appendChild(td);
+                td = document.createElement("td");
+                tr.appendChild(td);
+                table.appendChild(tr);
+            }
+
+            if (comment.indexOf('wbsetlabel-add') != -1) {
+                td = document.createElement("td");
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\* wbsetlabel-add:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                comment = comment.replace(" ", "");
+                languageData["labels"].push(comment);
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#002171';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[1].appendChild(textDiv);
+                } else {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#002171';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+
+            if (comment.indexOf('wbsetdescription-add') != -1) {
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\*.*wbsetdescription-add:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#002171';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[2].appendChild(textDiv);
+                } else {
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#002171';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+            if (comment.indexOf('wbsetaliases-add-remove') != -1) {
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\*.*wbsetaliases-add-remove:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#0069c0';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[3].appendChild(textDiv);
+                } else {
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#0069c0';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+
+            if (comment.indexOf('wbsetaliases-add') != -1) {
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\*.*wbsetaliases-add:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#002171';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[3].appendChild(textDiv);
+                } else {
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#002171';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+
+            if (comment.indexOf('wbsetlabel-set') != -1) {
+                td = document.createElement("td");
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\* wbsetlabel-set:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                comment = comment.replace(" ", "");
+                languageData["labels"].push(comment);
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#0069c0';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[1].appendChild(textDiv);
+                } else {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#0069c0';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+
+            if (comment.indexOf('wbsetdescription-set') != -1) {
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\*.*wbsetdescription-set:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#0069c0';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[2].appendChild(textDiv);
+                } else {
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#0069c0';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+
+            if (comment.indexOf('wbsetaliases-set') != -1) {
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\*.*wbsetaliases-set:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#0069c0';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[3].appendChild(textDiv);
+                } else {
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = '#0069c0';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+
+            if (comment.indexOf('wbsetlabeldescriptionaliases') != -1) {
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\*.*wbsetlabeldescriptionaliases:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                comment = comment.replace(" ", "");
+                languageData["labels"].push(comment);
+                if (!newEntry) {
+                    text1 = document.createTextNode(comment);
+                    text2 = document.createTextNode(comment);
+                    text3 = document.createTextNode(comment);
+                    textDiv1 = document.createElement("div");
+                    textDiv2 = document.createElement("div");
+                    textDiv3 = document.createElement("div");
+                    textDiv1.setAttribute('class', "pathlanguage");
+                    textDiv1.style['background-color'] = '#0069c0';
+                    textDiv1.append(text1);
+
+                    textDiv2.setAttribute('class', "pathlanguage");
+                    textDiv2.style['background-color'] = '#0069c0';
+                    textDiv2.append(text2);
+
+                    textDiv3.setAttribute('class', "pathlanguage");
+                    textDiv3.style['background-color'] = '#0069c0';
+                    textDiv3.append(text3);
+                    tr.children[1].appendChild(textDiv1);
+                    tr.children[2].appendChild(textDiv2);
+                    tr.children[3].appendChild(textDiv3);
+                } else {
+                    text1 = document.createTextNode(comment);
+                    text2 = document.createTextNode(comment);
+                    text3 = document.createTextNode(comment);
+                    textDiv1 = document.createElement("div");
+                    textDiv2 = document.createElement("div");
+                    textDiv3 = document.createElement("div");
+                    textDiv1.setAttribute('class', "pathlanguage");
+                    textDiv1.style['background-color'] = '#0069c0';
+                    textDiv1.append(text1);
+
+                    textDiv2.setAttribute('class', "pathlanguage");
+                    textDiv2.style['background-color'] = '#0069c0';
+                    textDiv2.append(text2);
+
+                    textDiv3.setAttribute('class', "pathlanguage");
+                    textDiv3.style['background-color'] = '#0069c0';
+                    textDiv3.append(text3);
+
+                    td = document.createElement("td");
+                    td.appendChild(textDiv1);
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    td.appendChild(textDiv2);
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    td.appendChild(textDiv3);
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+
+            if (comment.indexOf('wbsetlabel-remove') != -1) {
+                td = document.createElement("td");
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\* wbsetlabel-remove:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = 'red';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[1].appendChild(textDiv);
+                } else {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = 'red';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+
+            if (comment.indexOf('wbsetdescription-remove') != -1) {
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\*.*wbsetdescription-remove:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = 'red';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[2].appendChild(textDiv);
+                } else {
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = 'red';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+
+            if (comment.indexOf('wbsetaliases-remove') != -1) {
+                comment = comment.replace(/\*\/.*/g, '');
+                comment = comment.replace(/\/\*.*wbsetaliases-remove:[0-9]| /, '');
+                comment = comment.replace('|', '');
+                if (!newEntry) {
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = 'red';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    tr.children[3].appendChild(textDiv);
+                } else {
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    tr.appendChild(td);
+                    td = document.createElement("td");
+                    text = document.createTextNode(comment);
+                    textDiv = document.createElement("div");
+                    textDiv.setAttribute('class', "pathlanguage");
+                    textDiv.style['background-color'] = 'red';
+                    alanguagedifflink.append(text);
+                    textDiv.append(alanguagedifflink);
+                    td.appendChild(textDiv);
+                    tr.appendChild(td);
+                    table.appendChild(tr);
+                }
+            }
+        }
     }
-    for (count = 1; count <= totalCount; count++) {
-      let newEntry = false;
-      tr = null;
-      let comment = "";
-      let time = "";
-      if (optimized) {
-        if ('comment' + count in result) {
-          comment = result['comment' + count].value;
-          time = result['time' + count].value;
-        }
-        else {
-          continue;
-        }
-      }
-      else {
-        comment = result['comment'].value;
-        time = result['time'].value;
-      }
-      comment = comment.replace(/\*\/.*/g, '');
-      comment = comment.replace(/\/\* wb.*[0-9]| /, '');
-      if (time + comment in trMap) {
-        tr = trMap[time + comment];
-      }
-      alanguagedifflink = document.createElement("a");
-      if (optimized) {
-        alanguagedifflink.setAttribute('href',
-          "https://www.wikidata.org/wiki/Special:Diff/" +
-          result['revision' + count].value);
-      }
-      else {
-        alanguagedifflink.setAttribute('href',
-          "https://www.wikidata.org/wiki/Special:Diff/" +
-          result['revision'].value);
-      }
-
-      atimepermalink = document.createElement("a");
-      if (optimized) {
-        atimepermalink.setAttribute('href',
-          "https://www.wikidata.org/wiki/Special:PermaLink/" +
-          result['revision' + count].value);
-      }
-      else {
-        atimepermalink.setAttribute('href',
-          "https://www.wikidata.org/wiki/Special:PermaLink/" +
-          result['revision'].value);
-      }
-      if (tr == null) {
-        tr = document.createElement("tr");
-        tr.setAttribute('id', time + comment);
-        trMap[time + comment] = tr;
-        td = document.createElement("td");
-        text = document.createTextNode(time);
-        atimepermalink.append(text);
-        td.appendChild(atimepermalink);
-        tr.appendChild(td);
-        newEntry = true;
-      }
-
-      if (optimized) {
-        comment = result['comment' + count].value;
-      }
-      else {
-        comment = result['comment'].value;
-      }
-
-      if (comment.indexOf('wbeditentity-create') != -1) {
-        td = document.createElement("td");
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\* wbeditentity-create:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        comment = comment.replace(" ", "");
-        languageData["labels"].push(comment);
-        text = document.createTextNode(comment);
-        textDiv = document.createElement("div");
-        textDiv.setAttribute('class', "pathlanguage");
-        textDiv.style['background-color'] = '#002171';
-        alanguagedifflink.append(text);
-        textDiv.append(alanguagedifflink);
-        td.appendChild(textDiv);
-        tr.appendChild(td);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        table.appendChild(tr);
-      }
-
-      if (comment.indexOf('special-create-property') != -1) {
-        td = document.createElement("td");
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\* special-create-property:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        comment = comment.replace(" ", "");
-        languageData["labels"].push(comment);
-        text = document.createTextNode(comment);
-        textDiv = document.createElement("div");
-        textDiv.setAttribute('class', "pathlanguage");
-        textDiv.style['background-color'] = '#002171';
-        alanguagedifflink.append(text);
-        textDiv.append(alanguagedifflink);
-        td.appendChild(textDiv);
-        tr.appendChild(td);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        table.appendChild(tr);
-      }
-
-      if (comment.indexOf('wbsetlabel-add') != -1) {
-        td = document.createElement("td");
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\* wbsetlabel-add:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        comment = comment.replace(" ", "");
-        languageData["labels"].push(comment);
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#002171';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[1].appendChild(textDiv);
-        }
-        else {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#002171';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-
-      if (comment.indexOf('wbsetdescription-add') != -1) {
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\*.*wbsetdescription-add:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#002171';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[2].appendChild(textDiv);
-        }
-        else {
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#002171';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-      if (comment.indexOf('wbsetaliases-add-remove') != -1) {
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\*.*wbsetaliases-add-remove:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#0069c0';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[3].appendChild(textDiv);
-        }
-        else {
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#0069c0';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-
-      if (comment.indexOf('wbsetaliases-add') != -1) {
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\*.*wbsetaliases-add:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#002171';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[3].appendChild(textDiv);
-        }
-        else {
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#002171';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-
-      if (comment.indexOf('wbsetlabel-set') != -1) {
-        td = document.createElement("td");
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\* wbsetlabel-set:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        comment = comment.replace(" ", "");
-        languageData["labels"].push(comment);
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#0069c0';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[1].appendChild(textDiv);
-        }
-        else {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#0069c0';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-
-      if (comment.indexOf('wbsetdescription-set') != -1) {
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\*.*wbsetdescription-set:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#0069c0';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[2].appendChild(textDiv);
-        }
-        else {
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#0069c0';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-
-      if (comment.indexOf('wbsetaliases-set') != -1) {
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\*.*wbsetaliases-set:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#0069c0';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[3].appendChild(textDiv);
-        }
-        else {
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = '#0069c0';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-
-      if (comment.indexOf('wbsetlabeldescriptionaliases') != -1) {
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\*.*wbsetlabeldescriptionaliases:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        comment = comment.replace(" ", "");
-        languageData["labels"].push(comment);
-        if (!newEntry) {
-          text1 = document.createTextNode(comment);
-          text2 = document.createTextNode(comment);
-          text3 = document.createTextNode(comment);
-          textDiv1 = document.createElement("div");
-          textDiv2 = document.createElement("div");
-          textDiv3 = document.createElement("div");
-          textDiv1.setAttribute('class', "pathlanguage");
-          textDiv1.style['background-color'] = '#0069c0';
-          textDiv1.append(text1);
-
-          textDiv2.setAttribute('class', "pathlanguage");
-          textDiv2.style['background-color'] = '#0069c0';
-          textDiv2.append(text2);
-
-          textDiv3.setAttribute('class', "pathlanguage");
-          textDiv3.style['background-color'] = '#0069c0';
-          textDiv3.append(text3);
-          tr.children[1].appendChild(textDiv1);
-          tr.children[2].appendChild(textDiv2);
-          tr.children[3].appendChild(textDiv3);
-        }
-        else {
-          text1 = document.createTextNode(comment);
-          text2 = document.createTextNode(comment);
-          text3 = document.createTextNode(comment);
-          textDiv1 = document.createElement("div");
-          textDiv2 = document.createElement("div");
-          textDiv3 = document.createElement("div");
-          textDiv1.setAttribute('class', "pathlanguage");
-          textDiv1.style['background-color'] = '#0069c0';
-          textDiv1.append(text1);
-
-          textDiv2.setAttribute('class', "pathlanguage");
-          textDiv2.style['background-color'] = '#0069c0';
-          textDiv2.append(text2);
-
-          textDiv3.setAttribute('class', "pathlanguage");
-          textDiv3.style['background-color'] = '#0069c0';
-          textDiv3.append(text3);
-
-          td = document.createElement("td");
-          td.appendChild(textDiv1);
-          tr.appendChild(td);
-          td = document.createElement("td");
-          td.appendChild(textDiv2);
-          tr.appendChild(td);
-          td = document.createElement("td");
-          td.appendChild(textDiv3);
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-
-      if (comment.indexOf('wbsetlabel-remove') != -1) {
-        td = document.createElement("td");
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\* wbsetlabel-remove:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = 'red';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[1].appendChild(textDiv);
-        }
-        else {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = 'red';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-
-      if (comment.indexOf('wbsetdescription-remove') != -1) {
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\*.*wbsetdescription-remove:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = 'red';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[2].appendChild(textDiv);
-        }
-        else {
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = 'red';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-
-      if (comment.indexOf('wbsetaliases-remove') != -1) {
-        comment = comment.replace(/\*\/.*/g, '');
-        comment = comment.replace(/\/\*.*wbsetaliases-remove:[0-9]| /, '');
-        comment = comment.replace('|', '');
-        if (!newEntry) {
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = 'red';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          tr.children[3].appendChild(textDiv);
-        }
-        else {
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          tr.appendChild(td);
-          td = document.createElement("td");
-          text = document.createTextNode(comment);
-          textDiv = document.createElement("div");
-          textDiv.setAttribute('class', "pathlanguage");
-          textDiv.style['background-color'] = 'red';
-          alanguagedifflink.append(text);
-          textDiv.append(alanguagedifflink);
-          td.appendChild(textDiv);
-          tr.appendChild(td);
-          table.appendChild(tr);
-        }
-      }
-    }
-  }
-  path.appendChild(table);
-  if (visualization)
-    visualizePath(languageData);
+    path.appendChild(table);
+    if (visualization)
+        visualizePath(languageData);
 }
 
 function getTranslationPathQueryOptimized() {
-  let property = "P3966";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("property=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      property = decodeURIComponent(value[1]);
+    let property = "P3966";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("property=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            property = decodeURIComponent(value[1]);
+        }
     }
-  }
 
 
-  let sparqlQuery = `SELECT * {
+    let sparqlQuery = `SELECT * {
      SERVICE wikibase:mwapi {
       bd:serviceParam wikibase:endpoint "www.wikidata.org" .
       bd:serviceParam wikibase:api "Generator" .
@@ -2281,42 +2262,42 @@ function getTranslationPathQueryOptimized() {
       bd:serviceParam mwapi:grvprop "timestamp|comment" .
       bd:serviceParam mwapi:grvlimit "15".
       bd:serviceParam mwapi:prop  "revisions". `;
-  for (i = 1; i < 16; i++) {
-    sparqlQuery = sparqlQuery +
-      `?time` + i + ` wikibase:apiOutput "revisions/rev[` + i + `]/@timestamp" . 
-         ?comment`+ i + ` wikibase:apiOutput "revisions/rev[` + i + `]/@comment" .
-         ?revision`+ i + ` wikibase:apiOutput "revisions/rev[` + i + `]/@revid" .`;
-  }
-  sparqlQuery = sparqlQuery + `
+    for (i = 1; i < 16; i++) {
+        sparqlQuery = sparqlQuery +
+            `?time` + i + ` wikibase:apiOutput "revisions/rev[` + i + `]/@timestamp" . 
+         ?comment` + i + ` wikibase:apiOutput "revisions/rev[` + i + `]/@comment" .
+         ?revision` + i + ` wikibase:apiOutput "revisions/rev[` + i + `]/@revid" .`;
+    }
+    sparqlQuery = sparqlQuery + `
       }
     }
     order by ?time1
     `;
-  return sparqlQuery;
+    return sparqlQuery;
 }
 
 function getTranslationPathTableOptimized() {
-  sparqlQuery = getTranslationPathQueryOptimized();
-  queryWikidata(sparqlQuery, createDivTranslationPathOptimized, "translationPath");
+    sparqlQuery = getTranslationPathQueryOptimized();
+    queryWikidata(sparqlQuery, createDivTranslationPathOptimized, "translationPath");
 }
 
 function getTranslationPathVizOptimized() {
-  sparqlQuery = getTranslationPathQueryOptimized();
-  queryWikidata(sparqlQuery, createDivTranslationPathVizOptimized, "translationPath");
+    sparqlQuery = getTranslationPathQueryOptimized();
+    queryWikidata(sparqlQuery, createDivTranslationPathVizOptimized, "translationPath");
 }
 
 function getPath() {
-  let property = "P3966";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("property=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      property = decodeURIComponent(value[1]);
+    let property = "P3966";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("property=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            property = decodeURIComponent(value[1]);
+        }
     }
-  }
 
 
-  const sparqlQuery = `
+    const sparqlQuery = `
      SELECT * {
      SERVICE wikibase:mwapi {
       bd:serviceParam wikibase:endpoint "www.wikidata.org" .
@@ -2333,34 +2314,35 @@ function getPath() {
     }
     order by ?time
     `;
-  queryWikidata(sparqlQuery, createDivTranslationPath, "translationPath");
+    queryWikidata(sparqlQuery, createDivTranslationPath, "translationPath");
 }
+
 function createDivReferencesCount(divId, json) {
-  const { head: { vars }, results } = json;
-  let referencesCount = document.getElementById(divId);
-  percentage = parseFloat(results.bindings[0]["percentage"]["value"]).toFixed(2);
-  let percentageDiv = document.createElement("h3");
-  percentageDiv.innerHTML = "Total " +
-    results.bindings[0]["referencecount"]["value"] +
-    " referenced statements from a total of " +
-    results.bindings[0]["statementcount"]["value"] +
-    " statements (" + percentage + "%)";
-  referencesCount.appendChild(percentageDiv);
+    const { head: { vars }, results } = json;
+    let referencesCount = document.getElementById(divId);
+    percentage = parseFloat(results.bindings[0]["percentage"]["value"]).toFixed(2);
+    let percentageDiv = document.createElement("h3");
+    percentageDiv.innerHTML = "Total " +
+        results.bindings[0]["referencecount"]["value"] +
+        " referenced statements from a total of " +
+        results.bindings[0]["statementcount"]["value"] +
+        " statements (" + percentage + "%)";
+    referencesCount.appendChild(percentageDiv);
 }
 
 function getReferencesCount() {
-  let item = "P31";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("property=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      item = decodeURIComponent(value[1]);
+    let item = "P31";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("property=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            item = decodeURIComponent(value[1]);
+        }
     }
-  }
-  let div = document.getElementById("itemCode");
-  div.innerHTML = item;
+    let div = document.getElementById("itemCode");
+    div.innerHTML = item;
 
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT (count(?reference) as ?referencecount ) (count(?statement) as ?statementcount ) (?referencecount*100/?statementcount as ?percentage)
     WITH {
       SELECT ?statement
@@ -2373,22 +2355,22 @@ function getReferencesCount() {
       OPTIONAL{?statement prov:wasDerivedFrom ?reference}
     }
     `;
-  queryWikidata(sparqlQuery, createDivReferencesCount, "referencesCount");
+    queryWikidata(sparqlQuery, createDivReferencesCount, "referencesCount");
 }
 
 function getReferences() {
-  let item = "P31";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("property=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      item = decodeURIComponent(value[1]);
+    let item = "P31";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("property=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            item = decodeURIComponent(value[1]);
+        }
     }
-  }
-  let div = document.getElementById("itemCode");
-  div.innerHTML = item;
+    let div = document.getElementById("itemCode");
+    div.innerHTML = item;
 
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT ?statement ?prop ?reference
     {
       wd:` + item + ` ?prop ?statement.
@@ -2397,236 +2379,210 @@ function getReferences() {
     }
     ORDER by ?statement
     `;
-  queryWikidata(sparqlQuery, createDivReferences, "references");
+    queryWikidata(sparqlQuery, createDivReferences, "references");
 }
 
 function createDivReferences(divId, json) {
-  const { head: { vars }, results } = json;
-  let references = document.getElementById(divId);
-  refs = {};
-  for (const result of results.bindings) {
-    if (result["reference"] != undefined) {
-      if (result['prop'].value in refs) {
-        refs[result['prop'].value] += 1;
-      }
-      else {
-        refs[result['prop'].value] = 1;
-      }
+    const { head: { vars }, results } = json;
+    let references = document.getElementById(divId);
+    refs = {};
+    for (const result of results.bindings) {
+        if (result["reference"] != undefined) {
+            if (result['prop'].value in refs) {
+                refs[result['prop'].value] += 1;
+            } else {
+                refs[result['prop'].value] = 1;
+            }
+        }
     }
-  }
-  let statementTotal = document.createElement("h3");
-  statementTotal.innerHTML = "Total " + Object.keys(refs).length + " reference statements" +
-    " for a total of " + results.bindings.length + " statements";
-  if (results.bindings.length != 0) {
-    statementTotal.innerHTML = statementTotal.innerHTML +
-      " (" + ((Object.keys(refs).length * 100) / results.bindings.length).toFixed(2) + "%)"
-  }
-  references.appendChild(statementTotal);
+    let statementTotal = document.createElement("h3");
+    statementTotal.innerHTML = "Total " + Object.keys(refs).length + " reference statements" +
+        " for a total of " + results.bindings.length + " statements";
+    if (results.bindings.length != 0) {
+        statementTotal.innerHTML = statementTotal.innerHTML +
+            " (" + ((Object.keys(refs).length * 100) / results.bindings.length).toFixed(2) + "%)"
+    }
+    references.appendChild(statementTotal);
 
-  if (Object.keys(refs).length == 0) {
-    return;
-  }
+    if (Object.keys(refs).length == 0) {
+        return;
+    }
 
-  let table = document.createElement("table");
-  let th = document.createElement("tr");
-  let td = document.createElement("th");
-  td.innerHTML = "Property";
-  th.appendChild(td);
-  td = document.createElement("th");
-  td.innerHTML = "Number of statements";
-  th.appendChild(td);
-  table.append(th);
-  data = Object.keys(refs);
-  for (i = 0; i < data.length; i++) {
-    tr = document.createElement("tr");
+    let table = document.createElement("table");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    td.innerHTML = "Property";
+    th.appendChild(td);
+    td = document.createElement("th");
+    td.innerHTML = "Number of statements";
+    th.appendChild(td);
+    table.append(th);
+    data = Object.keys(refs);
+    for (i = 0; i < data.length; i++) {
+        tr = document.createElement("tr");
 
-    td = document.createElement("td");
-    td.setAttribute('class', "property");
-    let a = document.createElement("a");
-    a.setAttribute('href', data[i]);
-    let text = document.createTextNode(data[i].replace("http://www.wikidata.org/prop/", ""));
-    a.append(text);
-    td.appendChild(a);
-    tr.appendChild(td);
+        td = document.createElement("td");
+        td.setAttribute('class', "property");
+        let a = document.createElement("a");
+        a.setAttribute('href', data[i]);
+        let text = document.createTextNode(data[i].replace("http://www.wikidata.org/prop/", ""));
+        a.append(text);
+        td.appendChild(a);
+        tr.appendChild(td);
 
-    td = document.createElement("td");
-    text = null;
-    text = document.createTextNode(refs[data[i]]);
-    td.appendChild(text);
-    tr.appendChild(td);
-    table.appendChild(tr);
+        td = document.createElement("td");
+        text = null;
+        text = document.createTextNode(refs[data[i]]);
+        td.appendChild(text);
+        tr.appendChild(td);
+        table.appendChild(tr);
 
-  }
-  references.appendChild(table);
+    }
+    references.appendChild(table);
 }
 
 function getEquivalentProperties() {
-  let item = "P31";
-  if (window.location.search.length > 0) {
-    let reg = new RegExp("property=([^&#=]*)");
-    let value = reg.exec(window.location.search);
-    if (value != null) {
-      item = decodeURIComponent(value[1]);
+    let item = "P31";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("property=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            item = decodeURIComponent(value[1]);
+        }
     }
-  }
 
-  const sparqlQuery = `
+    const sparqlQuery = `
     SELECT ?equivproperty
     {
-      wd:`+ item + ` wdt:P1628 ?equivproperty
+      wd:` + item + ` wdt:P1628 ?equivproperty
     }
 
     `;
-  queryWikidata(sparqlQuery, createDivExternalLinks, "externalEquivProperties");
+    queryWikidata(sparqlQuery, createDivExternalLinks, "externalEquivProperties");
 }
 
 function createDivExternalLinks(divId, json) {
-  const { head: { vars }, results } = json;
-  let references = document.getElementById(divId);
-  refs = {};
-  let statementTotal = document.createElement("h3");
-  statementTotal.innerHTML = "Total " + results.bindings.length + " equivalent properties on external sources";
-  references.appendChild(statementTotal);
+    const { head: { vars }, results } = json;
+    let references = document.getElementById(divId);
+    refs = {};
+    let statementTotal = document.createElement("h3");
+    statementTotal.innerHTML = "Total " + results.bindings.length + " equivalent properties on external sources";
+    references.appendChild(statementTotal);
 }
 
 function getLinks() {
-  getReferences();
-  getReferencesCount();
-  getEquivalentProperties();
+    getReferences();
+    getReferencesCount();
+    getEquivalentProperties();
 }
-document.onkeydown = function (event) {
-  event = event || window.event;
-  if (event.keyCode == '13') {
-    let search = document.getElementById("headersearchtext").value;
-    window.location = "./search.html?search=" + search;
-    findProperty(event);
-  }
+document.onkeydown = function(event) {
+    event = event || window.event;
+    if (event.keyCode == '13') {
+        let search = document.getElementById("headersearchtext").value;
+        window.location = "./search.html?search=" + search;
+        findProperty(event);
+    }
 }
 
 /* Models*/
 class Language {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class DataType {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class Property {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class PropertyClass {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class PropertyDiscussion {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class Reference {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class WikiProject {
-  constructor() {
-  }
+    constructor() {}
 }
 
 /* View*/
 class LanguageView {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class DataTypeView {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class PropertyView {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class PropertyClassView {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class PropertyDiscussionView {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class ReferenceView {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class SearchView {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class ComparisonView {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class WikiProjectView {
-  constructor() {
-  }
+    constructor() {}
 }
 
 /* Controller*/
 class LanguageController {
-  constructor(model, view) {
-  }
+    constructor(model, view) {}
 }
 
 class DataTypeController {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class PropertyController {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class PropertyClassController {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class PropertyDiscussionController {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class ReferenceController {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class SearchController {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class ComparisonController {
-  constructor() {
-  }
+    constructor() {}
 }
 
 class WikiProjectController {
-  constructor() {
-  }
+    constructor() {}
 }

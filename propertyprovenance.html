@@ -1,69 +1,72 @@
 <!DOCTYPE HTML>
 <html>
+
 <head>
-  <meta charset="utf-8"/>
-  <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
-  <link rel="stylesheet" type="text/css" href="style.css"/>
-  <script type="text/javascript" src="wdprop.js">
-  </script>
+    <meta charset="utf-8" />
+    <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script type="text/javascript" src="wdprop.js">
+    </script>
 </head>
+
 <body onload="getLinks()">
-  <div id="header">
-    <div id="logo"><a href="./index.html">WDProp</a>
-      <span id="subtitle">Everything about Wikidata properties</span>
+    <div id="header">
+        <div id="logo"><a href="./index.html">WDProp</a>
+            <span id="subtitle">Everything about Wikidata properties</span>
+        </div>
+        <div id="headersearch">
+            <form action="./search.html" method="get">
+                <input id="headersearchtext" type="text" name="search" placeholder="Software, heritage" />
+                <button id="headersearchbutton" type="submit" value="Search">Search</button>
+            </form>
+        </div>
     </div>
-    <div id="headersearch">
-      <form action="./search.html" method="get">
-        <input id="headersearchtext" type="text" name="search" placeholder="Software, heritage" />
-        <button id="headersearchbutton" type="submit" value="Search">Search</button>
-      </form>
+    <div id="sidebar">
+        <div id="sidebarlinks">
+            <ul>
+                <li><a href="./languages.html">Languages</a></li>
+                <li><a href="./datatypes.html">Data types</a></li>
+                <li><a href="./properties.html">Properties</a></li>
+                <li><a href="./classes.html">Property Classes</a></li>
+                <li><a href="./provenance.html">Provenance</a></li>
+                <li><a href="./search.html">Search</a></li>
+                <li><a href="./compare.html">Compare</a></li>
+                <li><a href="templates/translated.html">Property Discussion</a></li>
+                <li><a href="./wikiprojects.html">Wikiprojects</a></li>
+                <li><a href="./wdprop.html">About</a> </li>
+            </ul>
+        </div>
     </div>
-  </div>
-  <div id="sidebar">
-   <div id="sidebarlinks">
-     <ul>
-      <li><a href="./languages.html">Languages</a></li>
-      <li><a href="./datatypes.html">Data types</a></li>
-      <li><a href="./properties.html">Properties</a></li>
-      <li><a href="./classes.html">Property Classes</a></li>
-      <li><a href="./provenance.html">Provenance</a></li>
-      <li><a href="./search.html">Search</a></li>
-      <li><a href="./compare.html">Compare</a></li>
-      <li><a href="templates/translated.html">Property Discussion</a></li>
-      <li><a href="./wikiprojects.html">Wikiprojects</a></li>
-      <li><a href="./wdprop.html">About</a> </li>
-     </ul>
+    <div id="content">
+        <div class="section">
+            <h2>Statistics on sources describing <span id="itemCode"></span></h2>
+            <ul>
+                <li><a href="#references">Statements and references</a></li>
+                <li><a href="#externalEquivProperties">Equivalent properties</a></li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>Statements and references</h2>
+            <div id="references"></div>
+            <h3>Query</h3>
+            <div id="referencesQuery"></div>
+        </div>
+        <div class="section">
+            <h2>Count of references</h2>
+            <div id="referencesCount"></div>
+            <h3>Query</h3>
+            <div id="referencesCountQuery"></div>
+        </div>
+        <div class="section">
+            <h2>Equivalent properties</h2>
+            <div id="externalEquivProperties"></div>
+            <h3>Query</h3>
+            <div id="externalEquivPropertiesQuery"></div>
+        </div>
     </div>
-  </div>
-  <div id="content">
-    <div class="section">
-      <h2>Statistics on sources describing <span id="itemCode"></span></h2>
-      <ul>
-        <li><a href="#references">Statements and references</a></li>
-        <li><a href="#externalEquivProperties">Equivalent properties</a></li>
-      </ul>
+    <div id="footer">
+        <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
-    <div class="section">
-      <h2>Statements and references</h2>
-      <div id="references"></div>
-      <h3>Query</h3>
-      <div id="referencesQuery"></div>
-    </div>
-    <div class="section">
-      <h2>Count of references</h2>
-      <div id="referencesCount"></div>
-      <h3>Query</h3>
-      <div id="referencesCountQuery"></div>
-    </div>
-    <div class="section">
-      <h2>Equivalent properties</h2>
-      <div id="externalEquivProperties"></div>
-      <h3>Query</h3>
-      <div id="externalEquivPropertiesQuery"></div>
-    </div>
-  </div>
-  <div id="footer">
-    <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
-  </div>
 </body>
+
 </html>

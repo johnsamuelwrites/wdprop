@@ -1,9 +1,9 @@
 {
-    "name" : "WDProp",
-    "title" : "WDProp: Everything about Wikidata properties",
-    "description" : "Understanding and improving translation of properties",
-    "url" : "https://tools.wmflabs.org/wdprop/index.html",
-    "keywords" : "wikidata, properties, multilingualism",
-    "author" : "John Samuel",
-    "repository" : "https://github.com/johnsamuelwrites/wdprop"
+    "name": "WDProp",
+    "title": "WDProp: Everything about Wikidata properties",
+    "description": "Understanding and improving translation of properties",
+    "url": "https://tools.wmflabs.org/wdprop/index.html",
+    "keywords": "wikidata, properties, multilingualism",
+    "author": "John Samuel",
+    "repository": "https://github.com/johnsamuelwrites/wdprop"
 }
