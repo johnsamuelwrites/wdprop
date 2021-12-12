@@ -363,6 +363,7 @@ function createDivClasses(divId, json) {
     properties.appendChild(total);
 
     let table = document.createElement("table");
+    table.setAttribute("class", "alternate");
     let th = document.createElement("tr");
     let td = document.createElement("th");
     td.innerHTML = "Item";
@@ -499,6 +500,7 @@ function createDivWikiProjects(divId, json) {
     }
 
     let table = document.createElement("table");
+    table.setAttribute("class", "alternate");
     let th = document.createElement("tr");
     let td = document.createElement("th");
     td.innerHTML = "Projects";
