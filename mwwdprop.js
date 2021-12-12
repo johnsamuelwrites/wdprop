@@ -123,6 +123,54 @@ function getTemplateTranslationStatistics() {
         "https://www.wikidata.org/wiki/Template:Comment");
 }
 
+function createDivWikprojectsWithProperty(divId, json) {
+    let wikiprojects = document.getElementById(divId);
+    let total = document.createElement("h3");
+
+    let count = 0;
+    let table = document.createElement("table");
+    table.setAttribute("class", "alternate");
+    let th = document.createElement("tr");
+    let td = document.createElement("th");
+    td.innerHTML = "Projects";
+    th.appendChild(td);
+    table.appendChild(th);
+
+    td = document.createElement("th");
+    td.innerHTML = "Link";
+    th.appendChild(td);
+    table.appendChild(th);
+
+    let tr = "";
+    for (const page of Object.keys(json.query.search)) {
+        if (!json.query.search[page]["title"].startsWith("Wikidata:WikiProject")) {
+            continue;
+        }
+        tr = document.createElement("tr");
+
+        td = document.createElement("td");
+        let a = document.createElement("a");
+        a.setAttribute('href', "https://www.wikidata.org/wiki/" + json.query.search[page]["title"]);
+        let title = json.query.search[page]["title"].replace("Wikidata:WikiProject", "");
+        let text = document.createTextNode(title);
+        a.appendChild(text);
+        td.appendChild(a);
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        let wdproject = document.createElement("a");
+        let link = "wikiproject.html?project=" + json.query.search[page]["title"];
+        wdproject.setAttribute('href', link);
+        text = document.createTextNode(link);
+        wdproject.appendChild(text);
+        td.appendChild(wdproject);
+        tr.appendChild(td);
+        table.appendChild(tr);
+    }
+    wikiprojects.append(table);
+
+}
+
 function createDivWikprojectProperties(divId, json) {
     let properties = document.getElementById(divId);
     let total = document.createElement("h3");
@@ -174,6 +222,14 @@ function createDivPropertyList(divId, json, url) {
 function showWikiProjectProperties(project, divId) {
     var queryparams = "query&prop=links&pllimit=500&origin=*&titles=" + project;
     queryMediaWiki(queryparams, createDivWikprojectProperties,
+        divId,
+        "");
+}
+
+function showWikiProjectsWithProperty(property, divId) {
+    var queryparams = "query&list=search&origin=*&srnamespace=4&srsearch=Wikidata:WikiProject%20haswbstatement=" +
+        property + "&srlimit=500&format=json";
+    queryMediaWiki(queryparams, createDivWikprojectsWithProperty,
         divId,
         "");
 }

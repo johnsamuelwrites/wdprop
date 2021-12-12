@@ -506,6 +506,11 @@ function createDivWikiProjects(divId, json) {
     td.innerHTML = "Projects";
     th.appendChild(td);
     table.appendChild(th);
+
+    td = document.createElement("th");
+    td.innerHTML = "Link";
+    th.appendChild(td);
+    table.appendChild(th);
     let tr = "";
     for (const result of results.bindings) {
         tr = document.createElement("tr");
@@ -513,15 +518,18 @@ function createDivWikiProjects(divId, json) {
         td = document.createElement("td");
         let a = document.createElement("a");
         a.setAttribute('href', "https://www.wikidata.org/wiki/" + result['title'].value);
-        let text = document.createTextNode(result['title'].value.replace("Wikidata:", ""));
+        let title = result['title'].value.replace("Wikidata:WikiProject", "");
+        let text = document.createTextNode(title);
         a.appendChild(text);
         td.appendChild(a);
+        tr.appendChild(td);
+
+        td = document.createElement("td");
         let wdproject = document.createElement("a");
-        wdproject.setAttribute('href', "wikiproject.html?project=" + result['title'].value);
-        let emptytext = document.createTextNode(" ");
-        td.appendChild(emptytext);
-        let wdprojtext = document.createTextNode("(Details)");
-        wdproject.appendChild(wdprojtext);
+        let link = "wikiproject.html?project=" + result['title'].value;
+        wdproject.setAttribute('href', link);
+        text = document.createTextNode(link);
+        wdproject.appendChild(text);
         td.appendChild(wdproject);
         tr.appendChild(td);
         table.appendChild(tr);
@@ -1634,10 +1642,23 @@ function getWikiProjects() {
         offset = Number(offsetString);
     }
 
-    allWikiProjectsQuery = allWikiProjectsQuery.replace("{{limit}}", limit);
-    allWikiProjectsQuery = allWikiProjectsQuery.replace("{{offset}}", offset);
-    const sparqlQuery = allWikiProjectsQuery;
-    queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+    let property = "";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("property=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            property = decodeURIComponent(value[1]);
+        }
+    }
+
+    if (property != "") {
+        showWikiProjectsWithProperty(property, "allWikiProjects")
+    } else {
+        allWikiProjectsQuery = allWikiProjectsQuery.replace("{{limit}}", limit);
+        allWikiProjectsQuery = allWikiProjectsQuery.replace("{{offset}}", offset);
+        const sparqlQuery = allWikiProjectsQuery;
+        queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+    }
 }
 
 function addDivPropertyLabels(divId, wdproperties) {
