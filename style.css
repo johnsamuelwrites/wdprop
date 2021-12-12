@@ -272,7 +272,7 @@ a:visited {
 }
 
 .alternate tr:nth-child(2n) {
-  background-color: #D3D3D3;
+    background-color: #D3D3D3;
 }
 
 img {
