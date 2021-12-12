@@ -1389,65 +1389,55 @@ function getPropertyDetails() {
             property = decodeURIComponent(value[1]);
         }
     }
+
+    let language = "en";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("language=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            language = decodeURIComponent(value[1]);
+        }
+    }
     let div = document.getElementById("propertyCode");
     div.innerHTML = property;
+    fetchWikidataPage(property, language);
 
-    div = document.getElementById("propertyDetails");
-    let table = document.createElement("table");
-    let th = document.createElement("tr");
-    let td = document.createElement("th");
-    td.innerHTML = "Feature";
-    th.appendChild(td);
-    td = document.createElement("th");
-    td.innerHTML = "Value";
-    th.appendChild(td);
-    table.appendChild(th);
-    tr = document.createElement("tr");
-    td = document.createElement("td");
-    td.innerHTML = "Link";
-    tr.appendChild(td);
-    td = document.createElement("td");
-    link = document.createElement("a");
-    link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
-    let text = document.createTextNode("https://www.wikidata.org/entity/" + property);
-    link.appendChild(text);
-    td.appendChild(link)
-    tr.appendChild(td);
-    table.appendChild(tr);
+    link = document.getElementById("wikidatalink");
+    link.setAttribute('href', "https://www.wikidata.org/entity/" + property);
+    link.innerHTML = "https://www.wikidata.org/entity/" + property;
 
-    tr = document.createElement("tr");
-    td = document.createElement("td");
-    td.innerHTML = "Translation Path";
-    tr.appendChild(td);
-    td = document.createElement("td");
-    link = document.createElement("a");
-    link.setAttribute('href', "path.html?property=" + property)
-    text = document.createTextNode("path.html?property=" + property);
-    link.appendChild(text);
 
-    vizlink = document.createElement("a");
-    vizlink.setAttribute('href', "pathviz.html?property=" + property)
-    let viztext = document.createTextNode(" (Visualization: " + property + ") ");
-    vizlink.appendChild(viztext);
-    td.appendChild(link)
-    td.appendChild(vizlink)
-    tr.appendChild(td);
-    table.appendChild(tr);
-    div.appendChild(table);
+    link = document.getElementById("wikidatastatements");
+    link.setAttribute('href', "https://www.wikidata.org/entity/" + property);
+    link.innerHTML = "https://www.wikidata.org/entity/" + property;
 
-    tr = document.createElement("tr");
-    td = document.createElement("td");
-    td.innerHTML = "Provenance information";
-    tr.appendChild(td);
-    td = document.createElement("td");
-    link = document.createElement("a");
-    link.setAttribute('href', "propertyprovenance.html?property=" + property)
-    text = document.createTextNode("provenance.html?property=" + property);
-    link.appendChild(text);
-    td.appendChild(link)
-    tr.appendChild(td);
-    table.appendChild(tr);
-    div.appendChild(table);
+    link = document.getElementById("wikidatawikiprojects");
+    link.setAttribute('href', "wikiprojects.html?property=" + property);
+    link.innerHTML = "wikiprojects.html?property=" + property;
+
+    link = document.getElementById("wikidatatranslationpath");
+    link.setAttribute('href', "path.html?property=" + property);
+    link.innerHTML = "path.html?property=" + property;
+
+    link = document.getElementById("wikidatatranslationpathviz");
+    link.setAttribute('href', "pathviz.html?property=" + property);
+    link.innerHTML = "pathviz.html?property=" + property;
+
+    link = document.getElementById("wikidataprovenance");
+    link.setAttribute('href', "propertyprovenance.html?property=" + property);
+    link.innerHTML = "provenance.html?property=" + property;
+
+    link = document.getElementById("wikidataclass");
+    link.setAttribute('href', "classes.html?property=" + property);
+    link.innerHTML = "classes.html?property=" + property;
+
+    link = document.getElementById("wikidatawikiprojects");
+    link.setAttribute('href', "wikiprojects.html?property=" + property);
+    link.innerHTML = "wikiprojects.html?property=" + property;
+
+    link = document.getElementById("sqidlink");
+    link.setAttribute('href', "https://sqid.toolforge.org/#/view?id=" + property);
+    link.innerHTML = "https://sqid.toolforge.org/#/view?id=" + property;
 
     let sparqlQuery = `
     SELECT DISTINCT ?language

@@ -271,6 +271,10 @@ a:visited {
     color: white;
 }
 
+.alternate tr:nth-child(2n) {
+  background-color: #D3D3D3;
+}
+
 img {
     width: 50vw;
     height: 50vh;

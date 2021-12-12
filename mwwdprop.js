@@ -58,6 +58,49 @@ function createDivLanguage(divId, json, url) {
   languagesDiv.appendChild(languages);
 }
 
+function fetchWikidataPage(property, language) {
+   url = "https://www.wikidata.org/w/api.php?action=parse&page=Property:"+
+		property+
+		"&prop=wikitext&format=json&origin=*";
+   fetch( url, { } ).then( body => body.json() ).then( json => {
+       result = json.parse.wikitext["*"];
+       parsedResult = JSON.parse(result);
+       let aliases = [];
+       if ( language in parsedResult.aliases) {
+         for (let i = 0; i < parsedResult.aliases[language].length; i++) {
+           aliases.push(parsedResult.aliases[language][i]["value"]);
+         }
+      }
+    aliasesString = aliases.join(", ");
+
+    link = document.getElementById("wikidatalabel");
+    link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
+    link.innerHTML = parsedResult.labels[language]["value"];
+
+    link = document.getElementById("wikidatadescription");
+    link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
+    link.innerHTML = parsedResult.descriptions[language]["value"];
+
+    link = document.getElementById("wikidataalias");
+    link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
+    link.innerHTML = aliasesString;
+
+    link = document.getElementById("wikidatadatatype");
+    link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
+    link.innerHTML = parsedResult.datatype;
+
+    link = document.getElementById("wikidatastatements");
+    link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
+    link.innerHTML = String(Object.keys(parsedResult.claims).length);
+
+    link = document.getElementById("wikidataconstraints");
+    link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
+    if ('P2302' in parsedResult.claims) {
+    link.innerHTML = String(Object.keys(parsedResult.claims['P2302']).length);
+    }
+     } );
+}
+
 function getTemplateTranslationStatistics() {
   var queryparams = "parse&page=Template:Support&prop=parsetree&origin=*";
   queryMediaWiki(queryparams, createDivLanguage,
