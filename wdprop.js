@@ -230,6 +230,8 @@ function getValueFromURL(regexp, defaultValue) {
         } else {
             value = defaultValue;
         }
+    } else {
+        value = defaultValue;
     }
     return (value);
 }
@@ -802,24 +804,11 @@ function getProperty(item, language) {
 }
 
 function getClasses() {
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en")
 
-    let property = "";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("property=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            property = decodeURIComponent(value[1]);
-        }
-    }
-    if (property == "") {
+    let property = getValueFromURL("property=([^&#=]*)", "");
+
+    if (property == "" || property == undefined) {
         allClassesQuery = allClassesQuery.replaceAll("{{language}}", language);
         const sparqlQuery = allClassesQuery;
         queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
@@ -832,20 +821,8 @@ function getClasses() {
 }
 
 function getClassProperties() {
-    let language = "en";
-    let item = "Q9143";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-        reg = new RegExp("class=([^&#=]*)");
-        value = reg.exec(window.location.search);
-        if (value != null) {
-            item = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en")
+    let item = getValueFromURL("class=([^&#=]*)", "Q9143")
 
     getProperty(item, language);
 
@@ -878,14 +855,7 @@ function getClassProperties() {
 }
 
 function getMissingPropertyAliases() {
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en")
 
     getLanguage(language);
 
@@ -904,14 +874,7 @@ function getMissingPropertyAliases() {
 }
 
 function getPropertyLabelsNeedingTranslation() {
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en")
 
     getLanguage(language);
 
@@ -963,14 +926,7 @@ function getLanguage(language) {
 }
 
 function getPropertyDescriptionsNeedingTranslation() {
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en")
 
     getLanguage(language);
 
@@ -1010,14 +966,7 @@ function getCountOfTranslatedLabels() {
 }
 
 function getComparisonResultsOnLoad() {
-    let search = "en, fr";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("languages=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            search = decodeURIComponent(value[1]);
-        }
-    }
+    let search = getValueFromURL("languages=([^&#=]*)", "en, fr");
     document.getElementById("languages").value = search;
     search = "('" + search + "')";
     search = search.replace(/ /g, "");
@@ -1027,14 +976,7 @@ function getComparisonResultsOnLoad() {
 
 function getComparisonResultsOnEvent(e, form) {
     e.preventDefault();
-    let search = "en, fr";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("languages=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            search = decodeURIComponent(value[1]);
-        }
-    }
+    let search = getValueFromURL("languages=([^&#=]*)", "en, fr");
     search = "('" + document.getElementById("languages").value + "')";
     search = search.replace(/ /g, "");
     search = search.replace(/,/g, "') ('");
@@ -1117,14 +1059,7 @@ function getComparisonResult(search) {
 }
 
 function getTranslatedLabels() {
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en")
     getLanguage(language);
 
     const sparqlQuery = `
@@ -1141,14 +1076,7 @@ function getTranslatedLabels() {
 }
 
 function getTranslatedDescriptions() {
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en")
     getLanguage(language);
 
     const sparqlQuery = `
@@ -1165,14 +1093,7 @@ function getTranslatedDescriptions() {
 }
 
 function getTranslatedAliases() {
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en")
     getLanguage(language);
 
     const sparqlQuery = `
@@ -1386,7 +1307,7 @@ function getOverallProvenance() {
 }
 
 function getPropertiesForClassRequiringTranslationQuery(propertyClass) {
-    language = getValueFromURL("language=([^&#=]*)", "en")
+    let language = getValueFromURL("language=([^&#=]*)", "en")
     getLanguage(language);
     getProperty(propertyClass, language);
     propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{class}}", propertyClass);
@@ -1402,7 +1323,7 @@ function getPropertiesForClassRequiringTranslationQuery(propertyClass) {
 }
 
 function getSpecifiedPropertiesRequiringTranslation(property) {
-    language = getValueFromURL("language=([^&#=]*)", "en")
+    let language = getValueFromURL("language=([^&#=]*)", "en")
     getLanguage(language);
     specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{property}}", property);
     specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{language}}", language);
@@ -1417,8 +1338,8 @@ function getSpecifiedPropertiesRequiringTranslation(property) {
 }
 
 function getPropertiesNeedingTranslation() {
-    propertyClass = getValueFromURL("class=([^&#=]*)", "");
-    property = getValueFromURL("property=([^&#=]*)", "");
+    let propertyClass = getValueFromURL("class=([^&#=]*)", "");
+    let property = getValueFromURL("property=([^&#=]*)", "");
     if (property != "") {
         getSpecifiedPropertiesRequiringTranslation(property)
     } else if (propertyClass != "") {
@@ -1432,23 +1353,10 @@ function getPropertiesNeedingTranslation() {
 
 
 function getPropertyDetails() {
-    let property = "P31";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("property=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            property = decodeURIComponent(value[1]);
-        }
-    }
+    let property = getValueFromURL("property=([^&#=]*)", "P31");
 
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en");
+
     let div = document.getElementById("propertyCode");
     div.innerHTML = property;
     fetchWikidataPage(property, language);
@@ -1685,16 +1593,9 @@ function getWikiProjects() {
         offset = Number(offsetString);
     }
 
-    let property = "";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("property=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            property = decodeURIComponent(value[1]);
-        }
-    }
+    let property = getValueFromURL("property=([^&#=]*)", "");
 
-    if (property != "") {
+    if (property != undefined && property != "") {
         showWikiProjectsWithProperty(property, "allWikiProjects")
     } else {
         allWikiProjectsQuery = allWikiProjectsQuery.replace("{{limit}}", limit);
@@ -1710,7 +1611,7 @@ function addDivPropertyLabels(divId, wdproperties) {
     const sparqlQuery = propertyLabelsQuery;
     queryWikidata(sparqlQuery, createDivClassProperties, divId);
     let project = getValueFromURL("project=([^&#=]*)", "");
-    if (project != undefined) {
+    if (project != "" && project != undefined) {
         getTranslationStatisticsForWikiProject(wdproperties);
     }
 }
@@ -1726,36 +1627,15 @@ function findWikiProjects(e, form) {
 function findWikiProjectsOnLoad() {
     limit = 500;
     offset = 500;
-    let search = 'heritage';
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("search=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            search = decodeURIComponent(value[1]);
-        }
-    }
+    let search = getValueFromURL("search=([^&#=]*)", "heritage");
     sparqlQuery = getSearchWikiProjectQuery('"' + search + '"');
     document.getElementById("search").value = search;
     queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
 }
 
 function findPropertyOnLoad() {
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
-    let search = '';
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("search=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            search = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en");
+    let search = getValueFromURL("search=([^&#=]*)", "");
 
     if (search == "") {
         return;
@@ -1768,14 +1648,7 @@ function findPropertyOnLoad() {
 
 function findProperty(e) {
     e.preventDefault();
-    let language = "en";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("language=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            language = decodeURIComponent(value[1]);
-        }
-    }
+    let language = getValueFromURL("language=([^&#=]*)", "en");
     let search = '"' + document.getElementById("search").value + '"';
     sparqlQuery = getSearchQuery(language, search);
     queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
@@ -2299,15 +2172,7 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
 }
 
 function getTranslationPathQueryOptimized() {
-    let property = "P3966";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("property=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            property = decodeURIComponent(value[1]);
-        }
-    }
-
+    let property = getValueFromURL("property=([^&#=]*)", "P3966");
 
     let sparqlQuery = `SELECT * {
      SERVICE wikibase:mwapi {
@@ -2343,15 +2208,7 @@ function getTranslationPathVizOptimized() {
 }
 
 function getPath() {
-    let property = "P3966";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("property=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            property = decodeURIComponent(value[1]);
-        }
-    }
-
+    let property = getValueFromURL("property=([^&#=]*)", "P3966");
 
     const sparqlQuery = `
      SELECT * {
@@ -2387,23 +2244,16 @@ function createDivReferencesCount(divId, json) {
 }
 
 function getReferencesCount() {
-    let item = "P31";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("property=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            item = decodeURIComponent(value[1]);
-        }
-    }
+    let property = getValueFromURL("property=([^&#=]*)", "P31");
     let div = document.getElementById("itemCode");
-    div.innerHTML = item;
+    div.innerHTML = property;
 
     const sparqlQuery = `
     SELECT (count(?reference) as ?referencecount ) (count(?statement) as ?statementcount ) (?referencecount*100/?statementcount as ?percentage)
     WITH {
       SELECT ?statement
       {
-        [] p:` + item + ` ?statement
+        [] p:` + property + ` ?statement
       }
     } AS %result
     WHERE {
@@ -2415,21 +2265,14 @@ function getReferencesCount() {
 }
 
 function getReferences() {
-    let item = "P31";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("property=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            item = decodeURIComponent(value[1]);
-        }
-    }
+    let property = getValueFromURL("property=([^&#=]*)", "P31");
     let div = document.getElementById("itemCode");
-    div.innerHTML = item;
+    div.innerHTML = property;
 
     const sparqlQuery = `
     SELECT ?statement ?prop ?reference
     {
-      wd:` + item + ` ?prop ?statement.
+      wd:` + property + ` ?prop ?statement.
       OPTIONAL{?statement prov:wasDerivedFrom ?reference}
       FILTER(REGEX(STR(?statement), "http://www.wikidata.org/entity/statement/"))
     }
@@ -2498,19 +2341,12 @@ function createDivReferences(divId, json) {
 }
 
 function getEquivalentProperties() {
-    let item = "P31";
-    if (window.location.search.length > 0) {
-        let reg = new RegExp("property=([^&#=]*)");
-        let value = reg.exec(window.location.search);
-        if (value != null) {
-            item = decodeURIComponent(value[1]);
-        }
-    }
+    let property = getValueFromURL("property=([^&#=]*)", "P31");
 
     const sparqlQuery = `
     SELECT ?equivproperty
     {
-      wd:` + item + ` wdt:P1628 ?equivproperty
+      wd:` + property + ` wdt:P1628 ?equivproperty
     }
 
     `;
