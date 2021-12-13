@@ -89,7 +89,7 @@ SELECT ?property ?label {
 }
 `;
 
-let allClassesQuery =
+allClassesQuery =
     `PREFIX wikibase: <http://wikiba.se/ontology#>
 SELECT DISTINCT ?item ?label
 {
@@ -113,6 +113,31 @@ SELECT DISTINCT ?item ?label
 }
 ORDER by ?label
 `;
+
+allClassesWithPropertyQuery =
+    `PREFIX wikibase: <http://wikiba.se/ontology#>
+SELECT DISTINCT ?item ?label
+{
+  {
+    SELECT ?item ?label
+    WHERE
+    {
+      ?item wdt:P1963 wd:{{property}}.
+    }
+  }
+  UNION
+  {
+    SELECT ?item ?label
+    WHERE
+    {
+      wd:{{property}} (wdt:P31|wdt:P279) ?item.
+    }
+  }
+  OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="{{language}}").}.
+}
+ORDER by ?label
+`;
+
 
 translationStatisticsForClassQuery =
     `SELECT ?languageCode (SUM(?count) as ?total)
@@ -785,9 +810,24 @@ function getClasses() {
         }
     }
 
-    allClassesQuery = allClassesQuery.replaceAll("{{language}}", language);
-    const sparqlQuery = allClassesQuery;
-    queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
+    let property = "";
+    if (window.location.search.length > 0) {
+        let reg = new RegExp("property=([^&#=]*)");
+        let value = reg.exec(window.location.search);
+        if (value != null) {
+            property = decodeURIComponent(value[1]);
+        }
+    }
+    if (property == "") {
+        allClassesQuery = allClassesQuery.replaceAll("{{language}}", language);
+        const sparqlQuery = allClassesQuery;
+        queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
+    } else {
+        allClassesWithPropertyQuery = allClassesWithPropertyQuery.replaceAll("{{language}}", language);
+        allClassesWithPropertyQuery = allClassesWithPropertyQuery.replaceAll("{{property}}", property);
+        const sparqlQuery = allClassesWithPropertyQuery;
+        queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
+    }
 }
 
 function getClassProperties() {
@@ -1411,6 +1451,8 @@ function getPropertyDetails() {
     let div = document.getElementById("propertyCode");
     div.innerHTML = property;
     fetchWikidataPage(property, language);
+    updateModificationDate(property, language);
+    updateCreationDate(property, language);
 
     link = document.getElementById("wikidatalink");
     link.setAttribute('href', "https://www.wikidata.org/entity/" + property);
