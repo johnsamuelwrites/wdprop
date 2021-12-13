@@ -177,7 +177,6 @@ function updateCreationDate(property, language) {
         "&rvlimit=1&rvprop=timestamp&rvdir=newer" +
         "&origin=*&format=json";
     fetch(url, {}).then(body => body.json()).then(json => {
-        console.log(json.query.pages[Object.keys(json.query.pages)[0]]);
         let creationDate = document.getElementById("wikidatapropertycreationdate");
         creationDate.innerHTML = json.query.pages[Object.keys(json.query.pages)[0]].revisions[0]["timestamp"];
     });
@@ -189,7 +188,6 @@ function updateModificationDate(property, language) {
         "&rvlimit=1&rvprop=timestamp&rvdir=older" +
         "&origin=*&format=json";
     fetch(url, {}).then(body => body.json()).then(json => {
-        console.log(json.query.pages[Object.keys(json.query.pages)[0]]);
         let modificationDate = document.getElementById("wikidatapropertylastmodified");
         modificationDate.innerHTML = json.query.pages[Object.keys(json.query.pages)[0]].revisions[0]["timestamp"];
     });
