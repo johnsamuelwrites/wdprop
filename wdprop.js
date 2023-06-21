@@ -288,7 +288,7 @@ function visualizePath(languageData) {
     //Reference: https://www.d3-graph-gallery.com/graph/arc_basic.html
 
     languages = new Set();
-    languageData["labels"].forEach(function(l) {
+    languageData["labels"].forEach(function (l) {
         languages.add(l);
     });
     languages = Array.from(languages);
@@ -311,7 +311,7 @@ function visualizePath(languageData) {
         .data(languages)
         .enter()
         .append("circle")
-        .attr("cy", function(d) { return (x(d)) })
+        .attr("cy", function (d) { return (x(d)) })
         .attr("cx", 90)
         .attr("r", 4)
         .style("fill", "#00549d");
@@ -319,9 +319,9 @@ function visualizePath(languageData) {
         .data(languages)
         .enter()
         .append("text")
-        .attr("y", function(d) { return (x(d)) })
+        .attr("y", function (d) { return (x(d)) })
         .attr("x", 80)
-        .text(function(d) { return (d) })
+        .text(function (d) { return (d) })
         .style("text-anchor", "end");
 
     // Create links
@@ -338,16 +338,16 @@ function visualizePath(languageData) {
         .data(links)
         .enter()
         .append('path')
-        .attr('d', function(d) {
+        .attr('d', function (d) {
             start = x(d[0]);
             end = x(d[1]);
             arcInflectionPoint = Math.abs(start - end) > 400 ? (start - end) / 1.2 : (start - end) / 2;
             return ['M', 90, start,
-                    'A',
-                    arcInflectionPoint, ',',
-                    arcInflectionPoint, 0, 0, ',',
-                    start < end ? 1 : 0, 90, ',', end
-                ]
+                'A',
+                arcInflectionPoint, ',',
+                arcInflectionPoint, 0, 0, ',',
+                start < end ? 1 : 0, 90, ',', end
+            ]
                 .join(' ');
         })
         .style("fill", "none")
@@ -2367,7 +2367,7 @@ function getLinks() {
     getReferencesCount();
     getEquivalentProperties();
 }
-document.onkeydown = function(event) {
+document.onkeydown = function (event) {
     event = event || window.event;
     if (event.keyCode == '13') {
         let search = document.getElementById("headersearchtext").value;
@@ -2378,103 +2378,103 @@ document.onkeydown = function(event) {
 
 /* Models*/
 class Language {
-    constructor() {}
+    constructor() { }
 }
 
 class DataType {
-    constructor() {}
+    constructor() { }
 }
 
 class Property {
-    constructor() {}
+    constructor() { }
 }
 
 class PropertyClass {
-    constructor() {}
+    constructor() { }
 }
 
 class PropertyDiscussion {
-    constructor() {}
+    constructor() { }
 }
 
 class Reference {
-    constructor() {}
+    constructor() { }
 }
 
 class WikiProject {
-    constructor() {}
+    constructor() { }
 }
 
 /* View*/
 class LanguageView {
-    constructor() {}
+    constructor() { }
 }
 
 class DataTypeView {
-    constructor() {}
+    constructor() { }
 }
 
 class PropertyView {
-    constructor() {}
+    constructor() { }
 }
 
 class PropertyClassView {
-    constructor() {}
+    constructor() { }
 }
 
 class PropertyDiscussionView {
-    constructor() {}
+    constructor() { }
 }
 
 class ReferenceView {
-    constructor() {}
+    constructor() { }
 }
 
 class SearchView {
-    constructor() {}
+    constructor() { }
 }
 
 class ComparisonView {
-    constructor() {}
+    constructor() { }
 }
 
 class WikiProjectView {
-    constructor() {}
+    constructor() { }
 }
 
 /* Controller*/
 class LanguageController {
-    constructor(model, view) {}
+    constructor(model, view) { }
 }
 
 class DataTypeController {
-    constructor() {}
+    constructor() { }
 }
 
 class PropertyController {
-    constructor() {}
+    constructor() { }
 }
 
 class PropertyClassController {
-    constructor() {}
+    constructor() { }
 }
 
 class PropertyDiscussionController {
-    constructor() {}
+    constructor() { }
 }
 
 class ReferenceController {
-    constructor() {}
+    constructor() { }
 }
 
 class SearchController {
-    constructor() {}
+    constructor() { }
 }
 
 class ComparisonController {
-    constructor() {}
+    constructor() { }
 }
 
 class WikiProjectController {
-    constructor() {}
+    constructor() { }
 }

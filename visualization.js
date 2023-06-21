@@ -45,7 +45,7 @@ function visualizePath() {
         .data(languages)
         .enter()
         .append("circle")
-        .attr("cy", function(d) { console.log(x(d)); return (x(d)) })
+        .attr("cy", function (d) { console.log(x(d)); return (x(d)) })
         .attr("cx", 390)
         .attr("r", 4)
         .style("fill", "#00549d");
@@ -54,8 +54,8 @@ function visualizePath() {
         .data(languages)
         .enter()
         .append("text")
-        .attr("y", function(d) { return (x(d)) })
+        .attr("y", function (d) { return (x(d)) })
         .attr("x", 400)
-        .text(function(d) { return (d) })
+        .text(function (d) { return (d) })
         .style("text-anchor", "left");
 }
