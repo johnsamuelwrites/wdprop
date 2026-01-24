@@ -6,7 +6,6 @@
 
 ## Demo
 * [https://wdprop.toolforge.org/](https://wdprop.toolforge.org/)
-* [WDProp (on https://rawgit.com)](https://rawgit.com/johnsamuelwrites/wdprop/master/index.html)
 * [WDProp](http://johnsamuel.info/wdprop/index.html)
 
 ## Features
