@@ -2478,3 +2478,50 @@ class ComparisonController {
 class WikiProjectController {
     constructor() { }
 }
+
+/* Theme Management */
+function toggleTheme() {
+    const body = document.body;
+    const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
+
+    if (currentTheme === 'light') {
+        body.classList.add('dark-theme');
+        localStorage.setItem('wdprop-theme', 'dark');
+    } else {
+        body.classList.remove('dark-theme');
+        localStorage.setItem('wdprop-theme', 'light');
+    }
+}
+
+function loadTheme() {
+    const savedTheme = localStorage.getItem('wdprop-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.body.classList.add('dark-theme');
+    }
+}
+
+function toggleMobileMenu() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('mobile-open');
+}
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+
+    if (sidebar && menuToggle && sidebar.classList.contains('mobile-open')) {
+        if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+            sidebar.classList.remove('mobile-open');
+        }
+    }
+});
+
+// Load theme on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadTheme);
+} else {
+    loadTheme();
+}

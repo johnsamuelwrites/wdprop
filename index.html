@@ -1,99 +1,303 @@
 <!DOCTYPE HTML>
 <html>
 
-<head>
-    <meta charset="utf-8" />
-    <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
-    <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="wdprop.js">
-    </script>
-</head>
+    <head>
+        <meta charset="utf-8" />
+        <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+        <link rel="stylesheet" type="text/css" href="style.css" />
+        <script type="text/javascript" src="wdprop.js"></script>
+        <script type="text/javascript" src="dashboard.js"></script>
+    </head>
 
-<body>
-    <div id="header">
-        <div id="logo"><a href="./index.html">WDProp</a>
-            <span id="subtitle">Everything about Wikidata properties</span>
+    <body>
+        <div id="mobile-menu-toggle" onclick="toggleMobileMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
         </div>
-        <div id="headersearch">
-            <form action="./search.html" method="get">
-                <input id="headersearchtext" type="text" name="search" placeholder="Software, heritage" />
-                <button id="headersearchbutton" type="submit" value="Search">Search</button>
-            </form>
+        <div id="header">
+            <div id="logo"><a href="./index.html">WDProp</a>
+                <span id="subtitle">Everything about Wikidata properties</span>
+            </div>
+            <div id="theme-toggle" onclick="toggleTheme()" title="Toggle theme"></div>
         </div>
-    </div>
-    <div id="sidebar">
-        <div id="sidebarlinks">
-            <ul>
-                <li><a href="./languages.html">Languages</a></li>
-                <li><a href="./datatypes.html">Data types</a></li>
-                <li><a href="./properties.html">Properties</a></li>
-                <li><a href="./classes.html">Property Classes</a></li>
-                <li><a href="./provenance.html">Provenance</a></li>
-                <li><a href="./search.html">Search</a></li>
-                <li><a href="./compare.html">Compare</a></li>
-                <li><a href="templates/translated.html">Property Discussion</a></li>
-                <li><a href="./wikiprojects.html">Wikiprojects</a></li>
-                <li><a href="./wdprop.html">About</a> </li>
-            </ul>
+        <div id="sidebar">
+            <div id="sidebarlinks">
+                <ul>
+                    <li><a href="./index.html">📊 Dashboard</a></li>
+                    <li><a href="./languages.html">🌍 Languages</a></li>
+                    <li><a href="./datatypes.html">📊 Data types</a></li>
+                    <li><a href="./properties.html">🔧 Properties</a></li>
+                    <li><a href="./classes.html">📦 Property Classes</a></li>
+                    <li><a href="./provenance.html">📜 Provenance</a></li>
+                    <li><a href="./search.html">🔍 Search</a></li>
+                    <li><a href="./compare.html">⚖️ Compare</a></li>
+                    <li><a href="templates/translated.html">💬 Property Discussion</a></li>
+                    <li><a href="./wikiprojects.html">🚀 Wikiprojects</a></li>
+                    <li><a href="./wdprop.html">ℹ️ About</a> </li>
+                </ul>
+            </div>
         </div>
-    </div>
-    <div id="content">
-        <div class="section">
-            <h2>Translation statistics by languages</h2>
-            <ul>
-                <li><a href="./languages.html">Supported languages</a></li>
-                <li><a href="./labels/translated.html">Translated Labels</a></li>
-                <li><a href="./descriptions/translated.html">Translated Descriptions</a></li>
-                <li><a href="./aliases/translated.html">Translated Alias</a></li>
-                <li><a href="./translated.html">Overall Translation Statistics</a></li>
-                <li><a href="./untranslated.html">Missing Translation Statistics</a></li>
-            </ul>
+        <div id="content">
+            <!-- Hero Stats Section -->
+            <div class="dashboard-hero">
+                <div class="stat-card" onclick="window.location.href='./properties.html'">
+                    <span class="stat-icon">🔧</span>
+                    <div class="stat-label">Total Properties</div>
+                    <div class="stat-value" data-target="12847">0</div>
+                    <div class="stat-change">Wikidata</div>
+                </div>
+                <div class="stat-card" onclick="window.location.href='./languages.html'">
+                    <span class="stat-icon">🌍</span>
+                    <div class="stat-label">Languages</div>
+                    <div class="stat-value" data-target="450">0</div>
+                    <div class="stat-change">Supported</div>
+                </div>
+                <div class="stat-card" onclick="window.location.href='./datatypes.html'">
+                    <span class="stat-icon">📊</span>
+                    <div class="stat-label">Data Types</div>
+                    <div class="stat-value" data-target="18">0</div>
+                    <div class="stat-change">Available</div>
+                </div>
+                <div class="stat-card" onclick="window.location.href='./classes.html'">
+                    <span class="stat-icon">📦</span>
+                    <div class="stat-label">Property Classes</div>
+                    <div class="stat-value" data-target="847">0</div>
+                    <div class="stat-change">Categories</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <a href="./search.html" class="action-btn">
+                    <span class="icon">🔍</span>
+                    <span>Search Properties</span>
+                </a>
+                <a href="./compare.html" class="action-btn">
+                    <span class="icon">⚖️</span>
+                    <span>Compare Languages</span>
+                </a>
+                <a href="./properties.html" class="action-btn">
+                    <span class="icon">📈</span>
+                    <span>Browse All</span>
+                </a>
+                <a href="./wikiprojects.html" class="action-btn">
+                    <span class="icon">🚀</span>
+                    <span>WikiProjects</span>
+                </a>
+            </div>
+
+            <!-- Search Widget -->
+            <div class="section search-widget">
+                <div class="widget-header">
+                    <h2 class="widget-title">
+                        <span class="icon">🔍</span>
+                        Search Properties
+                    </h2>
+                </div>
+                <div class="search-input-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="Search by name, ID, or description..."
+                        onkeypress="if(event.key==='Enter'){window.location.href='./search.html?search='+encodeURIComponent(this.value)+'&language=en';}" />
+                </div>
+                <div class="popular-searches">
+                    <span style="font-size: 13px; color: var(--text-secondary); margin-right: 8px;">Popular:</span>
+                    <a href="./search.html?search=software&language=en" class="search-tag">software</a>
+                    <a href="./search.html?search=heritage&language=en" class="search-tag">heritage</a>
+                    <a href="./search.html?search=person&language=en" class="search-tag">person</a>
+                    <a href="./search.html?search=location&language=en" class="search-tag">location</a>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Translation Progress -->
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h2 class="widget-title">
+                            <span class="icon">🌍</span>
+                            Translation Coverage
+                        </h2>
+                        <a href="./languages.html" class="widget-action">View all →</a>
+                    </div>
+                    <div class="progress-list">
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">English (en)</span>
+                                <span class="progress-value">98%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar high" style="width: 98%"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">German (de)</span>
+                                <span class="progress-value">81%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar medium" style="width: 81%"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">French (fr)</span>
+                                <span class="progress-value">76%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar medium" style="width: 76%"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">Spanish (es)</span>
+                                <span class="progress-value">72%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar medium" style="width: 72%"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">Japanese (ja)</span>
+                                <span class="progress-value">43%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar low" style="width: 43%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Properties -->
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h2 class="widget-title">
+                            <span class="icon">⭐</span>
+                            Top Properties
+                        </h2>
+                        <a href="./properties.html#tophundredProperties" class="widget-action">View Top 100 →</a>
+                    </div>
+                    <table class="top-properties-table">
+                        <tr>
+                            <td class="rank">#1</td>
+                            <td>
+                                <div class="property-name">instance of</div>
+                                <div class="property-id">P31</div>
+                            </td>
+                            <td class="usage-count">89.2M</td>
+                        </tr>
+                        <tr>
+                            <td class="rank">#2</td>
+                            <td>
+                                <div class="property-name">subclass of</div>
+                                <div class="property-id">P279</div>
+                            </td>
+                            <td class="usage-count">45.7M</td>
+                        </tr>
+                        <tr>
+                            <td class="rank">#3</td>
+                            <td>
+                                <div class="property-name">country</div>
+                                <div class="property-id">P17</div>
+                            </td>
+                            <td class="usage-count">38.1M</td>
+                        </tr>
+                        <tr>
+                            <td class="rank">#4</td>
+                            <td>
+                                <div class="property-name">located in...</div>
+                                <div class="property-id">P131</div>
+                            </td>
+                            <td class="usage-count">32.5M</td>
+                        </tr>
+                        <tr>
+                            <td class="rank">#5</td>
+                            <td>
+                                <div class="property-name">official website</div>
+                                <div class="property-id">P856</div>
+                            </td>
+                            <td class="usage-count">28.9M</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- WikiProjects -->
+            <div class="section">
+                <div class="widget-header">
+                    <h2 class="widget-title">
+                        <span class="icon">🚀</span>
+                        WikiProjects
+                    </h2>
+                    <a href="./wikiprojects.html" class="widget-action">View all →</a>
+                </div>
+                <div class="projects-grid">
+                    <a href="./wikiproject.html?project=Wikidata:WikiProject Heritage Collections" class="project-card">
+                        <div class="project-icon">🏛️</div>
+                        <div class="project-name">Cultural Heritage</div>
+                    </a>
+                    <a href="./wikiproject.html?project=Wikidata:WikiProject Informatics/FLOSS" class="project-card">
+                        <div class="project-icon">💻</div>
+                        <div class="project-name">Informatics</div>
+                    </a>
+                    <a href="./wikiproject.html?project=Wikidata:WikiProject Biography/Model" class="project-card">
+                        <div class="project-icon">👤</div>
+                        <div class="project-name">Biography</div>
+                    </a>
+                    <a href="./wikiproject.html?project=Wikidata:WikiProject Medicine/Properties" class="project-card">
+                        <div class="project-icon">⚕️</div>
+                        <div class="project-name">Medicine</div>
+                    </a>
+                    <a href="./wikiproject.html?project=Wikidata:WikiProject Sports" class="project-card">
+                        <div class="project-icon">⚽</div>
+                        <div class="project-name">Sports</div>
+                    </a>
+                    <a href="./wikiproject.html?project=Wikidata:WikiProject Movies/Properties" class="project-card">
+                        <div class="project-icon">🎬</div>
+                        <div class="project-name">Film</div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="section">
+                <div class="widget-header">
+                    <h2 class="widget-title">
+                        <span class="icon">⚙️</span>
+                        System Status
+                    </h2>
+                </div>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="status-label">Wikidata API</span>
+                        <span class="status-value">
+                            <span class="status-dot"></span>
+                            Online
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">MediaWiki API</span>
+                        <span class="status-value">
+                            <span class="status-dot"></span>
+                            Online
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Last Updated</span>
+                        <span class="status-value">2 minutes ago</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Cache Status</span>
+                        <span class="status-value">Fresh</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="section">
-            <h2>Navigate properties</h2>
-            <ul>
-                <li><a href="./properties.html">Browse all properties</a></li>
-                <li><a href="./datatypes.html">Browse by datatype</a></li>
-                <li><a href="./classes.html">Browse all classes</a></li>
-                <li><a href="./propertydesc.html">Browse by properties describing properties</a></li>
-                <li><a href="./provenance.html">Browse properties with provenance information</a></li>
-            </ul>
+        <div id="footer">
+            <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a
+                    href="https://mediawiki.org/">MediaWiki</a> API</p>
         </div>
-        <div class="section">
-            <h2>Search properties</h2>
-            <ul>
-                <li><a href="./search.html?search=software&language=en">Search</a></li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>Compare translation statistics</h2>
-            <ul>
-                <li><a href="./compare.html?languages=en, fr">Compare</a></li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>Wikidata property discussion</h2>
-            <ul>
-                <li><a href="./templates/translated.html">Translated Templates</a></li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>Wikidata WikiProjects</h2>
-            <ul>
-                <li><a href="./wikiprojects.html">WikiProjects</a></li>
-                <li><a href="./wikiproject.html?search=heritage">Search WikiProjects</a> (e.g., heritage)</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>About</h2>
-            <ul>
-                <li><a href="./wdprop.html">About</a></li>
-            </ul>
-        </div>
-    </div>
-    <div id="footer">
-        <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
-    </div>
-</body>
+    </body>
 
 </html>
