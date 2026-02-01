@@ -392,32 +392,52 @@ tr:hover > td {
     background: var(--bg-primary);
 }
 
+.path {
+    border-collapse: collapse;
+    width: auto;
+}
+
 .path tr>th {
     background-color: #0077c2;
-    font-size: 2vh;
-    line-height: 3vh;
-    text-align: center;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: left;
     color: white;
-    margin: 2vmax;
-    padding: 0.5vmax;
+    padding: 6px 8px;
+    white-space: nowrap;
 }
 
 .path tr>td {
-    font-size: 2vh;
-    line-height: 3vh;
+    font-size: 12px;
+    line-height: 1.4;
     text-align: left;
+    padding: 4px 8px;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.path tr>td:first-child {
+    color: var(--text-secondary);
 }
 
 .pathlanguage {
     background-color: #0077c2;
     color: white;
     text-align: center;
+    display: inline-block;
+    font-size: 11px;
+    line-height: 1.4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin: 1px 2px;
 }
 
 .pathlanguage>a,
 .pathlanguage>a:link,
 .pathlanguage>a:visited {
     color: white;
+    text-decoration: none;
 }
 
 h1 {

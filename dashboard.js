@@ -84,12 +84,19 @@ function getDatatypesCount() {
     });
 }
 
-// Get total count of property classes
+// Get total count of property classes (mirrors allClassesQuery in wdprop.js)
 function getPropertyClassesCount() {
     const query = `PREFIX wikibase: <http://wikiba.se/ontology#>
     SELECT (COUNT(DISTINCT ?item) as ?count)
     WHERE {
-      ?item wdt:P1963 [].
+      {
+        ?item wdt:P1963 [].
+      }
+      UNION
+      {
+        ?property a wikibase:Property;
+                  (wdt:P31|wdt:P279) ?item.
+      }
     }`;
 
     return queryDashboardData(query).then(json => {

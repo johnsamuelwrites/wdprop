@@ -1681,13 +1681,13 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
     td.innerHTML = "Time";
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "L";
+    td.innerHTML = "Labels";
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "D";
+    td.innerHTML = "Descriptions";
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "A";
+    td.innerHTML = "Aliases";
     th.appendChild(td);
     table.append(th);
 
