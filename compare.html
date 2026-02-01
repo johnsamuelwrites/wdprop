@@ -3,10 +3,11 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WDProp: Properties needing translation: John Samuel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WDProp: Compare Languages: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="wdprop.js">
-    </script>
+    <script type="text/javascript" src="wdprop.js"></script>
+    <script type="text/javascript" src="compare.js"></script>
 </head>
 
 <body onload="getComparisonResultsOnLoad()">
@@ -39,30 +40,64 @@
         </div>
     </div>
     <div id="content">
-        <div class="section">
-            <h2>Compare translations among different languages</h2>
-            <form action="./compare.html" onsubmit="getComparisonResultsOnEvent(event, this)">
-                <input id="languages" name="languages" type="text" value="en, fr" />
-                <input type="submit" />
+
+        <!-- Compare Hero -->
+        <div class="compare-hero">
+            <h2 class="compare-hero-title">Compare Languages</h2>
+            <p class="compare-hero-subtitle">Compare translation coverage across Wikidata properties</p>
+
+            <form action="./compare.html" onsubmit="getComparisonResultsOnEvent(event, this)" class="compare-form">
+                <div class="compare-input-wrap">
+                    <span class="compare-input-icon">🌍</span>
+                    <input id="languages" name="languages" type="text" class="compare-field" placeholder="e.g. en, fr, de, es" autocomplete="off" value="en, fr" />
+                    <button type="submit" class="compare-submit-btn">Compare</button>
+                </div>
             </form>
-        </div>
-        <div class="section">
-            <h3>Results</h3>
-            <div id="comparisonResults">
+
+            <div class="compare-examples">
+                <span class="compare-examples-label">Try:</span>
+                <a href="./compare.html?languages=en,fr" class="compare-chip">en, fr</a>
+                <a href="./compare.html?languages=en,fr,de" class="compare-chip">en, fr, de</a>
+                <a href="./compare.html?languages=en,fr,de,es" class="compare-chip">en, fr, de, es</a>
+                <a href="./compare.html?languages=en,fr,de,es,ja" class="compare-chip">en, fr, de, es, ja</a>
+                <a href="./languages.html" class="compare-chip compare-chip-ref">🔍 All language codes</a>
             </div>
         </div>
-        <div class="section">
-            <h3>Examples</h3>
-            <ul>
-                <li><a href="./compare.html?languages=en,fr,de,es">Compare translation statistics of English, French, German, Spanish</a></li>
-            </ul>
+
+        <!-- Hidden: original chip output consumed by compare.js -->
+        <div id="comparisonResults" style="display:none;"></div>
+
+        <!-- Chart area -->
+        <div class="compare-results" id="compareChartArea" style="display:none;">
+
+            <!-- Category tabs -->
+            <div class="compare-tabs">
+                <button class="compare-tab active" id="ctab-labels" onclick="switchCompareTab('labels')">
+                    🏷️ Labels
+                </button>
+                <button class="compare-tab" id="ctab-descriptions" onclick="switchCompareTab('descriptions')">
+                    📝 Descriptions
+                </button>
+                <button class="compare-tab" id="ctab-aliases" onclick="switchCompareTab('aliases')">
+                    🔀 Aliases
+                </button>
+            </div>
+
+            <!-- Chart panels -->
+            <div class="compare-chart-panel active" id="cpanel-labels">
+                <div id="compare-chart-labels" class="compare-chart"></div>
+            </div>
+            <div class="compare-chart-panel" id="cpanel-descriptions">
+                <div id="compare-chart-descriptions" class="compare-chart"></div>
+            </div>
+            <div class="compare-chart-panel" id="cpanel-aliases">
+                <div id="compare-chart-aliases" class="compare-chart"></div>
+            </div>
+
+            <!-- Shareable URL -->
+            <div class="compare-url-row" id="compareURLRow"></div>
         </div>
-        <div class="section">
-            <h3>Get language codes</h3>
-            <ul>
-                <li><a href="./languages.html">Supported languages</a></li>
-            </ul>
-        </div>
+
     </div>
     <div id="footer">
         <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>

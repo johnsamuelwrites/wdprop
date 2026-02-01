@@ -3,6 +3,10 @@ const endpointUrl = 'https://www.wikidata.org/w/api.php';
 function showMediaWikiQuery(fullurl, divId) {
     let queryLink = document.getElementById(divId + "Query");
     if (queryLink != null) {
+        // Clear previous query link before adding the new one
+        while (queryLink.firstChild) {
+            queryLink.removeChild(queryLink.firstChild);
+        }
         let a = document.createElement("a");
         a.setAttribute('href', fullurl);
         let text = document.createTextNode("Run Query using Wikidata Mediawiki API. ");
@@ -13,15 +17,26 @@ function showMediaWikiQuery(fullurl, divId) {
 
 function queryMediaWiki(queryparams, func, divId, url) {
     var div = document.getElementById(divId);
-    var fetchText = document.createElement("h4");
-    fetchText.innerHTML = "Fetching data...";
-    div.append(fetchText);
+
+    // Clear previous contents before showing the loading indicator
+    while (div.firstChild) {
+        div.removeChild(div.firstChild);
+    }
+
+    // Styled loading indicator (matches queryWikidata)
+    var fetchText = document.createElement("div");
+    fetchText.setAttribute("class", "wdprop-loading");
+    fetchText.innerHTML = '<span class="wdprop-loading-spinner"></span> Fetching data\u2026';
+    div.appendChild(fetchText);
 
     fullUrl = endpointUrl + '?action=' + queryparams + "&format=json";
     showMediaWikiQuery(fullUrl, divId);
 
     fetch(fullUrl, {}).then(body => body.json()).then(json => {
-        div.removeChild(fetchText);
+        // Clear loading indicator and any other content before rendering results
+        while (div.firstChild) {
+            div.removeChild(div.firstChild);
+        }
         func(divId, json, url)
     });
 }

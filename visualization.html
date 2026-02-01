@@ -3,13 +3,14 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WDProp: Language Codes: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script src="d3.v5.js"></script>
+    <script type="text/javascript" src="wdprop.js"></script>
     <script src="visualization.js"></script>
 </head>
 
-<body onload="visualizePath()">
+<body onload="initVisualization()">
     <div id="mobile-menu-toggle" onclick="toggleMobileMenu()">
         <span></span>
         <span></span>
@@ -39,10 +40,41 @@
         </div>
     </div>
     <div id="content">
-        <div class="section">
-            <h2>List of Language codes</h2>
+
+        <!-- Hero with search -->
+        <div class="viz-hero">
+            <h2 class="viz-hero-title">Language Codes</h2>
+            <p class="viz-hero-subtitle">All languages supported by Wikidata properties — search by code or name</p>
+            <div class="viz-search-wrap">
+                <span class="viz-search-icon">🔍</span>
+                <input id="viz-search" type="text" class="viz-search-field" placeholder="e.g. French, de, be-tarask…" autocomplete="off" />
+            </div>
         </div>
-        <div id="path"></div>
+
+        <!-- Status / error messages -->
+        <div id="viz-loading" class="wdprop-loading" style="display:block;"></div>
+        <p id="viz-error" class="viz-status viz-status-error" style="display:none;">Failed to fetch data. Please check your connection and try again.</p>
+
+        <!-- Table -->
+        <div class="viz-table-wrapper">
+            <div class="viz-table-header">
+                <span class="viz-table-count">Showing <strong id="viz-count">…</strong> languages</span>
+            </div>
+            <table class="viz-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Language</th>
+                    </tr>
+                </thead>
+                <tbody id="viz-tbody">
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    <div id="footer">
+        <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
 </body>
 

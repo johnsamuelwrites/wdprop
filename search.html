@@ -3,10 +3,10 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WDProp: Properties needing translation: John Samuel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WDProp: Search Properties: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="wdprop.js">
-    </script>
+    <script type="text/javascript" src="wdprop.js"></script>
 </head>
 
 <body onload="findPropertyOnLoad()">
@@ -39,36 +39,142 @@
         </div>
     </div>
     <div id="content">
-        <div class="section">
-            <h2>Search properties</h2>
-            <form action="./search.html" onsubmit="findProperty(event, this)">
-                <input id="search" name="search" type="text" placeholder="Software"></input>
-                <input type="submit" />
-            </form>
+
+        <!-- Search Hero -->
+        <div class="search-hero">
+            <h2 class="search-hero-title">Search</h2>
+            <p class="search-hero-subtitle">Find Wikidata properties or WikiProjects by keyword</p>
+
+            <!-- Tabs -->
+            <div class="search-tabs">
+                <button class="search-tab active" id="tab-properties" onclick="switchSearchTab('properties')">
+                    🔧 Properties
+                </button>
+                <button class="search-tab" id="tab-wikiprojects" onclick="switchSearchTab('wikiprojects')">
+                    🚀 WikiProjects
+                </button>
+            </div>
+
+            <!-- Properties search panel -->
+            <div class="search-panel active" id="panel-properties">
+                <form action="./search.html" onsubmit="findProperty(event, this)" class="search-form">
+                    <div class="search-input-wrap">
+                        <span class="search-input-icon">🔍</span>
+                        <input id="search" name="search" type="text" class="search-field" placeholder="e.g. software, person, location…" autocomplete="off" />
+                        <button type="submit" class="search-submit-btn">Search</button>
+                    </div>
+                </form>
+                <div class="search-examples">
+                    <span class="search-examples-label">Try:</span>
+                    <a href="./search.html?search=software&language=en" class="search-chip">software</a>
+                    <a href="./search.html?search=programming+language&language=en" class="search-chip">programming language</a>
+                    <a href="./search.html?search=person&language=en" class="search-chip">person</a>
+                    <a href="./search.html?search=location&language=en" class="search-chip">location</a>
+                    <a href="./search.html?search=date&language=en" class="search-chip">date</a>
+                </div>
+            </div>
+
+            <!-- WikiProjects search panel -->
+            <div class="search-panel" id="panel-wikiprojects">
+                <form action="./search.html" onsubmit="findWikiProjects(event, this)" class="search-form">
+                    <div class="search-input-wrap">
+                        <span class="search-input-icon">🔍</span>
+                        <input id="searchproject" name="searchproject" type="text" class="search-field" placeholder="e.g. heritage, biology, music…" autocomplete="off" />
+                        <button type="submit" class="search-submit-btn">Search</button>
+                    </div>
+                </form>
+                <div class="search-examples">
+                    <span class="search-examples-label">Try:</span>
+                    <a href="#" class="search-chip" onclick="fillAndSubmitProject('heritage')">heritage</a>
+                    <a href="#" class="search-chip" onclick="fillAndSubmitProject('biology')">biology</a>
+                    <a href="#" class="search-chip" onclick="fillAndSubmitProject('music')">music</a>
+                    <a href="#" class="search-chip" onclick="fillAndSubmitProject('geography')">geography</a>
+                </div>
+            </div>
         </div>
-        <div class="section">
-            <h2>Search Wikiprojects</h2>
-            <form action="./search.html" onsubmit="findWikiProjects(event, this)">
-                <input id="searchproject" name="searchproject" type="text" placeholder="heritage"></input>
-                <input type="submit" />
-            </form>
-        </div>
-        <div class="section">
+
+        <!-- Results -->
+        <div class="section" id="resultsSection" style="display:none;">
             <div id="searchResults"></div>
-            <h3>Query</h3>
-            <div id="searchResultsQuery"></div>
         </div>
-        <div class="section">
-            <h3>Examples</h3>
-            <ul>
-                <li><a href="./search.html?search=software&language=en">Properties to describe software</a></li>
-                <li><a href="./search.html?search=programming language&language=en">Properties to describe programming language</a></li>
-            </ul>
+
+        <!-- Query (collapsed by default) -->
+        <div class="section search-query-section" id="querySection" style="display:none;">
+            <button class="search-query-toggle" onclick="toggleQuerySection()">
+                <span class="search-query-toggle-icon">⚙️</span> Show SPARQL Query
+                <span class="search-query-chevron">▼</span>
+            </button>
+            <div id="searchResultsQuery" class="search-query-body" style="display:none;"></div>
         </div>
+
     </div>
     <div id="footer">
         <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
+
+    <script>
+        function switchSearchTab(tab) {
+            // Update tab buttons
+            document.getElementById('tab-properties').classList.toggle('active', tab === 'properties');
+            document.getElementById('tab-wikiprojects').classList.toggle('active', tab === 'wikiprojects');
+            // Update panels
+            document.getElementById('panel-properties').classList.toggle('active', tab === 'properties');
+            document.getElementById('panel-wikiprojects').classList.toggle('active', tab === 'wikiprojects');
+        }
+
+        function fillAndSubmitProject(value) {
+            event.preventDefault();
+            document.getElementById('searchproject').value = value;
+            let sparqlQuery = getSearchWikiProjectQuery("'" + value + "'");
+            queryWikidata(sparqlQuery, createDivWikiProjects, "searchResults");
+            showResultsSection();
+        }
+
+        function showResultsSection() {
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('querySection').style.display = 'block';
+        }
+
+        function toggleQuerySection() {
+            let body = document.getElementById('searchResultsQuery');
+            let chevron = document.querySelector('.search-query-chevron');
+            let btn = document.querySelector('.search-query-toggle');
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                chevron.textContent = '▲';
+                btn.classList.add('open');
+            } else {
+                body.style.display = 'none';
+                chevron.textContent = '▼';
+                btn.classList.remove('open');
+            }
+        }
+
+        // Wrap findProperty so the results section (containing the spinner)
+        // is revealed BEFORE queryWikidata fires — not only after data arrives.
+        var _origFindProperty = findProperty;
+        findProperty = function(event, form) {
+            showResultsSection();
+            _origFindProperty(event, form);
+        };
+
+        // Same for the on-load path (handles ?search= URL param)
+        var _origFindPropertyOnLoad = findPropertyOnLoad;
+        findPropertyOnLoad = function() {
+            // Only reveal if there's actually a search param pending
+            if (window.location.search.indexOf('search=') !== -1) {
+                showResultsSection();
+            }
+            _origFindPropertyOnLoad();
+        };
+
+        // Wrap findWikiProjects for the WikiProjects tab
+        var _origFindWikiProjects = findWikiProjects;
+        findWikiProjects = function(event, form) {
+            showResultsSection();
+            _origFindWikiProjects(event, form);
+        };
+    </script>
 </body>
 
 </html>

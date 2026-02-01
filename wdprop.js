@@ -240,6 +240,10 @@ function showQuery(sparqlQuery, divId) {
     fullurl = browserendpointurl + encodeURIComponent(sparqlQuery);
     let queryLink = document.getElementById(divId + "Query");
     if (queryLink != null) {
+        // Clear previous query link before adding the new one
+        while (queryLink.firstChild) {
+            queryLink.removeChild(queryLink.firstChild);
+        }
         let a = document.createElement("a");
         a.setAttribute('href', fullurl);
         let text = document.createTextNode("Run Query on Wikidata. ");
@@ -833,16 +837,27 @@ function queryWikidata(sparqlQuery, func, divId) {
      * script generated from Wikidata Query services
      */
     let div = document.getElementById(divId);
-    let fetchText = document.createElement("h4");
-    fetchText.innerHTML = "Fetching data...";
-    div.append(fetchText);
+
+    // Clear previous contents before showing the loading indicator
+    while (div.firstChild) {
+        div.removeChild(div.firstChild);
+    }
+
+    // Styled loading indicator
+    let fetchText = document.createElement("div");
+    fetchText.setAttribute("class", "wdprop-loading");
+    fetchText.innerHTML = '<span class="wdprop-loading-spinner"></span> Fetching data…';
+    div.appendChild(fetchText);
 
     fullUrl = endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json";
     showQuery(sparqlQuery, divId);
     headers = { 'Accept': 'application/sparql-results+json' };
 
     fetch(fullUrl, { headers }).then(body => body.json()).then(json => {
-        div.removeChild(fetchText);
+        // Clear loading indicator and any other content before rendering results
+        while (div.firstChild) {
+            div.removeChild(div.firstChild);
+        }
         func(divId, json)
     });
 }
