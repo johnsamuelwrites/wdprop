@@ -287,73 +287,132 @@ function visualizePath(languageData) {
     //Wikidata supported languages
     //Reference: https://www.d3-graph-gallery.com/graph/arc_basic.html
 
-    languages = new Set();
-    languageData["labels"].forEach(function (l) {
-        languages.add(l);
-    });
-    languages = Array.from(languages);
-    languages.sort();
+    var vizTypes = [
+        { key: "labels", containerId: "pathviz-labels", color: "#1B80CF", emptyMsg: "No label translations recorded." },
+        { key: "descriptions", containerId: "pathviz-descriptions", color: "#E67E22", emptyMsg: "No description translations recorded." },
+        { key: "aliases", containerId: "pathviz-aliases", color: "#27AE60", emptyMsg: "No alias translations recorded." }
+    ];
 
-    let height = languages.length > 50 ? languages.length * 15 : languages.length * 20;
-    let width = 800;
-    let svg = d3.select("#pathviz")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .append("g")
-        .attr("transform",
-            "translate( 10 , 10 )");
-    let x = d3.scalePoint()
-        .range([0, height - 10])
-        .domain(languages);
-    nodes = svg
-        .selectAll("nodes")
-        .data(languages)
-        .enter()
-        .append("circle")
-        .attr("cy", function (d) { return (x(d)) })
-        .attr("cx", 90)
-        .attr("r", 4)
-        .style("fill", "#00549d");
-    svg.selectAll("language")
-        .data(languages)
-        .enter()
-        .append("text")
-        .attr("y", function (d) { return (x(d)) })
-        .attr("x", 80)
-        .text(function (d) { return (d) })
-        .style("text-anchor", "end");
+    vizTypes.forEach(function (viz) {
+        var data = languageData[viz.key];
+        var container = document.getElementById(viz.containerId);
+        if (!container) return;
 
-    // Create links
-    links = [];
-    if (languageData["labels"].length > 1) {
-        links.push([languageData["labels"][0], languageData["labels"][1]]);
-        for (let i = 1; i < languageData["labels"].length - 1; i++) {
-            links.push([languageData["labels"][i], languageData["labels"][i + 1]]);
+        // Show empty message if no data
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p class="pathviz-empty">' + viz.emptyMsg + '</p>';
+            return;
         }
-    }
-    languageData["labels"][0] = languageData["labels"][0].replace(" ", "");
-    slinks = svg
-        .selectAll('links')
-        .data(links)
-        .enter()
-        .append('path')
-        .attr('d', function (d) {
-            start = x(d[0]);
-            end = x(d[1]);
-            arcInflectionPoint = Math.abs(start - end) > 400 ? (start - end) / 1.2 : (start - end) / 2;
-            return ['M', 90, start,
-                'A',
-                arcInflectionPoint, ',',
-                arcInflectionPoint, 0, 0, ',',
-                start < end ? 1 : 0, 90, ',', end
-            ]
-                .join(' ');
-        })
-        .style("fill", "none")
-        .attr("stroke", "#1B80CF");
 
+        // Clean whitespace from entries
+        data = data.map(function (d) { return d.replace(/\s+/g, '').trim(); });
 
+        // Deduplicate and sort for y-axis
+        var languageSet = new Set();
+        data.forEach(function (l) { languageSet.add(l); });
+        var languages = Array.from(languageSet);
+        languages.sort();
+
+        var labelMargin = 0;
+        languages.forEach(function (l) { if (l.length > labelMargin) labelMargin = l.length; });
+        var leftMargin = Math.max(90, labelMargin * 7.5 + 20);
+
+        var height = languages.length > 50 ? languages.length * 15 : languages.length * 20;
+        var width = Math.max(600, leftMargin + 350);
+
+        var svgRoot = d3.select("#" + viz.containerId)
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height + 10);
+
+        // Define arrow marker in defs (must be child of svg, not g)
+        svgRoot.append("defs")
+            .append("marker")
+            .attr("id", "arrowhead-" + viz.key)
+            .attr("viewBox", "0 0 10 10")
+            .attr("refX", 9)
+            .attr("refY", 5)
+            .attr("markerWidth", 5)
+            .attr("markerHeight", 5)
+            .attr("orient", "auto-start-reverse")
+            .append("path")
+            .attr("d", "M 0 0 L 10 5 L 0 10 z")
+            .attr("fill", viz.color);
+
+        var svg = svgRoot.append("g")
+            .attr("transform", "translate(10, 5)");
+
+        var x = d3.scalePoint()
+            .range([0, height - 5])
+            .domain(languages);
+
+        // Draw nodes
+        svg.selectAll("nodes")
+            .data(languages)
+            .enter()
+            .append("circle")
+            .attr("cy", function (d) { return x(d); })
+            .attr("cx", leftMargin)
+            .attr("r", 4)
+            .style("fill", viz.color);
+
+        // Draw language labels
+        svg.selectAll("language")
+            .data(languages)
+            .enter()
+            .append("text")
+            .attr("y", function (d) { return x(d); })
+            .attr("x", leftMargin - 10)
+            .text(function (d) { return d; })
+            .style("text-anchor", "end")
+            .style("font-size", "12px")
+            .style("fill", "var(--text-primary)");
+
+        // Build links from consecutive pairs
+        var links = [];
+        for (var i = 0; i < data.length - 1; i++) {
+            links.push([data[i], data[i + 1]]);
+        }
+
+        // Draw arcs with direction arrows
+        svg.selectAll("links")
+            .data(links)
+            .enter()
+            .append("path")
+            .attr("d", function (d) {
+                var start = x(d[0]);
+                var end = x(d[1]);
+                if (start === end) return null; // Skip self-loops
+                var arcInflectionPoint = Math.abs(start - end) > 400 ? (start - end) / 1.2 : (start - end) / 2;
+                return ['M', leftMargin, start,
+                    'A',
+                    arcInflectionPoint, ',',
+                    arcInflectionPoint, 0, 0, ',',
+                    start < end ? 1 : 0, leftMargin, ',', end
+                ].join(' ');
+            })
+            .style("fill", "none")
+            .attr("stroke", viz.color)
+            .attr("stroke-width", "1.5")
+            .attr("marker-end", "url(#arrowhead-" + viz.key + ")");
+
+        // Add sequence numbers on source nodes (first occurrence index)
+        var firstOccurrence = {};
+        data.forEach(function (d, idx) {
+            if (!(d in firstOccurrence)) firstOccurrence[d] = idx + 1;
+        });
+        svg.selectAll("seq")
+            .data(languages)
+            .enter()
+            .append("text")
+            .attr("y", function (d) { return x(d) - 7; })
+            .attr("x", leftMargin)
+            .text(function (d) { return firstOccurrence[d]; })
+            .style("text-anchor", "middle")
+            .style("font-size", "9px")
+            .style("fill", viz.color)
+            .style("font-weight", "bold");
+    });
 }
 
 function createDivProperties(divId, json) {
@@ -1839,6 +1898,7 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
                 comment = comment.replace(/\*\/.*/g, '');
                 comment = comment.replace(/\/\*.*wbsetdescription-add:[0-9]| /, '');
                 comment = comment.replace('|', '');
+                languageData["descriptions"].push(comment);
                 if (!newEntry) {
                     text = document.createTextNode(comment);
                     textDiv = document.createElement("div");
@@ -1868,6 +1928,7 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
                 comment = comment.replace(/\*\/.*/g, '');
                 comment = comment.replace(/\/\*.*wbsetaliases-add-remove:[0-9]| /, '');
                 comment = comment.replace('|', '');
+                languageData["aliases"].push(comment);
                 if (!newEntry) {
                     text = document.createTextNode(comment);
                     textDiv = document.createElement("div");
@@ -1898,6 +1959,7 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
                 comment = comment.replace(/\*\/.*/g, '');
                 comment = comment.replace(/\/\*.*wbsetaliases-add:[0-9]| /, '');
                 comment = comment.replace('|', '');
+                languageData["aliases"].push(comment);
                 if (!newEntry) {
                     text = document.createTextNode(comment);
                     textDiv = document.createElement("div");
@@ -1960,6 +2022,7 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
                 comment = comment.replace(/\*\/.*/g, '');
                 comment = comment.replace(/\/\*.*wbsetdescription-set:[0-9]| /, '');
                 comment = comment.replace('|', '');
+                languageData["descriptions"].push(comment);
                 if (!newEntry) {
                     text = document.createTextNode(comment);
                     textDiv = document.createElement("div");
@@ -1990,6 +2053,7 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
                 comment = comment.replace(/\*\/.*/g, '');
                 comment = comment.replace(/\/\*.*wbsetaliases-set:[0-9]| /, '');
                 comment = comment.replace('|', '');
+                languageData["aliases"].push(comment);
                 if (!newEntry) {
                     text = document.createTextNode(comment);
                     textDiv = document.createElement("div");
@@ -2022,6 +2086,8 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
                 comment = comment.replace('|', '');
                 comment = comment.replace(" ", "");
                 languageData["labels"].push(comment);
+                languageData["descriptions"].push(comment);
+                languageData["aliases"].push(comment);
                 if (!newEntry) {
                     text1 = document.createTextNode(comment);
                     text2 = document.createTextNode(comment);
@@ -2080,6 +2146,7 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
                 comment = comment.replace(/\*\/.*/g, '');
                 comment = comment.replace(/\/\* wbsetlabel-remove:[0-9]| /, '');
                 comment = comment.replace('|', '');
+                languageData["labels"].push(comment);
                 if (!newEntry) {
                     text = document.createTextNode(comment);
                     textDiv = document.createElement("div");
@@ -2109,6 +2176,7 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
                 comment = comment.replace(/\*\/.*/g, '');
                 comment = comment.replace(/\/\*.*wbsetdescription-remove:[0-9]| /, '');
                 comment = comment.replace('|', '');
+                languageData["descriptions"].push(comment);
                 if (!newEntry) {
                     text = document.createTextNode(comment);
                     textDiv = document.createElement("div");
@@ -2139,6 +2207,7 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
                 comment = comment.replace(/\*\/.*/g, '');
                 comment = comment.replace(/\/\*.*wbsetaliases-remove:[0-9]| /, '');
                 comment = comment.replace('|', '');
+                languageData["aliases"].push(comment);
                 if (!newEntry) {
                     text = document.createTextNode(comment);
                     textDiv = document.createElement("div");
@@ -2508,7 +2577,7 @@ function toggleMobileMenu() {
 }
 
 // Close mobile menu when clicking outside
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('mobile-menu-toggle');
 
