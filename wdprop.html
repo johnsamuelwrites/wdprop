@@ -3,8 +3,10 @@
 
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About WDProp</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
+    <script type="text/javascript" src="wdprop.js"></script>
 </head>
 
 <body vocab="http://schema.org/" typeof="Website">
@@ -37,86 +39,184 @@
         </div>
     </div>
     <div id="content">
-        <div class="section">
-            <h2>About</h2>
-            <p>
-                WDProp provides a visual interface to understanding and improving multilingual and collaborative ontology development on Wikidata. Its goal is to understand different aspects of Wikidata properties, particularly focusing on the translation process. Every
-                property has three major information that requires to be translated: label, description and aliases. A property may have none, some or all of these information in any given language. Properties can be therefore be separated into two categories:
-                translated properties and untranslated properties. A contributor may wish to focus on translating the labels or a particular set of properties. WDProp provides an interface to contributors for finding properties that requires translation.
-            </p>
-            <p>
+
+        <!-- ─── Hero ─── -->
+        <div class="about-hero">
+            <div class="about-hero-inner">
+                <div class="about-hero-logo">WDProp</div>
+                <p class="about-hero-tagline">A visual interface for understanding and improving multilingual property development on Wikidata</p>
+                <div class="about-hero-badges">
+                    <span class="about-badge">🌐 Multilingual</span>
+                    <span class="about-badge">📊 Live Data</span>
+                    <span class="about-badge">🔍 Searchable</span>
+                    <span class="about-badge">📱 Responsive</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── What is WDProp ─── -->
+        <div class="section about-narrative">
+            <div class="about-narrative-content">
+                <p>
+                    Every Wikidata property carries three critical pieces of information that need translation: <strong>labels</strong>, <strong>descriptions</strong>, and <strong>aliases</strong>.
+                    A property may have none, some, or all of these in any given language — making it challenging to track progress across hundreds of languages.
+                </p>
+                <p>
+                    WDProp queries the <a href="https://query.wikidata.org/">Wikidata Query Service</a> in real time to surface live statistics, identify gaps, and guide contributors toward the properties and languages that need attention most.
+                </p>
+            </div>
+            <div class="about-narrative-image">
                 <img src="./images/wdprop.svg" alt="Wikidata Properties" />
-            </p>
-            <p>
-                Wikidata is highly evolving. New properties are being proposed, discussed and created every day. It is highly difficult to know the latest statistics like the total count of properties, datatypes, supported languages etc. unless contributors make queries
-                on the Wikidata query service. WDProp makes use of the query service to provide these statistics related to the properties and other relevant information.
-            </p>
+            </div>
         </div>
+
+        <!-- ─── Features ─── -->
+        <div class="about-features-header">
+            <h2 class="about-section-title">Features</h2>
+        </div>
+        <div class="about-features">
+            <div class="about-feature-card">
+                <span class="about-feature-icon">🌍</span>
+                <h4 class="about-feature-title">Language Coverage</h4>
+                <p class="about-feature-desc">Browse all supported languages and their translation statistics at a glance.</p>
+            </div>
+            <div class="about-feature-card">
+                <span class="about-feature-icon">📊</span>
+                <h4 class="about-feature-title">Translation Stats</h4>
+                <p class="about-feature-desc">Live counts of translated labels, descriptions, and aliases per language.</p>
+            </div>
+            <div class="about-feature-card">
+                <span class="about-feature-icon">🔍</span>
+                <h4 class="about-feature-title">Multilingual Search</h4>
+                <p class="about-feature-desc">Find properties by keyword in any supported language instantly.</p>
+            </div>
+            <div class="about-feature-card">
+                <span class="about-feature-icon">⚖️</span>
+                <h4 class="about-feature-title">Language Compare</h4>
+                <p class="about-feature-desc">Compare translation progress across languages with animated bar charts.</p>
+            </div>
+            <div class="about-feature-card">
+                <span class="about-feature-icon">📦</span>
+                <h4 class="about-feature-title">Property Classes</h4>
+                <p class="about-feature-desc">Navigate properties organised by their class groupings and datatypes.</p>
+            </div>
+            <div class="about-feature-card">
+                <span class="about-feature-icon">📜</span>
+                <h4 class="about-feature-title">Provenance</h4>
+                <p class="about-feature-desc">Trace how translation information flows through property paths.</p>
+            </div>
+            <div class="about-feature-card">
+                <span class="about-feature-icon">🚀</span>
+                <h4 class="about-feature-title">WikiProjects</h4>
+                <p class="about-feature-desc">Discover and explore active WikiProjects related to Wikidata properties.</p>
+            </div>
+            <div class="about-feature-card">
+                <span class="about-feature-icon">🔗</span>
+                <h4 class="about-feature-title">Bookmarkable URLs</h4>
+                <p class="about-feature-desc">Every view supports URL parameters — share or bookmark any search or comparison.</p>
+            </div>
+        </div>
+
+        <!-- ─── Technology ─── -->
+        <div class="section about-tech">
+            <h3 class="about-section-title">Technology</h3>
+            <p class="about-tech-desc">Built with vanilla web technologies — no frameworks or bundlers required. Download the HTML files and run locally on any modern browser.</p>
+            <div class="about-tech-pills">
+                <span class="about-tech-pill">HTML5</span>
+                <span class="about-tech-pill">CSS3</span>
+                <span class="about-tech-pill">JavaScript</span>
+                <span class="about-tech-pill">JSON</span>
+                <span class="about-tech-pill">SPARQL</span>
+                <span class="about-tech-pill">Wikidata API</span>
+                <span class="about-tech-pill">MediaWiki API</span>
+            </div>
+        </div>
+
+        <!-- ─── Conferences ─── -->
         <div class="section">
-            <h3>Features</h3>
-            <p>WDProp provides the following information:</p>
-            <ul>
-                <li>Bookmarkable links</li>
-                <li>List of supported languages</li>
-                <li>Translation statistics of labels, descriptions and aliases of Wikidata properties</li>
-                <li>Missing translation statistics: property labels, descriptions and aliases needing translation</li>
-                <li>Search properties by their labels (multilingual)</li>
-                <li>Compare translation statistics among different languages</li>
-                <li>Navigation of properties by their datatypes and their describing properties</li>
-                <li>View already translated labels, descriptions and aliases in any supported language</li>
-                <li>Translation statistics of property discussion templates</li>
-                <li>Support navigation by classes</li>
-                <li>Improve search results</li>
-                <li>Support search and language parameter in URLs</li>
-                <li>Visualize path of translation and provenance information</li>
-            </ul>
+            <h3 class="about-section-title">Research &amp; Publications</h3>
+            <div class="about-timeline">
+
+                <div class="about-timeline-item">
+                    <div class="about-timeline-year">2021</div>
+                    <div class="about-timeline-content">
+                        <h4 class="about-timeline-title">WDProp: Web Application to Analyse Multilingual Aspects of Wikidata Properties</h4>
+                        <p class="about-timeline-meta">OpenSym 2021 · Madrid · 15–17 September</p>
+                        <a href="https://figshare.com/articles/presentation/WDProp_Web_Application_to_Analyse_Multilingual_Aspects_of_Wikidata_Properties/16641502" class="about-timeline-link">📄 Presentation slides</a>
+                    </div>
+                </div>
+
+                <div class="about-timeline-item">
+                    <div class="about-timeline-year">2018</div>
+                    <div class="about-timeline-content">
+                        <h4 class="about-timeline-title">Analyzing and Visualizing Translation Patterns of Wikidata Properties</h4>
+                        <p class="about-timeline-meta"><a href="http://clef2018.clef-initiative.eu/index.php?page=Pages/accepted_papers.html">CLEF 2018</a> · Avignon, France · Lecture Notes in Computer Science, vol 11018, Springer</p>
+                        <a href="https://link.springer.com/chapter/10.1007%2F978-3-319-98932-7_12" class="about-timeline-link">📖 Read paper</a>
+                    </div>
+                </div>
+
+                <div class="about-timeline-item">
+                    <div class="about-timeline-year">2018</div>
+                    <div class="about-timeline-content">
+                        <h4 class="about-timeline-title">Towards Understanding and Improving Multilingual Collaborative Ontology Development in Wikidata</h4>
+                        <p class="about-timeline-meta">Wiki Workshop 2018 (The Web Conference) · Lyon, France · 24 April</p>
+                        <div class="about-timeline-links">
+                            <a href="http://wikiworkshop.org/2018/#papers" class="about-timeline-link">📄 Paper</a>
+                            <a href="https://doi.org/10.5281/zenodo.1219239" class="about-timeline-link">🌐 Open access</a>
+                            <a href="https://figshare.com/articles/Towards_Understanding_and_Improving_Multilingual_Collaborative_Ontology_Development_in_Wikidata/6171080" class="about-timeline-link">📊 Slides</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="about-timeline-item">
+                    <div class="about-timeline-year">2017</div>
+                    <div class="about-timeline-content">
+                        <h4 class="about-timeline-title">Collaborative Approach to Developing a Multilingual Ontology: A Case Study of Wikidata</h4>
+                        <p class="about-timeline-meta">MTSR 2017 · Communications in Computer and Information Science, vol 755, Springer</p>
+                        <a href="https://link.springer.com/chapter/10.1007%2F978-3-319-70863-8_16" class="about-timeline-link">📖 Read paper</a>
+                    </div>
+                </div>
+
+            </div>
         </div>
+
+        <!-- ─── Demonstrations ─── -->
         <div class="section">
-            <h3>Technologies</h3>
-            <p>WDProp can be tested on any modern browser. It makes use of the basic web technologies in a manner that anybody can download the set of HTML files and test WDProp in a desktop or a mobile environment. It can also be integrated to any server
-                supporting HTML pages. Following are the web technologies used for creating WDProp:
-            </p>
-            <ul>
-                <li>HTML, Javascript, CSS, JSON</li>
-                <li>SPARQL queries</li>
-            </ul>
+            <h3 class="about-section-title">Demonstrations</h3>
+            <div class="about-demo-card">
+                <span class="about-demo-icon">🎤</span>
+                <div class="about-demo-body">
+                    <p class="about-demo-title">How can I contribute to Wikidata properties? Introducing the WDProp tool.</p>
+                    <p class="about-demo-meta"><a href="https://www.mediawiki.org/wiki/Wikimedia_Hackathon_2018/Program#Sunday_20_May_2018">Wikimedia Hackathon 2018</a> · Barcelona · 20 May 2018</p>
+                </div>
+            </div>
         </div>
-        <div class="section">
-            <h3>Conferences</h3>
-            <ul>
-                <li><b>WDProp: Web Application to Analyse Multilingual Aspects of Wikidata Properties</b>, John Samuel, OpenSym 2021, 15-17 September 2021, Madrid (<a href="https://figshare.com/articles/presentation/WDProp_Web_Application_to_Analyse_Multilingual_Aspects_of_Wikidata_Properties/16641502">PDF</a>)</li>
-                <li><b>Analyzing and Visualizing Translation Patterns of Wikidata Properties</b>, John Samuel, <a href="http://clef2018.clef-initiative.eu/index.php?page=Pages/accepted_papers.html">CLEF 2018</a>, Avignon, France, 10-14 September, 2018, Lecture
-                    Notes in Computer Science, vol 11018. Springer, Cham (<a href="https://link.springer.com/chapter/10.1007%2F978-3-319-98932-7_12">Link</a>)</li>
-                <li><b>Towards Understanding and Improving Multilingual Collaborative Ontology Development in Wikidata</b>, John Samuel, Wiki Workshop 2018 (held at The Web Conference 2018), Lyon, France, 24 April 2018 (<a href="http://wikiworkshop.org/2018/#papers">Link</a>,
-                    <a href="http://wikiworkshop.org/2018/papers/wikiworkshop2018_paper_12.pdf">PDF</a>, <a href="https://doi.org/10.5281/zenodo.1219239">Open access</a>, <a href="https://figshare.com/articles/Towards_Understanding_and_Improving_Multilingual_Collaborative_Ontology_Development_in_Wikidata/6171080">Slides</a>)</li>
-                <li><b>Collaborative Approach to Developing a Multilingual Ontology: A Case Study of Wikidata</b>, John Samuel, Metadata and Semantic Research. MTSR 2017. Communications in Computer and Information Science, vol 755. Springer, Cham (<a href="https://link.springer.com/chapter/10.1007%2F978-3-319-70863-8_16">Link</a>)</li>
-            </ul>
+
+        <!-- ─── Source &amp; Team ─── -->
+        <div class="about-bottom-row">
+            <div class="section about-source">
+                <h3 class="about-section-title">Source Code</h3>
+                <a href="https://github.com/johnsamuelwrites/wdprop" class="about-github-btn">
+                    <span class="about-github-icon">🐙</span>
+                    <span>GitHub Repository</span>
+                </a>
+            </div>
+            <div class="section about-team">
+                <h3 class="about-section-title">Team</h3>
+                <div class="about-team-member">
+                    <span class="about-team-avatar">👨‍💻</span>
+                    <span class="about-team-name">John Samuel</span>
+                </div>
+            </div>
+            <div class="section about-ack">
+                <h3 class="about-section-title">Acknowledgements</h3>
+                <ul class="about-ack-list">
+                    <li>🌍 Wikidata community</li>
+                    <li>🛠️ Wikimedia Hackathon 2018</li>
+                </ul>
+            </div>
         </div>
-        <div class="section">
-            <h3>Demonstrations</h3>
-            <ul>
-                <li>How can I contribute to Wikidata properties? Introducing the WDProp tool. <a href="https://www.mediawiki.org/wiki/Wikimedia_Hackathon_2018/Program#Sunday_20_May_2018">Wikimedia Hackathon 2018</a>, Barcelona, 20<sup>th</sup> May, 2018</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h3>Source code</h3>
-            <ul>
-                <li><a href="https://github.com/johnsamuelwrites/wdprop">WDProp on Github</a></li>
-            </ul>
-        </div>
-        <div class="section">
-            <h3>Team</h3>
-            <ul>
-                <li>John Samuel</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h3>Acknowledgements</h3>
-            <ul>
-                <li>Wikidata community</li>
-                <li>Wikimedia Hackathon 2018</li>
-            </ul>
-        </div>
+
     </div>
     <div id="footer">
         <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>

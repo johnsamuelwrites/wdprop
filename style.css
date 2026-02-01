@@ -2104,3 +2104,528 @@ body.dark-theme .viz-search-field:focus {
     font-size: 14px;
     color: var(--text-primary);
 }
+
+/* ─── About page ─── */
+
+/* Hero banner */
+.about-hero {
+    background: var(--header-bg);
+    border-radius: 20px;
+    padding: 56px 40px 48px;
+    margin-bottom: 28px;
+    text-align: center;
+    box-shadow: 0 8px 40px var(--shadow-color);
+    position: relative;
+    overflow: hidden;
+}
+
+/* subtle radial glow behind the logo */
+.about-hero::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.about-hero-inner {
+    position: relative;
+    z-index: 1;
+}
+
+.about-hero-logo {
+    font-size: 52px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.75) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.about-hero-tagline {
+    font-size: 17px;
+    color: rgba(255,255,255,0.85);
+    max-width: 580px;
+    margin: 0 auto 24px;
+    line-height: 1.6;
+}
+
+.about-hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.about-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 20px;
+    color: rgba(255,255,255,0.9);
+    font-size: 13px;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Narrative row: text + image side by side */
+.about-narrative {
+    display: flex;
+    align-items: flex-start;
+    gap: 36px;
+}
+
+.about-narrative-content {
+    flex: 1 1 0;
+}
+
+.about-narrative-content p {
+    margin-bottom: 16px;
+}
+
+.about-narrative-content strong {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.about-narrative-image {
+    flex: 0 0 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.about-narrative-image img {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: contain;
+}
+
+/* Features section header (outside the card) */
+.about-features-header {
+    margin-bottom: 16px;
+}
+
+.about-section-title {
+    color: var(--text-primary);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--accent-color);
+    display: inline-block;
+}
+
+/* Feature grid */
+.about-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+    margin-bottom: 32px;
+}
+
+.about-feature-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 28px 22px 24px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.about-feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-color);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+}
+
+.about-feature-card:hover::before {
+    transform: scaleX(1);
+}
+
+.about-feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 36px var(--shadow-color);
+    border-color: var(--accent-color);
+}
+
+.about-feature-icon {
+    display: block;
+    font-size: 32px;
+    margin-bottom: 14px;
+    filter: grayscale(0.2);
+    transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.about-feature-card:hover .about-feature-icon {
+    filter: grayscale(0);
+    transform: scale(1.12);
+}
+
+.about-feature-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+}
+
+.about-feature-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* Technology pills */
+.about-tech-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+}
+
+.about-tech-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.about-tech-pill {
+    display: inline-block;
+    padding: 7px 18px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent-color);
+    transition: all 0.25s ease;
+}
+
+.about-tech-pill:hover {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+/* Timeline (conferences) */
+.about-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.about-timeline-item {
+    display: flex;
+    gap: 24px;
+    position: relative;
+    padding-bottom: 28px;
+}
+
+.about-timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+/* vertical connector line */
+.about-timeline-item::after {
+    content: '';
+    position: absolute;
+    left: 26px;
+    top: 36px;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-color);
+}
+
+.about-timeline-item:last-child::after {
+    display: none;
+}
+
+.about-timeline-year {
+    flex: 0 0 52px;
+    position: relative;
+    z-index: 1;
+}
+
+.about-timeline-year {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 52px;
+    height: 36px;
+    background: var(--accent-color);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 36px;
+    text-align: center;
+    box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.about-timeline-content {
+    flex: 1 1 0;
+    padding-top: 4px;
+}
+
+.about-timeline-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+
+.about-timeline-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 10px;
+    line-height: 1.5;
+}
+
+.about-timeline-meta a {
+    color: var(--accent-color);
+}
+
+.about-timeline-link {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 4px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    transition: all 0.2s ease;
+    margin-right: 6px;
+}
+
+.about-timeline-link:hover {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+}
+
+.about-timeline-link::after {
+    display: none;
+}
+
+.about-timeline-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* Demo card */
+.about-demo-card {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    padding: 18px 20px;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: all 0.25s ease;
+}
+
+.about-demo-card:hover {
+    border-color: var(--accent-color);
+    transform: translateX(4px);
+}
+
+.about-demo-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+    line-height: 1;
+    padding-top: 2px;
+}
+
+.about-demo-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+
+.about-demo-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.about-demo-meta a {
+    color: var(--accent-color);
+}
+
+/* Bottom row: Source / Team / Acknowledgements */
+.about-bottom-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.about-bottom-row .section {
+    margin-bottom: 0;
+}
+
+/* GitHub CTA */
+.about-github-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 22px;
+    background: var(--accent-color);
+    color: #fff;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 14px var(--shadow-color);
+}
+
+.about-github-btn:link,
+.about-github-btn:visited {
+    color: #fff;
+}
+
+.about-github-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--shadow-color);
+    color: #fff;
+}
+
+.about-github-btn::after {
+    display: none;
+}
+
+.about-github-icon {
+    font-size: 22px;
+}
+
+/* Team member row */
+.about-team-member {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+}
+
+.about-team-avatar {
+    font-size: 32px;
+}
+
+.about-team-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Acknowledgements list */
+.about-ack-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.about-ack-list li {
+    font-size: 15px;
+    color: var(--text-secondary);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0;
+}
+
+.about-ack-list li:last-child {
+    border-bottom: none;
+}
+
+/* ─── About page responsive ─── */
+@media screen and (max-width: 768px) {
+    .about-hero {
+        padding: 40px 24px 36px;
+    }
+
+    .about-hero-logo {
+        font-size: 38px;
+    }
+
+    .about-narrative {
+        flex-direction: column;
+    }
+
+    .about-narrative-image {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 200px;
+        margin: 0 auto;
+    }
+
+    .about-features {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 14px;
+    }
+
+    .about-bottom-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .about-hero {
+        padding: 32px 18px 28px;
+    }
+
+    .about-hero-logo {
+        font-size: 32px;
+    }
+
+    .about-hero-tagline {
+        font-size: 14px;
+    }
+
+    .about-features {
+        grid-template-columns: 1fr;
+    }
+
+    .about-timeline-item {
+        gap: 16px;
+    }
+
+    .about-timeline-year {
+        flex: 0 0 42px;
+        width: 42px;
+        font-size: 12px;
+        height: 32px;
+        line-height: 32px;
+    }
+
+    .about-timeline-item::after {
+        left: 21px;
+        top: 32px;
+    }
+}
