@@ -2629,3 +2629,306 @@ body.dark-theme .viz-search-field:focus {
         top: 32px;
     }
 }
+
+/* ─── Virtual-scroll table (classes.html, wikiprojects.html) ─── */
+
+/* Hero — reuses the same visual language as .viz-hero / .search-hero */
+.vst-hero {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 32px 32px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.vst-hero-title {
+    margin: 0 0 6px;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.vst-hero-subtitle {
+    margin: 0 0 20px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.vst-search-wrap {
+    position: relative;
+}
+
+.vst-search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.vst-search-field {
+    width: 100%;
+    padding: 14px 20px 14px 52px;
+    font-size: 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.vst-search-field::placeholder {
+    color: var(--text-secondary);
+}
+
+.vst-search-field:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+body.dark-theme .vst-search-field:focus {
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+}
+
+/* Table wrapper card */
+.vst-table-wrapper {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+/* Row-count bar */
+.vst-table-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-primary);
+}
+
+.vst-table-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.vst-table-count strong {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+/* Sticky column headers (outside the scroll container so they never scroll) */
+.vst-col-headers {
+    display: flex;
+    background: var(--accent-color);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.vst-col-header {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 20px;
+    flex-shrink: 0;
+}
+
+/* Column widths — id / name columns are fixed; label / intlink columns flex-grow */
+.vst-col-id,
+.vst-cell-id {
+    flex: 0 0 140px;
+}
+
+.vst-col-label,
+.vst-cell-label {
+    flex: 1 1 0;
+    min-width: 0;   /* allow text-overflow: ellipsis to work in flex */
+}
+
+.vst-col-name,
+.vst-cell-name {
+    flex: 0 0 320px;
+}
+
+.vst-col-intlink,
+.vst-cell-intlink {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* Scroll container — fixed height, native scroll */
+.vst-scroll {
+    height: 600px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Thin accent scrollbar */
+.vst-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.vst-scroll::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+.vst-scroll::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 3px;
+}
+
+/* Viewport spacer — JS sets its height to totalRows × rowHeight */
+.vst-scroll-viewport {
+    position: relative;
+    width: 100%;
+}
+
+/* Row container — JS translates this to skip non-visible rows */
+.vst-scroll-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    will-change: transform;
+}
+
+/* Individual rows */
+.vst-row {
+    display: flex;
+    align-items: center;
+    height: 44px;                          /* must match ROW_HEIGHT in JS */
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s ease;
+}
+
+.vst-row:hover {
+    background: var(--bg-primary);
+}
+
+/* Cells */
+.vst-cell {
+    padding: 0 20px;
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+}
+
+/* ID link (classes page) */
+.vst-id-link {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.vst-id-link:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+.vst-id-link::after {
+    display: none;
+}
+
+/* Name link (wikiprojects page) */
+.vst-name-link {
+    color: var(--accent-color);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.vst-name-link:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+.vst-name-link::after {
+    display: none;
+}
+
+/* Internal link (wikiprojects page) */
+.vst-intlink {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.vst-intlink:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+.vst-intlink::after {
+    display: none;
+}
+
+/* ─── Virtual-scroll responsive ─── */
+@media screen and (max-width: 768px) {
+    .vst-scroll {
+        height: 480px;
+    }
+
+    .vst-col-name,
+    .vst-cell-name {
+        flex: 0 0 180px;
+    }
+
+    .vst-col-intlink,
+    .vst-cell-intlink {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .vst-hero {
+        padding: 24px 18px 20px;
+    }
+
+    .vst-hero-title {
+        font-size: 22px;
+    }
+
+    .vst-scroll {
+        height: 400px;
+    }
+
+    .vst-col-id,
+    .vst-cell-id {
+        width: 100px;
+    }
+
+    .vst-col-name,
+    .vst-cell-name {
+        flex: 0 0 140px;
+    }
+
+    .vst-cell {
+        padding: 0 10px;
+        font-size: 13px;
+    }
+
+    .vst-col-header {
+        padding: 10px 10px;
+        font-size: 11px;
+    }
+}

@@ -3,10 +3,11 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WDProp: Property Classes: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="wdprop.js">
-    </script>
+    <script type="text/javascript" src="wdprop.js"></script>
+    <script type="text/javascript" src="classes.js"></script>
 </head>
 
 <body onload="getClasses()">
@@ -39,16 +40,82 @@
         </div>
     </div>
     <div id="content">
-        <div class="section">
-            <h2>Classes</h2>
-            <div id="propertyClasses"> </div>
-            <h2>Query</h2>
-            <div id="propertyClassesQuery"> </div>
+
+        <!-- Hero -->
+        <div class="vst-hero">
+            <h2 class="vst-hero-title">Property Classes</h2>
+            <p class="vst-hero-subtitle">Browse and search all classes that group Wikidata properties</p>
+            <div class="vst-search-wrap">
+                <span class="vst-search-icon">🔍</span>
+                <input id="classes-search" type="text" class="vst-search-field" placeholder="Filter by item ID or class label…" autocomplete="off" />
+            </div>
         </div>
+
+        <!-- Modern table (hidden until data arrives) -->
+        <div id="classes-modern" style="display:none;">
+            <div class="vst-table-wrapper">
+                <div class="vst-table-header">
+                    <span class="vst-table-count">Showing <span id="classes-count">…</span> classes</span>
+                </div>
+                <!-- sticky column headers -->
+                <div class="vst-col-headers">
+                    <div class="vst-col-header vst-col-id">Item</div>
+                    <div class="vst-col-header vst-col-label">Class Label</div>
+                </div>
+                <!-- virtual scroll container -->
+                <div id="classes-scroll" class="vst-scroll">
+                    <div id="classes-scroll-viewport" class="vst-scroll-viewport">
+                        <div id="classes-scroll-container" class="vst-scroll-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Original output (hidden; classes.js parses it then hides it) -->
+        <div id="propertyClasses" style="display:block;"></div>
+
+        <!-- Query section -->
+        <div class="section search-query-section" id="classesQuerySection" style="display:none;">
+            <button class="search-query-toggle" onclick="toggleClassesQuery()">
+                <span class="search-query-toggle-icon">⚙️</span> Show SPARQL Query
+                <span class="search-query-chevron">▼</span>
+            </button>
+            <div id="propertyClassesQuery" class="search-query-body" style="display:none;"></div>
+        </div>
+
     </div>
     <div id="footer">
         <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
+
+    <script>
+        function toggleClassesQuery() {
+            var body     = document.getElementById('propertyClassesQuery');
+            var chevron  = document.querySelector('#classesQuerySection .search-query-chevron');
+            var btn      = document.querySelector('#classesQuerySection .search-query-toggle');
+            var section  = document.getElementById('classesQuerySection');
+            section.style.display = 'block';
+            if (body.style.display === 'none') {
+                body.style.display  = 'block';
+                chevron.textContent = '▲';
+                btn.classList.add('open');
+            } else {
+                body.style.display  = 'none';
+                chevron.textContent = '▼';
+                btn.classList.remove('open');
+            }
+        }
+
+        // Reveal query section once data has loaded (classes.js sets display:block on #classes-modern)
+        var _origGetClasses = getClasses;
+        getClasses = function () {
+            _origGetClasses();
+            // Show query section after a tick so showQuery() has already run
+            setTimeout(function () {
+                document.getElementById('classesQuerySection').style.display = 'block';
+            }, 200);
+        };
+    </script>
 </body>
 
 </html>

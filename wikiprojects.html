@@ -3,10 +3,12 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WDProp: WikiProjects: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript" src="mwwdprop.js"></script>
     <script type="text/javascript" src="wdprop.js"></script>
+    <script type="text/javascript" src="wikiprojects.js"></script>
 </head>
 
 <body onload="getWikiProjects()">
@@ -39,17 +41,81 @@
         </div>
     </div>
     <div id="content">
-        <div class="section">
-            <h2>Wikidata WikiProjects</h2>
-            <div id="allWikiProjects">
-            </div>
-            <div id="allWikiProjectsQuery">
+
+        <!-- Hero -->
+        <div class="vst-hero">
+            <h2 class="vst-hero-title">WikiProjects</h2>
+            <p class="vst-hero-subtitle">Explore all Wikidata WikiProjects and their associated properties</p>
+            <div class="vst-search-wrap">
+                <span class="vst-search-icon">🔍</span>
+                <input id="wp-search" type="text" class="vst-search-field" placeholder="Filter by project name…" autocomplete="off" />
             </div>
         </div>
+
+        <!-- Modern table (hidden until data arrives) -->
+        <div id="wp-modern" style="display:none;">
+            <div class="vst-table-wrapper">
+                <div class="vst-table-header">
+                    <span class="vst-table-count">Showing <span id="wp-count">…</span> projects</span>
+                </div>
+                <!-- sticky column headers -->
+                <div class="vst-col-headers">
+                    <div class="vst-col-header vst-col-name">Project</div>
+                    <div class="vst-col-header vst-col-intlink">Local Link</div>
+                </div>
+                <!-- virtual scroll container -->
+                <div id="wp-scroll" class="vst-scroll">
+                    <div id="wp-scroll-viewport" class="vst-scroll-viewport">
+                        <div id="wp-scroll-container" class="vst-scroll-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Original output (hidden; wikiprojects.js parses it then hides it) -->
+        <div id="allWikiProjects" style="display:block;"></div>
+
+        <!-- Query section -->
+        <div class="section search-query-section" id="wpQuerySection" style="display:none;">
+            <button class="search-query-toggle" onclick="toggleWPQuery()">
+                <span class="search-query-toggle-icon">⚙️</span> Show SPARQL Query
+                <span class="search-query-chevron">▼</span>
+            </button>
+            <div id="allWikiProjectsQuery" class="search-query-body" style="display:none;"></div>
+        </div>
+
     </div>
     <div id="footer">
         <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
+
+    <script>
+        function toggleWPQuery() {
+            var body    = document.getElementById('allWikiProjectsQuery');
+            var chevron = document.querySelector('#wpQuerySection .search-query-chevron');
+            var btn     = document.querySelector('#wpQuerySection .search-query-toggle');
+            var section = document.getElementById('wpQuerySection');
+            section.style.display = 'block';
+            if (body.style.display === 'none') {
+                body.style.display  = 'block';
+                chevron.textContent = '▲';
+                btn.classList.add('open');
+            } else {
+                body.style.display  = 'none';
+                chevron.textContent = '▼';
+                btn.classList.remove('open');
+            }
+        }
+
+        // Reveal query section after data loads
+        var _origGetWP = getWikiProjects;
+        getWikiProjects = function () {
+            _origGetWP();
+            setTimeout(function () {
+                document.getElementById('wpQuerySection').style.display = 'block';
+            }, 200);
+        };
+    </script>
 </body>
 
 </html>
