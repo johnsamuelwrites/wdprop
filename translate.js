@@ -35,6 +35,7 @@ window.WDProp = window.WDProp || {};
     var LANGUAGE_RE = /^[a-z]{2,3}(-[A-Za-z0-9]+)*$/;
     var CLASS_RE = /^Q[0-9]+$/;
     var DATATYPE_RE = /^wikibase:[A-Za-z]+$/;
+    var PROPERTY_LIST_RE = /^P[0-9]+(,P[0-9]+)*$/;
 
     var TERM_PREDICATE = {
         label: "rdfs:label",
@@ -204,6 +205,18 @@ window.WDProp = window.WDProp || {};
                 "  { wd:" + settings.scope.value + " wdt:P1963 ?property. }\n" +
                 "  UNION\n" +
                 "  { ?property rdf:type wikibase:Property; wdt:P31 wd:" + settings.scope.value + ". }\n" +
+                missing +
+                "}";
+        }
+
+        /*
+         * A campaign hands over an explicit list, which is how WikiProject
+         * and hand-picked selections reach the workbench.
+         */
+        if (settings.scope.kind === "properties") {
+            return "PREFIX wikibase: <http://wikiba.se/ontology#>\n" +
+                "SELECT DISTINCT ?property WHERE {\n" +
+                "  VALUES ?property { wd:" + settings.scope.value.split(",").join(" wd:") + " }\n" +
                 missing +
                 "}";
         }
@@ -900,6 +913,9 @@ window.WDProp = window.WDProp || {};
         if (settings.scope.kind === "datatype" && !DATATYPE_RE.test(settings.scope.value)) {
             problems.push("A datatype looks like wikibase:WikibaseItem.");
         }
+        if (settings.scope.kind === "properties" && !PROPERTY_LIST_RE.test(settings.scope.value)) {
+            problems.push("A property list looks like P31,P17,P1476.");
+        }
         return problems;
     }
 
@@ -982,6 +998,7 @@ window.WDProp = window.WDProp || {};
         var type = urlValue("type", "label");
         var scopeClass = urlValue("class", "");
         var scopeDatatype = urlValue("datatype", "");
+        var scopeProperties = urlValue("properties", "");
 
         document.getElementById("wbTarget").value = target;
         document.getElementById("wbPivots").value = pivots;
@@ -995,12 +1012,16 @@ window.WDProp = window.WDProp || {};
         } else if (scopeDatatype) {
             scopeSelect.value = "datatype";
             scopeValue.value = scopeDatatype;
+        } else if (scopeProperties) {
+            scopeSelect.value = "properties";
+            scopeValue.value = scopeProperties;
         }
 
         function updateScopeVisibility() {
             scopeValue.style.display = scopeSelect.value === "all" ? "none" : "";
             scopeValue.setAttribute("placeholder",
-                scopeSelect.value === "datatype" ? "wikibase:WikibaseItem" : "Q18616576");
+                scopeSelect.value === "datatype" ? "wikibase:WikibaseItem" :
+                    scopeSelect.value === "properties" ? "P31,P17,P1476" : "Q18616576");
         }
         scopeSelect.addEventListener("change", updateScopeVisibility);
         updateScopeVisibility();

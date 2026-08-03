@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WDProp: Translation batch: John Samuel</title>
+    <title>WDProp: Translation campaign: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript" src="wdprop.js">
     </script>
@@ -11,9 +11,7 @@
     </script>
     <script type="text/javascript" src="qs.js">
     </script>
-    <script type="text/javascript" src="validate.js">
-    </script>
-    <script type="text/javascript" src="batch.js">
+    <script type="text/javascript" src="campaign.js">
     </script>
 </head>
 
@@ -50,35 +48,40 @@
     </div>
     <div id="content">
         <div class="section">
-            <h2>Translation batch</h2>
-            <p>Translations you have proposed are kept in this browser until you
-                export them. WDProp produces
-                <a href="https://www.wikidata.org/wiki/Help:QuickStatements" target="_blank" rel="noopener">QuickStatements</a>
-                commands, which you run yourself, under your own account.</p>
-            <p class="wdp-muted">To add translations, use the
-                <a href="./translate.html">translation workbench</a>, which lists the
-                properties still missing one. You can also use ＋ next to a property on a
-                <a href="./languages.html">language</a> page, or open a
-                <a href="./properties.html">property</a> and choose
-                <em>Propose a translation</em>.</p>
+            <h2>Translation campaign</h2>
+            <p class="wdp-muted">A language and a set of properties, with how far
+                the translation has got. A campaign is only a link — there is nothing
+                to create and nothing stored: everyone who opens it sees figures
+                measured from Wikidata at that moment. Useful for an edit-a-thon, a
+                course, or dividing work between people.</p>
+            <form id="campaignForm" class="wb-controls">
+                <div class="wb-control">
+                    <label for="cmTarget">Language</label>
+                    <input type="text" id="cmTarget" class="wdp-input wdp-input-small" size="6" autocomplete="off" />
+                </div>
+                <div class="wb-control">
+                    <label for="cmScope">Properties</label>
+                    <select id="cmScope" class="wdp-input">
+                        <option value="class">In a property class</option>
+                        <option value="datatype">With a datatype</option>
+                        <option value="wikiproject">Linked from a WikiProject</option>
+                        <option value="properties">A list I paste</option>
+                    </select>
+                    <input type="text" id="cmScopeValue" class="wdp-input" size="26" autocomplete="off"
+                           placeholder="Q18616576" />
+                </div>
+                <div class="wb-control">
+                    <button type="submit" class="wdp-button wdp-primary">Measure progress</button>
+                </div>
+            </form>
         </div>
         <div class="section">
-            <div id="batchSummary"></div>
-            <div id="batchEntries"></div>
-            <p>
-                <button type="button" id="batchRecheck" class="wdp-button">Check again</button>
-                <button type="button" id="batchClear" class="wdp-button">Empty the batch</button>
-            </p>
+            <div id="campaignHeading"></div>
+            <div id="campaignGoals"></div>
         </div>
         <div class="section">
-            <h2>QuickStatements commands</h2>
-            <p class="wdp-muted">These are the exact edits that will be made. Nothing
-                is sent anywhere until you choose one of the options below.</p>
-            <div id="batchCommands"></div>
-        </div>
-        <div class="section">
-            <h2>Export</h2>
-            <div id="batchExport"></div>
+            <h3>Share this campaign</h3>
+            <div id="campaignShare"></div>
         </div>
     </div>
     <div id="footer">
