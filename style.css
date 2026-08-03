@@ -3673,3 +3673,142 @@ kbd {
     margin-bottom: 10px;
     font-size: 14px;
 }
+
+/* ==========================================================================
+   Contributions, and the workbench's per-property context panel
+   ========================================================================== */
+
+.cn-batch {
+    margin-bottom: 26px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+}
+
+.cn-batch-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.cn-batch-head h3 {
+    margin: 0;
+}
+
+.cn-pill {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cn-pill-live {
+    background: rgba(47, 133, 90, 0.15);
+    color: var(--wdp-ok);
+}
+
+.cn-pill-missing {
+    background: rgba(197, 48, 48, 0.12);
+    color: var(--wdp-danger);
+}
+
+.cn-pill-changed {
+    background: rgba(183, 121, 31, 0.15);
+    color: var(--wdp-warn);
+}
+
+.cn-actions {
+    margin-top: 14px;
+}
+
+tr.cn-live .wdp-value {
+    color: var(--wdp-ok);
+}
+
+tr.cn-missing {
+    background: rgba(197, 48, 48, 0.06);
+}
+
+tr.cn-changed {
+    background: rgba(183, 121, 31, 0.07);
+}
+
+/* Per-property context in the workbench */
+
+.wb-more {
+    margin-top: 12px;
+}
+
+.wb-more > summary {
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.wb-more > summary:hover {
+    color: var(--accent-color);
+}
+
+.wb-more-body {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: var(--bg-primary);
+}
+
+.wb-more-title {
+    margin: 14px 0 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.wb-more-title:first-child {
+    margin-top: 0;
+}
+
+.wb-examples {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.wb-example-item {
+    color: var(--text-secondary);
+}
+
+.wb-constraints,
+.wb-related {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.wb-constraint,
+.wb-related-item {
+    padding: 3px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    font-size: 13px;
+}
+
+.wb-related-item.wb-variant {
+    border-color: var(--accent-color);
+}
+
+.wb-lang-code {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}

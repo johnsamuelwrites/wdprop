@@ -3,13 +3,19 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+    <title>WDProp: My contributions: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="wdprop.js"></script>
+    <script type="text/javascript" src="wdprop.js">
+    </script>
+    <script type="text/javascript" src="cart.js">
+    </script>
+    <script type="text/javascript" src="contributions.js">
+    </script>
+    <script type="text/javascript" src="contributionsview.js">
     </script>
 </head>
 
-<body onload="getDatatypes()">
+<body>
     <div id="mobile-menu-toggle" onclick="toggleMobileMenu()">
         <span></span>
         <span></span>
@@ -43,12 +49,24 @@
     </div>
     <div id="content">
         <div class="section">
-            <h2>Datatypes used in Wikidata properties</h2>
-            <div id="propertyDatatypes">
-            </div>
-            <h3>Query</h3>
-            <div id="propertyDatatypesQuery">
-            </div>
+            <h2>My contributions</h2>
+            <p class="wdp-muted">What you have exported to QuickStatements, and what
+                Wikidata says about it now. WDProp cannot see whether a batch was run,
+                so it simply looks up each proposal and reports what is there.</p>
+            <p class="wdp-muted">A proposal shown as <strong>not there</strong> may mean
+                the batch was never run, that QuickStatements rejected the line, or that
+                the edit was reverted. You can put any of them back in your batch and
+                try again. This history is kept in this browser only.</p>
+        </div>
+        <div class="section">
+            <div id="contributionsSummary"></div>
+            <p>
+                <button type="button" id="contributionsRecheck" class="wdp-button">Check again</button>
+                <button type="button" id="contributionsClear" class="wdp-button">Forget all history</button>
+            </p>
+        </div>
+        <div class="section">
+            <div id="contributionsBatches"></div>
         </div>
     </div>
     <div id="footer">

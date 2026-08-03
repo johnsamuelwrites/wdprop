@@ -26,6 +26,8 @@
 * Propose translations of property labels, descriptions and aliases, and export them as [QuickStatements](https://www.wikidata.org/wiki/Help:QuickStatements) commands (human-driven)
 * Translation workbench: work through the properties still missing a translation, with their meaning shown in the languages you read and the terminology already used in your language
 * Translation campaigns: a shareable link pairing a language with a set of properties (a class, a datatype, a WikiProject or a list), showing live progress for labels, descriptions and aliases
+* Per-property context while translating: real usage examples, property constraints, and the same label in related languages and variants
+* Contributions: what you exported to QuickStatements, checked back against Wikidata, with anything that never arrived put back into your batch
 
 ## Author
 * John Samuel

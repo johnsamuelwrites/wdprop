@@ -177,6 +177,17 @@ window.WDProp = window.WDProp || {};
         container.appendChild(pre);
     }
 
+    /*
+     * Records what left WDProp so the contributions page can look it up later.
+     * All three routes record: which one the translator used says nothing about
+     * what they intend to run.
+     */
+    function recordExport(entries) {
+        if (WDProp.contributions) {
+            WDProp.contributions.record(entries);
+        }
+    }
+
     function renderExport() {
         var container = document.getElementById("batchExport");
         clear(container);
@@ -193,6 +204,9 @@ window.WDProp = window.WDProp || {};
             open.setAttribute("href", link.url);
             open.setAttribute("target", "_blank");
             open.setAttribute("rel", "noopener");
+            open.addEventListener("click", function () {
+                recordExport(entries);
+            });
             container.appendChild(open);
         } else {
             var note = element("p", "wdp-message wdp-warning");
@@ -211,6 +225,7 @@ window.WDProp = window.WDProp || {};
         var copy = element("button", "wdp-button", "Copy commands");
         copy.setAttribute("type", "button");
         copy.addEventListener("click", function () {
+            recordExport(entries);
             WDProp.qs.copy(WDProp.qs.batchText(entries)).then(function () {
                 copy.textContent = "Copied";
                 setTimeout(function () {
@@ -225,6 +240,7 @@ window.WDProp = window.WDProp || {};
         var save = element("button", "wdp-button", "Download .txt");
         save.setAttribute("type", "button");
         save.addEventListener("click", function () {
+            recordExport(entries);
             WDProp.qs.download(entries, "wdprop-quickstatements.txt");
         });
         container.appendChild(save);
@@ -236,7 +252,11 @@ window.WDProp = window.WDProp || {};
         helpLink.setAttribute("target", "_blank");
         helpLink.setAttribute("rel", "noopener");
         help.appendChild(helpLink);
-        help.appendChild(document.createTextNode("."));
+        help.appendChild(document.createTextNode(". Afterwards, "));
+        var mine = element("a", null, "your contributions");
+        mine.setAttribute("href", "contributions.html");
+        help.appendChild(mine);
+        help.appendChild(document.createTextNode(" shows what arrived."));
         container.appendChild(help);
     }
 

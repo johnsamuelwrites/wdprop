@@ -76,6 +76,7 @@ window.WDProp = window.WDProp || {};
         entities: {},
         glossary: null,
         glossaryStatus: "idle",
+        context: {},
         showSkipped: false,
         added: 0,
         skippedThisSession: 0
@@ -564,6 +565,210 @@ window.WDProp = window.WDProp || {};
         }
     }
 
+    /* ------------------------------------------------- per-property context */
+
+    /*
+     * Languages close enough that a translator who reads one often reads
+     * another, and that share vocabulary worth comparing. A rough grouping,
+     * used only to decide what to offer as further reading.
+     */
+    var LANGUAGE_FAMILIES = [
+        ["hi", "mr", "ne", "sa", "bho", "mai", "gu", "pa", "bn", "as", "or", "sd", "si"],
+        ["ta", "te", "kn", "ml"],
+        ["es", "pt", "ca", "gl", "it", "fr", "ro", "oc", "an", "ast"],
+        ["de", "nl", "da", "sv", "nb", "nn", "is", "af", "lb", "fy"],
+        ["ru", "uk", "be", "pl", "cs", "sk", "bg", "mk", "sr", "hr", "bs", "sl"],
+        ["ar", "he", "am", "ti", "mt", "arz", "ary"],
+        ["tr", "az", "kk", "ky", "uz", "tt", "ba", "tk"],
+        ["id", "ms", "jv", "su", "tl", "ceb", "war"],
+        ["fi", "et", "hu"],
+        ["zh", "yue", "wuu", "nan", "hak"],
+        ["sw", "zu", "xh", "yo", "ig", "ha", "am"]
+    ];
+
+    function relatedLanguages(target) {
+        var base = String(target || "").toLowerCase().split("-")[0];
+        var related = [];
+        LANGUAGE_FAMILIES.forEach(function (family) {
+            if (family.indexOf(base) !== -1) {
+                family.forEach(function (code) {
+                    if (code !== base && related.indexOf(code) === -1) {
+                        related.push(code);
+                    }
+                });
+            }
+        });
+        return related;
+    }
+
+    /*
+     * A handful of real statements. The inner LIMIT keeps this bounded on
+     * properties used millions of times; without it the query service walks
+     * the whole set before discarding it.
+     */
+    function fetchExamples(property) {
+        var languages = state.pivots.concat(["en"]).join(",");
+        var query = "SELECT ?itemLabel ?value ?valueLabel WHERE {\n" +
+            "  { SELECT ?item ?value WHERE { ?item wdt:" + property + " ?value. } LIMIT 4 }\n" +
+            '  SERVICE wikibase:label { bd:serviceParam wikibase:language "' + languages + '". }\n' +
+            "}";
+
+        return sparql(query).then(function (json) {
+            return json.results.bindings.map(function (b) {
+                var value = b.valueLabel ? b.valueLabel.value :
+                    (b.value ? b.value.value.replace("http://www.wikidata.org/entity/", "") : "");
+                return {
+                    item: b.itemLabel ? b.itemLabel.value : "",
+                    value: value
+                };
+            }).filter(function (example) {
+                return example.item && example.value;
+            });
+        });
+    }
+
+    /* What the property is required to look like, which a description must respect. */
+    function fetchConstraints(property) {
+        var languages = state.pivots.concat(["en"]).join(",");
+        var query = "SELECT ?constraintLabel WHERE {\n" +
+            "  wd:" + property + " p:P2302 ?statement.\n" +
+            "  ?statement ps:P2302 ?constraint.\n" +
+            '  SERVICE wikibase:label { bd:serviceParam wikibase:language "' + languages + '". }\n' +
+            "}";
+
+        return sparql(query).then(function (json) {
+            var counts = {};
+            json.results.bindings.forEach(function (b) {
+                if (b.constraintLabel) {
+                    counts[b.constraintLabel.value] = (counts[b.constraintLabel.value] || 0) + 1;
+                }
+            });
+            return Object.keys(counts).map(function (name) {
+                return { name: name, count: counts[name] };
+            }).sort(function (a, b) {
+                return b.count - a.count;
+            });
+        });
+    }
+
+    /*
+     * Every label the property has, so the ones in languages close to the
+     * target can be offered. Asked for without a language filter, which is a
+     * single small request.
+     */
+    function fetchRelatedLabels(property) {
+        var url = API + "?action=wbgetentities" +
+            "&ids=" + encodeURIComponent(property) +
+            "&props=labels&format=json&origin=*";
+
+        return fetch(url).then(function (r) {
+            return r.json();
+        }).then(function (json) {
+            var entity = json.entities && json.entities[property];
+            var labels = (entity && entity.labels) || {};
+            var base = state.target.toLowerCase().split("-")[0];
+            var neighbours = relatedLanguages(state.target);
+            var found = [];
+
+            Object.keys(labels).forEach(function (code) {
+                var codeBase = code.toLowerCase().split("-")[0];
+                if (code === state.target || state.pivots.indexOf(code) !== -1) {
+                    return;
+                }
+                var isVariant = codeBase === base;
+                if (isVariant || neighbours.indexOf(codeBase) !== -1) {
+                    found.push({ code: code, value: labels[code].value, variant: isVariant });
+                }
+            });
+
+            /* Variants of the target language first: they are the closest. */
+            return found.sort(function (a, b) {
+                return (b.variant ? 1 : 0) - (a.variant ? 1 : 0);
+            }).slice(0, 8);
+        });
+    }
+
+    function renderContextPanel(box, property) {
+        clear(box);
+        var loading = element("div", "wdprop-loading");
+        loading.innerHTML = '<span class="wdprop-loading-spinner"></span> Looking this property up…';
+        box.appendChild(loading);
+
+        var cached = state.context[property];
+        var pending = cached ? Promise.resolve(cached) : Promise.all([
+            fetchExamples(property).catch(function () {
+                return null;
+            }),
+            fetchConstraints(property).catch(function () {
+                return null;
+            }),
+            fetchRelatedLabels(property).catch(function () {
+                return null;
+            })
+        ]).then(function (results) {
+            state.context[property] = {
+                examples: results[0],
+                constraints: results[1],
+                related: results[2]
+            };
+            return state.context[property];
+        });
+
+        pending.then(function (context) {
+            clear(box);
+
+            function section(title, contents) {
+                if (!contents) {
+                    return;
+                }
+                box.appendChild(element("h4", "wb-more-title", title));
+                box.appendChild(contents);
+            }
+
+            if (context.examples && context.examples.length) {
+                var list = element("ul", "wb-examples");
+                context.examples.forEach(function (example) {
+                    var item = element("li");
+                    item.appendChild(element("span", "wb-example-item", example.item));
+                    item.appendChild(document.createTextNode(" → "));
+                    item.appendChild(element("strong", null, example.value));
+                    list.appendChild(item);
+                });
+                section("Used like this", list);
+            } else if (context.examples) {
+                section("Used like this", element("p", "wdp-muted", "No statements use this property yet."));
+            }
+
+            if (context.constraints && context.constraints.length) {
+                var rules = element("div", "wb-constraints");
+                context.constraints.forEach(function (constraint) {
+                    rules.appendChild(element("span", "wb-constraint",
+                        constraint.name + (constraint.count > 1 ? " ×" + constraint.count : "")));
+                });
+                section("Constraints", rules);
+            }
+
+            if (context.related && context.related.length) {
+                var languages = element("div", "wb-related");
+                context.related.forEach(function (entry) {
+                    var chip = element("span", entry.variant ? "wb-related-item wb-variant" : "wb-related-item");
+                    chip.setAttribute("title", entry.variant ?
+                        entry.code + " is a variant of " + state.target :
+                        entry.code + " is written in a related language");
+                    chip.appendChild(element("span", "wb-lang-code", entry.code));
+                    chip.appendChild(document.createTextNode(" " + entry.value));
+                    languages.appendChild(chip);
+                });
+                section("In related languages", languages);
+            }
+
+            if (!box.firstChild) {
+                box.appendChild(element("p", "wdp-muted",
+                    "Nothing further to show for this property."));
+            }
+        });
+    }
+
     function inputs() {
         return Array.prototype.slice.call(document.querySelectorAll(".wb-input:not([disabled])"));
     }
@@ -670,6 +875,22 @@ window.WDProp = window.WDProp || {};
 
         var terms = element("div", "wb-terms");
         row.appendChild(terms);
+
+        /*
+         * Examples and constraints are several seconds each, so they are
+         * fetched when asked for rather than for every row on the page.
+         */
+        var more = element("details", "wb-more");
+        var summary = element("summary", null, "Examples, constraints and related languages");
+        more.appendChild(summary);
+        var moreBody = element("div", "wb-more-body");
+        more.appendChild(moreBody);
+        more.addEventListener("toggle", function () {
+            if (more.open && !moreBody.firstChild) {
+                renderContextPanel(moreBody, property);
+            }
+        });
+        row.appendChild(more);
 
         var messages = element("div", "wdp-messages");
         row.appendChild(messages);
@@ -954,6 +1175,7 @@ window.WDProp = window.WDProp || {};
         state.entities = {};
         state.glossary = null;
         state.glossaryStatus = "idle";
+        state.context = {};
         state.page = 0;
         state.added = 0;
         syncUrl();
@@ -1050,7 +1272,8 @@ window.WDProp = window.WDProp || {};
             validateSettings: validateSettings,
             tokenize: tokenize,
             indexGlossary: indexGlossary,
-            terminologyFor: terminologyFor
+            terminologyFor: terminologyFor,
+            relatedLanguages: relatedLanguages
         }
     };
 
