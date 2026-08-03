@@ -24,6 +24,7 @@
 * Search and Navigate WikiProjects
 * Visualize path of translation and provenance information
 * Propose translations of property labels, descriptions and aliases, and export them as [QuickStatements](https://www.wikidata.org/wiki/Help:QuickStatements) commands (human-driven)
+* Translation workbench: work through the properties still missing a translation, with their meaning shown in the languages you read and the terminology already used in your language
 
 ## Author
 * John Samuel

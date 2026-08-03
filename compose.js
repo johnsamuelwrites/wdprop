@@ -2,9 +2,12 @@
  * WDProp - Translation composer
  *
  * A small dialog for writing one translation, with the property's existing
- * terms in a language the translator reads shown alongside. Opened from the
- * property page and from each property listed as needing translation on the
- * language page.
+ * terms in a language the translator reads shown alongside.
+ *
+ * It is reached from either side of the same gap: on the language page, from
+ * each property still missing a term in that language; on the property page,
+ * from each language still missing that property's label, description or
+ * alias.
  *
  * Author: John Samuel
  */
@@ -22,12 +25,24 @@ window.WDProp = window.WDProp || {};
         { value: "alias", text: "Alias" }
     ];
 
-    /* Which list on the language page corresponds to which kind of term. */
+    /*
+     * The two pages approach the same gap from opposite sides: the language
+     * page fixes the language and lists properties, the property page fixes
+     * the property and lists languages. Each list gets the same control.
+     */
     var CONTAINER_TYPE = {
         propertyLabelsNeedingTranslation: "label",
         propertyDescriptionsNeedingTranslation: "description",
         missingPropertyAliases: "alias"
     };
+
+    var LANGUAGE_CONTAINER_TYPE = {
+        untranslatedLabelsInLanguages: "label",
+        untranslatedDescriptionsInLanguages: "description",
+        untranslatedAliasesInLanguages: "alias"
+    };
+
+    var LANGUAGE_CODE_RE = /^[a-z]{2,3}(-[A-Za-z0-9]+)*$/;
 
     var state = null;
     var backdrop = null;
@@ -439,6 +454,57 @@ window.WDProp = window.WDProp || {};
         });
     }
 
+    /*
+     * The property page lists, for each kind of term, the languages still
+     * missing it. Each of those languages gets the same control the language
+     * page puts on each property.
+     */
+    function enhancePropertyPage() {
+        var property = urlValue("property", "P31");
+
+        Object.keys(LANGUAGE_CONTAINER_TYPE).forEach(function (containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) {
+                return;
+            }
+
+            function attach() {
+                var languages = container.querySelectorAll("div.language");
+                for (var i = 0; i < languages.length; i++) {
+                    addLanguageButton(languages[i], property, LANGUAGE_CONTAINER_TYPE[containerId]);
+                }
+            }
+
+            new MutationObserver(attach).observe(container, { childList: true });
+            attach();
+        });
+    }
+
+    function addLanguageButton(languageDiv, property, type) {
+        if (languageDiv.querySelector(".wdp-add")) {
+            return;
+        }
+        var link = languageDiv.querySelector("a");
+        if (!link) {
+            return;
+        }
+        var lang = link.textContent.trim();
+        if (!LANGUAGE_CODE_RE.test(lang)) {
+            return;
+        }
+
+        var button = element("button", "wdp-add", "＋");
+        button.setAttribute("type", "button");
+        button.setAttribute("title", "Propose a " + type + " in " + lang);
+        button.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            open({ property: property, lang: lang, type: type });
+        });
+        languageDiv.setAttribute("class", languageDiv.getAttribute("class") + " has-add");
+        languageDiv.appendChild(button);
+    }
+
     function addButton(propertyDiv, type, lang) {
         if (propertyDiv.querySelector(".wdp-add")) {
             return;
@@ -460,18 +526,29 @@ window.WDProp = window.WDProp || {};
             event.stopPropagation();
             open({ property: property, lang: lang, type: type });
         });
+        propertyDiv.setAttribute("class", propertyDiv.getAttribute("class") + " has-add");
         propertyDiv.appendChild(button);
     }
 
     WDProp.compose = {
         open: open,
         close: close,
-        enhanceLanguagePage: enhanceLanguagePage
+        enhanceLanguagePage: enhanceLanguagePage,
+        enhancePropertyPage: enhancePropertyPage
     };
 
     function init() {
         if (document.getElementById("propertyLabelsNeedingTranslation")) {
             enhanceLanguagePage();
+        }
+
+        /*
+         * untranslated.html reuses these container identifiers for a different
+         * question — which languages have no translations at all — so the
+         * property page is identified by an element only it has.
+         */
+        if (document.getElementById("propertyCode")) {
+            enhancePropertyPage();
         }
 
         var propose = document.getElementById("proposeTranslation");

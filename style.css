@@ -3347,3 +3347,241 @@ body.dark-theme {
         flex: 1;
     }
 }
+
+/* ==========================================================================
+   Translation workbench
+   ========================================================================== */
+
+.wb-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 20px;
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+}
+
+.wb-control {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wb-control > label {
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wb-control .wdp-input {
+    flex: 0 0 auto;
+}
+
+.wb-control .wdp-button {
+    margin: 0;
+}
+
+.wb-control .wdp-muted {
+    font-size: 12px;
+}
+
+/* One property awaiting a translation */
+
+.wb-row {
+    margin-bottom: 18px;
+    padding: 18px 20px;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent-color);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    transition: opacity 0.3s ease, border-color 0.3s ease;
+}
+
+.wb-row.wb-committed {
+    border-left-color: var(--wdp-ok);
+}
+
+.wb-row.wb-skipped {
+    border-left-color: var(--border-color);
+    opacity: 0.5;
+}
+
+.wb-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.wb-property {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.wb-link {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.wb-link:link,
+.wb-link:visited {
+    color: var(--text-secondary);
+}
+
+/* What the property says in the languages the translator reads */
+
+.wb-context {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--bg-primary);
+}
+
+.wb-context-line {
+    display: flex;
+    gap: 12px;
+    padding: 4px 0;
+}
+
+.wb-context-body {
+    flex: 1;
+}
+
+.wb-lang {
+    flex: 0 0 44px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    line-height: 1.8;
+}
+
+.wb-target {
+    color: var(--accent-color);
+}
+
+.wb-done {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* The translation field */
+
+.wb-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wb-entry .wdp-button {
+    margin: 0;
+}
+
+.wb-input {
+    flex: 1;
+    font-size: 17px;
+}
+
+/* Terminology already used in the target language */
+
+.wb-terms {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.wb-terms:empty {
+    margin-top: 0;
+}
+
+.wb-terms-title {
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wb-term {
+    padding: 3px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-primary);
+    font-size: 13px;
+}
+
+.wb-term-src {
+    color: var(--text-secondary);
+}
+
+.wb-term-tgt {
+    font-weight: 600;
+}
+
+kbd {
+    padding: 2px 6px;
+    border: 1px solid var(--border-color);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 12px;
+}
+
+@media (max-width: 768px) {
+    .wb-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .wb-entry {
+        flex-wrap: wrap;
+    }
+
+    .wb-input {
+        flex: 1 1 100%;
+    }
+}
+
+/*
+ * A chip carrying a ＋ control lays its link and button out side by side.
+ * Without this the link, which is display:block, pushes the button onto a
+ * line of its own inside the chip.
+ */
+.property.has-add,
+.language.has-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.property.has-add > a,
+.language.has-add > a {
+    display: inline;
+}
+
+.property .wdp-add,
+.language .wdp-add {
+    color: white;
+    font-size: 15px;
+    line-height: 1;
+    padding: 2px 4px;
+    opacity: 0.75;
+}
+
+.property .wdp-add:hover,
+.language .wdp-add:hover {
+    background: rgba(255, 255, 255, 0.3);
+    opacity: 1;
+}
