@@ -23,6 +23,7 @@
 * Support search and language parameter in URLs ([classes,class,search].html)
 * Search and Navigate WikiProjects
 * Visualize path of translation and provenance information
+* Propose translations of property labels, descriptions and aliases, and export them as [QuickStatements](https://www.wikidata.org/wiki/Help:QuickStatements) commands (human-driven)
 
 ## Author
 * John Samuel

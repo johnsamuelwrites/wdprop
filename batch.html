@@ -3,13 +3,21 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+    <title>WDProp: Translation batch: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript" src="wdprop.js">
     </script>
+    <script type="text/javascript" src="cart.js">
+    </script>
+    <script type="text/javascript" src="qs.js">
+    </script>
+    <script type="text/javascript" src="validate.js">
+    </script>
+    <script type="text/javascript" src="batch.js">
+    </script>
 </head>
 
-<body onload="getMissingTranslationStatistics()">
+<body>
     <div id="mobile-menu-toggle" onclick="toggleMobileMenu()">
         <span></span>
         <span></span>
@@ -41,33 +49,33 @@
     </div>
     <div id="content">
         <div class="section">
-            <h2>Missing Translation Statistics</h2>
-            <ul>
-                <li><a href="#untranslatedLabelsInLanguages">Languages with no translated labels</a></li>
-                <li><a href="#untranslatedDescriptionsInLanguages">Languages with no translated descriptions</a></li>
-                <li><a href="#untranslatedAliasesInLanguages">Languages with no translated aliases</a></li>
-            </ul>
+            <h2>Translation batch</h2>
+            <p>Translations you have proposed are kept in this browser until you
+                export them. WDProp produces
+                <a href="https://www.wikidata.org/wiki/Help:QuickStatements" target="_blank" rel="noopener">QuickStatements</a>
+                commands, which you run yourself, under your own account.</p>
+            <p class="wdp-muted">To add a translation, open a
+                <a href="./languages.html">language</a> and use ＋ next to a property that
+                needs one, or open a <a href="./properties.html">property</a> and choose
+                <em>Propose a translation</em>.</p>
         </div>
         <div class="section">
-            <h2>Languages with no translated labels</h2>
-            <div id="untranslatedLabelsInLanguages">
-            </div>
-            <h3>Query</h3>
-            <div id="untranslatedLabelsInLanguagesQuery"></div>
+            <div id="batchSummary"></div>
+            <div id="batchEntries"></div>
+            <p>
+                <button type="button" id="batchRecheck" class="wdp-button">Check again</button>
+                <button type="button" id="batchClear" class="wdp-button">Empty the batch</button>
+            </p>
         </div>
         <div class="section">
-            <h2>Languages with no translated descriptions</h2>
-            <div id="untranslatedDescriptionsInLanguages">
-            </div>
-            <h3>Query</h3>
-            <div id="untranslatedDescriptionsInLanguagesQuery"></div>
+            <h2>QuickStatements commands</h2>
+            <p class="wdp-muted">These are the exact edits that will be made. Nothing
+                is sent anywhere until you choose one of the options below.</p>
+            <div id="batchCommands"></div>
         </div>
         <div class="section">
-            <h2>Languages with no translated aliases</h2>
-            <div id="untranslatedAliasesInLanguages">
-            </div>
-            <h3>Query</h3>
-            <div id="untranslatedAliasesInLanguagesQuery"></div>
+            <h2>Export</h2>
+            <div id="batchExport"></div>
         </div>
     </div>
     <div id="footer">

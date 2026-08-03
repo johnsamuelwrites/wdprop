@@ -2932,3 +2932,418 @@ body.dark-theme .vst-search-field:focus {
         font-size: 11px;
     }
 }
+/* ==========================================================================
+   Translation batch: composer dialog, batch review and export
+   ========================================================================== */
+
+:root {
+    --wdp-danger: #c53030;
+    --wdp-warn: #b7791f;
+    --wdp-ok: #2f855a;
+    --wdp-surface: #ffffff;
+}
+
+body.dark-theme {
+    --wdp-danger: #fc8181;
+    --wdp-warn: #f6ad55;
+    --wdp-ok: #68d391;
+    --wdp-surface: #1a1a2e;
+}
+
+/* Batch indicator in the header */
+
+.cart-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 20px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--text-accent);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.cart-badge:link,
+.cart-badge:visited {
+    color: var(--text-accent);
+}
+
+.cart-badge:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateY(-1px);
+}
+
+.cart-badge.has-items {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--accent-color);
+    border-color: transparent;
+}
+
+.cart-badge.has-items:link,
+.cart-badge.has-items:visited {
+    color: var(--accent-hover);
+}
+
+/* Buttons shared by the composer and the batch page */
+
+.wdp-button {
+    display: inline-block;
+    margin: 0 8px 8px 0;
+    padding: 10px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wdp-button:link,
+.wdp-button:visited {
+    color: var(--text-primary);
+}
+
+.wdp-button:hover {
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.wdp-button.wdp-primary {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #ffffff;
+}
+
+.wdp-button.wdp-primary:link,
+.wdp-button.wdp-primary:visited {
+    color: #ffffff;
+}
+
+.wdp-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* The + control injected next to each property needing translation */
+
+.wdp-add {
+    margin-left: 6px;
+    padding: 0 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font-size: 16px;
+    line-height: 1.2;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: all 0.2s ease;
+}
+
+.wdp-add:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Composer dialog */
+
+.wdp-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.55);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.wdp-modal {
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 16px;
+    background: var(--wdp-surface);
+    color: var(--text-primary);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.wdp-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.wdp-modal-head h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.wdp-close {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.wdp-modal-body {
+    padding: 20px 24px;
+}
+
+.wdp-modal-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.wdp-modal-foot .wdp-button {
+    margin-bottom: 0;
+}
+
+.wdp-identity {
+    margin-bottom: 12px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Existing terms shown as translation context */
+
+.wdp-context {
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--bg-primary);
+}
+
+.wdp-context-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.wdp-context-table th {
+    width: 60px;
+    padding: 6px 10px 6px 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: left;
+    text-transform: uppercase;
+    vertical-align: top;
+}
+
+.wdp-context-table td {
+    padding: 6px 0;
+    vertical-align: top;
+}
+
+.wdp-target-row {
+    border-top: 1px dashed var(--border-color);
+}
+
+.wdp-desc {
+    color: var(--text-secondary);
+}
+
+.wdp-aliases {
+    margin-top: 2px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.wdp-missing {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.wdp-datatype {
+    margin-bottom: 8px;
+}
+
+.wdp-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: var(--accent-color);
+    color: #ffffff;
+    font-size: 12px;
+}
+
+/* Composer form */
+
+.wdp-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.wdp-field > label {
+    width: 150px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.wdp-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 16px;
+}
+
+.wdp-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.wdp-input-small {
+    flex: 0 0 100px;
+}
+
+/* Validation messages */
+
+.wdp-messages {
+    margin-top: 8px;
+}
+
+.wdp-message {
+    margin: 6px 0;
+    padding: 8px 12px;
+    border-left: 3px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.wdp-message.wdp-blocking {
+    border-left-color: var(--wdp-danger);
+    color: var(--wdp-danger);
+}
+
+.wdp-message.wdp-warning {
+    border-left-color: var(--wdp-warn);
+    color: var(--wdp-warn);
+}
+
+.wdp-message.wdp-success {
+    border-left-color: var(--wdp-ok);
+    color: var(--wdp-ok);
+}
+
+.wdp-ok {
+    color: var(--wdp-ok);
+    font-size: 18px;
+}
+
+.wdp-muted {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Batch review table */
+
+.wdp-batch-table {
+    width: 100%;
+}
+
+.wdp-batch-table .wdp-value {
+    font-weight: 600;
+}
+
+.wdp-status-cell {
+    max-width: 420px;
+}
+
+.wdp-status-blocked,
+.wdp-status-conflict {
+    background: rgba(197, 48, 48, 0.06);
+}
+
+.wdp-override {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.wdp-remove {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.wdp-remove:hover {
+    border-color: var(--wdp-danger);
+    color: var(--wdp-danger);
+}
+
+/* Generated commands */
+
+.wdp-commands {
+    max-height: 340px;
+    overflow: auto;
+    padding: 16px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    tab-size: 8;
+    white-space: pre;
+}
+
+@media (max-width: 768px) {
+    .cart-badge {
+        margin-right: 10px;
+        padding: 4px 10px;
+        font-size: 13px;
+    }
+
+    .wdp-field {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .wdp-field > label {
+        width: auto;
+    }
+
+    .wdp-input-small {
+        flex: 1;
+    }
+}

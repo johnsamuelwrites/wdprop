@@ -7,6 +7,9 @@
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript" src="mwwdprop.js"></script>
     <script type="text/javascript" src="wdprop.js"></script>
+    <script type="text/javascript" src="cart.js"></script>
+    <script type="text/javascript" src="validate.js"></script>
+    <script type="text/javascript" src="compose.js"></script>
 </head>
 
 <body onload="getPropertyDetails()">
@@ -25,6 +28,7 @@
         <div id="sidebarlinks">
             <ul>
                 <li><a href="./index.html">📊 Dashboard</a></li>
+                <li><a href="./batch.html">✍️ Translate</a></li>
                 <li><a href="./languages.html">🌍 Languages</a></li>
                 <li><a href="./datatypes.html">📊 Data types</a></li>
                 <li><a href="./properties.html">🔧 Properties</a></li>
@@ -143,6 +147,10 @@
         </div>
         <div class="section">
             <h3>Translation</h3>
+            <p>
+                <button type="button" id="proposeTranslation" class="wdp-button wdp-primary">✍️ Propose a translation</button>
+                <span class="wdp-muted">Added to your <a href="./batch.html">translation batch</a>, then exported to QuickStatements.</span>
+            </p>
             <ul>
                 <li><a href="#untranslatedLabelsInLanguages">Label missing translation in languages</a></li>
                 <li><a href="#untranslatedDescriptionsInLanguages">Description missing translation in languages</a></li>
