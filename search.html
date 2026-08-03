@@ -47,15 +47,15 @@
 
         <!-- Search Hero -->
         <div class="search-hero">
-            <h2 class="search-hero-title">Search</h2>
-            <p class="search-hero-subtitle">Find Wikidata properties or WikiProjects by keyword</p>
+            <h2 class="search-hero-title" data-i18n="page.search">Search</h2>
+            <p class="search-hero-subtitle" data-i18n="page.searchIntro">Find Wikidata properties or WikiProjects by keyword</p>
 
             <!-- Tabs -->
             <div class="search-tabs">
-                <button class="search-tab active" id="tab-properties" onclick="switchSearchTab('properties')">
+                <button class="search-tab active" id="tab-properties" onclick="switchSearchTab('properties')" data-i18n="page.tabProperties">
                     🔧 Properties
                 </button>
-                <button class="search-tab" id="tab-wikiprojects" onclick="switchSearchTab('wikiprojects')">
+                <button class="search-tab" id="tab-wikiprojects" onclick="switchSearchTab('wikiprojects')" data-i18n="page.tabWikiProjects">
                     🚀 WikiProjects
                 </button>
             </div>
@@ -66,7 +66,7 @@
                     <div class="search-input-wrap">
                         <span class="search-input-icon">🔍</span>
                         <input id="search" name="search" type="text" class="search-field" placeholder="e.g. software, person, location…" autocomplete="off" />
-                        <button type="submit" class="search-submit-btn">Search</button>
+                        <button type="submit" class="search-submit-btn" data-i18n="page.search">Search</button>
                     </div>
                 </form>
                 <div class="search-examples">
@@ -85,7 +85,7 @@
                     <div class="search-input-wrap">
                         <span class="search-input-icon">🔍</span>
                         <input id="searchproject" name="searchproject" type="text" class="search-field" placeholder="e.g. heritage, biology, music…" autocomplete="off" />
-                        <button type="submit" class="search-submit-btn">Search</button>
+                        <button type="submit" class="search-submit-btn" data-i18n="page.search">Search</button>
                     </div>
                 </form>
                 <div class="search-examples">

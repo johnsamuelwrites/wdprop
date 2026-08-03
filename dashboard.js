@@ -3,6 +3,14 @@
  * Real-time data from Wikidata with animations
  */
 
+/*
+ * Interface text, from i18n.js. Falls back to the key if the message
+ * files somehow did not load, which keeps the page working.
+ */
+function wdpropText(key, params) {
+    return (window.WDProp && window.WDProp.i18n) ? window.WDProp.i18n.t(key, params) : key;
+}
+
 const dashboardEndpoint = 'https://query.wikidata.org/sparql';
 
 // Counter animation for stat cards

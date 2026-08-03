@@ -3,6 +3,14 @@
  */
 
 /*
+ * Interface text, from i18n.js. Falls back to the key if the message
+ * files somehow did not load, which keeps the page working.
+ */
+function wdpropText(key, params) {
+    return (window.WDProp && window.WDProp.i18n) ? window.WDProp.i18n.t(key, params) : key;
+}
+
+/*
  * SPARQL endpoint URL 
  */
 const browserendpointurl = 'https://query.wikidata.org/#';
@@ -246,7 +254,7 @@ function showQuery(sparqlQuery, divId) {
         }
         let a = document.createElement("a");
         a.setAttribute('href', fullurl);
-        let text = document.createTextNode("Run Query on Wikidata. ");
+        let text = document.createTextNode(wdpropText("js.runQuery"));
         a.appendChild(text);
         queryLink.appendChild(a);
     }
@@ -268,7 +276,7 @@ function createDivAllProperties(divId, json) {
             }
         }
     }
-    total.innerHTML = "Total " + maxPropertyId + " properties";
+    total.innerHTML = wdpropText("js.totalProperties", [maxPropertyId]);
     for (let count = 0, i = 1; count < maxPropertyCount && i < maxPropertyId; i++, count++) {
         let property = document.createElement("div");
         let text = document.createTextNode("P" + String(i));
@@ -423,7 +431,7 @@ function createDivProperties(divId, json) {
     const { head: { vars }, results } = json;
     let properties = document.getElementById(divId);
     let total = document.createElement("h3");
-    total.innerHTML = "Total " + results.bindings.length + " properties";
+    total.innerHTML = wdpropText("js.totalProperties", [results.bindings.length]);
     properties.appendChild(total);
 
     let count = 0;
@@ -449,17 +457,17 @@ function createDivClasses(divId, json) {
     const { head: { vars }, results } = json;
     let properties = document.getElementById(divId);
     let total = document.createElement("h3");
-    total.innerHTML = "Total " + results.bindings.length + " classes";
+    total.innerHTML = wdpropText("js.totalClasses", [results.bindings.length]);
     properties.appendChild(total);
 
     let table = document.createElement("table");
     table.setAttribute("class", "alternate");
     let th = document.createElement("tr");
     let td = document.createElement("th");
-    td.innerHTML = "Item";
+    td.innerHTML = wdpropText("js.item");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Class label";
+    td.innerHTML = wdpropText("js.classLabel");
     th.appendChild(td);
     table.append(th);
 
@@ -493,17 +501,17 @@ function createDivClassProperties(divId, json) {
     const { head: { vars }, results } = json;
     let properties = document.getElementById(divId);
     let total = document.createElement("h3");
-    total.innerHTML = "Total " + results.bindings.length + " properties";
+    total.innerHTML = wdpropText("js.totalProperties", [results.bindings.length]);
     properties.appendChild(total);
 
     let table = document.createElement("table");
     table.setAttribute("class", "alternate");
     let th = document.createElement("tr");
     let td = document.createElement("th");
-    td.innerHTML = "Property";
+    td.innerHTML = wdpropText("js.property");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Property label";
+    td.innerHTML = wdpropText("js.propertyLabel");
     th.appendChild(td);
     table.append(th);
 
@@ -540,7 +548,7 @@ function createDivComparisonResults(divId, json) {
     const { head: { vars }, results } = json;
     let properties = document.getElementById(divId);
     let total = document.createElement("h3");
-    total.innerHTML = "Translation statistics";
+    total.innerHTML = wdpropText("js.translationStatistics");
     while (properties.hasChildNodes()) {
         properties.removeChild(properties.lastChild);
     }
@@ -548,13 +556,13 @@ function createDivComparisonResults(divId, json) {
     let table = document.createElement("table");
     let th = document.createElement("tr");
     let td = document.createElement("th");
-    td.innerHTML = "Language";
+    td.innerHTML = wdpropText("js.language");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Property";
+    td.innerHTML = wdpropText("js.property");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Label";
+    td.innerHTML = wdpropText("js.label");
     th.appendChild(td);
     table.appendChild(th);
     let tr = "";
@@ -594,12 +602,12 @@ function createDivWikiProjects(divId, json) {
     table.setAttribute("class", "alternate");
     let th = document.createElement("tr");
     let td = document.createElement("th");
-    td.innerHTML = "Projects";
+    td.innerHTML = wdpropText("js.projects");
     th.appendChild(td);
     table.appendChild(th);
 
     td = document.createElement("th");
-    td.innerHTML = "Link";
+    td.innerHTML = wdpropText("js.link");
     th.appendChild(td);
     table.appendChild(th);
     let tr = "";
@@ -635,8 +643,8 @@ function createDivWikiProjects(divId, json) {
         aF.setAttribute('href', "wikiprojects.html?limit=" + limit + "&offset=" + offset);
         let aL = document.createElement("a");
         aL.setAttribute('href', "wikiprojects.html?limit=" + limit + "&offset=" + offset);
-        let textF = document.createTextNode("Next");
-        let textL = document.createTextNode("Next");
+        let textF = document.createTextNode(wdpropText("js.next"));
+        let textL = document.createTextNode(wdpropText("js.next"));
         aF.appendChild(textF);
         aL.appendChild(textL);
         nextFirst.appendChild(aF);
@@ -653,7 +661,7 @@ function createDivSearchProperties(divId, json) {
     const { head: { vars }, results } = json;
     let properties = document.getElementById(divId);
     let total = document.createElement("h3");
-    total.innerHTML = "Total " + results.bindings.length + " properties";
+    total.innerHTML = wdpropText("js.totalProperties", [results.bindings.length]);
     while (properties.hasChildNodes()) {
         properties.removeChild(properties.lastChild);
     }
@@ -661,10 +669,10 @@ function createDivSearchProperties(divId, json) {
     let table = document.createElement("table");
     let th = document.createElement("tr");
     let td = document.createElement("th");
-    td.innerHTML = "Property";
+    td.innerHTML = wdpropText("js.property");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Label";
+    td.innerHTML = wdpropText("js.label");
     th.appendChild(td);
     table.appendChild(th);
     let tr = "";
@@ -706,16 +714,16 @@ function createDivTranslatedValues(divId, json) {
 
     let properties = document.getElementById(divId);
     let total = document.createElement("h3");
-    total.innerHTML = "Total " + results.bindings.length + " properties";
+    total.innerHTML = wdpropText("js.totalProperties", [results.bindings.length]);
     properties.appendChild(total);
 
     let table = document.createElement("table");
     let th = document.createElement("tr");
     let td = document.createElement("th");
-    td.innerHTML = "Property";
+    td.innerHTML = wdpropText("js.property");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Value";
+    td.innerHTML = wdpropText("js.value");
     th.appendChild(td);
     table.appendChild(th);
     for (const result of results.bindings) {
@@ -782,7 +790,7 @@ function createDivLanguage(divId, json) {
     const { head: { vars }, results } = json;
     let languages = document.getElementById(divId);
     let total = document.createElement("h3");
-    total.innerHTML = "Total " + results.bindings.length + " languages";
+    total.innerHTML = wdpropText("js.totalLanguages", [results.bindings.length]);
     languages.appendChild(total);
     for (const result of results.bindings) {
         for (const variable of vars) {
@@ -802,7 +810,7 @@ function createDivPropertyDetails(divId, json) {
     const { head: { vars }, results } = json;
     let properties = document.getElementById(divId);
     let total = document.createElement("h3");
-    total.innerHTML = "Total " + results.bindings.length + " properties";
+    total.innerHTML = wdpropText("js.totalProperties", [results.bindings.length]);
     properties.appendChild(total);
     propertySet = new Set();
     maxPropertyId = 0;
@@ -1076,7 +1084,7 @@ function getComparisonResult(search) {
 
     //URL to comparison page
     let compareURLdiv = document.createElement("div");
-    let textURL = document.createTextNode("URL: ");
+    let textURL = document.createTextNode(wdpropText("js.url"));
     compareURLdiv.appendChild(textURL);
     let compareURL = document.createElement("a");
     compareURL.setAttribute("href", "./compare.html?languages=" + document.getElementById("languages").value);
@@ -1088,7 +1096,7 @@ function getComparisonResult(search) {
     let labels = document.createElement("div");
     labels.setAttribute("id", "comparisonResultsLabels");
     let total = document.createElement("h3");
-    total.innerHTML = "Count of translated labels";
+    total.innerHTML = wdpropText("page.countLabels");
     compareDiv.appendChild(total);
     compareDiv.appendChild(labels);
     queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsLabels");
@@ -1107,7 +1115,7 @@ function getComparisonResult(search) {
     let descriptions = document.createElement("div");
     descriptions.setAttribute("id", "comparisonResultsDescriptions");
     total = document.createElement("h3");
-    total.innerHTML = "Count of translated descriptions";
+    total.innerHTML = wdpropText("page.countDescriptions");
     compareDiv.appendChild(total);
     compareDiv.appendChild(descriptions);
     queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsDescriptions");
@@ -1126,7 +1134,7 @@ function getComparisonResult(search) {
     let aliases = document.createElement("div");
     aliases.setAttribute("id", "comparisonResultsAliases");
     total = document.createElement("h3");
-    total.innerHTML = "Count of available aliases";
+    total.innerHTML = wdpropText("page.countAvailableAliases");
     compareDiv.appendChild(total);
     compareDiv.appendChild(aliases);
     queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "comparisonResultsAliases");
@@ -1310,7 +1318,7 @@ function createDivDataTypes(divId, json) {
     const { head: { vars }, results } = json;
     let datatypes = document.getElementById(divId);
     let total = document.createElement("h3");
-    total.innerHTML = "Total " + results.bindings.length + " datatypes";
+    total.innerHTML = wdpropText("js.totalDatatypes", [results.bindings.length]);
     datatypes.appendChild(total);
     for (const result of results.bindings) {
         for (const variable of vars) {
@@ -1543,7 +1551,7 @@ function getPropertiesWithDatatype() {
     let datatype = getValueFromURL("datatype=([^&#=]*)", "wikibase:WikibaseItem");
 
     let datatypeCode = document.getElementById("datatypeCode");
-    datatypeCode.innerHTML = "Properties with datatype- " + datatype;
+    datatypeCode.innerHTML = wdpropText("page.propsWithDatatype") + datatype;
 
     let sparqlQuery = propertiesWithDatatypeQuery;
     sparqlQuery = propertiesWithDatatypeQuery.replace(
@@ -1577,7 +1585,7 @@ function createDivPropertyDescriptors(divId, json) {
             properties.appendChild(property);
         }
     }
-    total.innerHTML = "Total " + count + " properties";
+    total.innerHTML = wdpropText("js.totalProperties", [count]);
 }
 
 function getPropertyDescriptors() {
@@ -1752,16 +1760,16 @@ function createDivTranslationPath(divId, json, optimized, visualization) {
     let th = document.createElement("tr");
     let td = document.createElement("th");
     table.setAttribute("class", "path");
-    td.innerHTML = "Time";
+    td.innerHTML = wdpropText("js.time");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Labels";
+    td.innerHTML = wdpropText("term.labels");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Descriptions";
+    td.innerHTML = wdpropText("term.descriptions");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Aliases";
+    td.innerHTML = wdpropText("term.aliases");
     th.appendChild(td);
     table.append(th);
 
@@ -2319,11 +2327,11 @@ function createDivReferencesCount(divId, json) {
     let referencesCount = document.getElementById(divId);
     percentage = parseFloat(results.bindings[0]["percentage"]["value"]).toFixed(2);
     let percentageDiv = document.createElement("h3");
-    percentageDiv.innerHTML = "Total " +
-        results.bindings[0]["referencecount"]["value"] +
-        " referenced statements from a total of " +
-        results.bindings[0]["statementcount"]["value"] +
-        " statements (" + percentage + "%)";
+    percentageDiv.innerHTML = wdpropText("js.referencedStatements", [
+        results.bindings[0]["referencecount"]["value"],
+        results.bindings[0]["statementcount"]["value"],
+        percentage
+    ]);
     referencesCount.appendChild(percentageDiv);
 }
 
@@ -2379,8 +2387,8 @@ function createDivReferences(divId, json) {
         }
     }
     let statementTotal = document.createElement("h3");
-    statementTotal.innerHTML = "Total " + Object.keys(refs).length + " reference statements" +
-        " for a total of " + results.bindings.length + " statements";
+    statementTotal.innerHTML = wdpropText("js.referenceStatements",
+        [Object.keys(refs).length, results.bindings.length]);
     if (results.bindings.length != 0) {
         statementTotal.innerHTML = statementTotal.innerHTML +
             " (" + ((Object.keys(refs).length * 100) / results.bindings.length).toFixed(2) + "%)"
@@ -2394,10 +2402,10 @@ function createDivReferences(divId, json) {
     let table = document.createElement("table");
     let th = document.createElement("tr");
     let td = document.createElement("th");
-    td.innerHTML = "Property";
+    td.innerHTML = wdpropText("js.property");
     th.appendChild(td);
     td = document.createElement("th");
-    td.innerHTML = "Number of statements";
+    td.innerHTML = wdpropText("js.numberOfStatements");
     th.appendChild(td);
     table.append(th);
     data = Object.keys(refs);
@@ -2442,7 +2450,7 @@ function createDivExternalLinks(divId, json) {
     let references = document.getElementById(divId);
     refs = {};
     let statementTotal = document.createElement("h3");
-    statementTotal.innerHTML = "Total " + results.bindings.length + " equivalent properties on external sources";
+    statementTotal.innerHTML = wdpropText("js.totalEquivalent", [results.bindings.length]);
     references.appendChild(statementTotal);
 }
 

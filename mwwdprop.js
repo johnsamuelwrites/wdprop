@@ -1,3 +1,11 @@
+/*
+ * Interface text, from i18n.js. Falls back to the key if the message
+ * files somehow did not load, which keeps the page working.
+ */
+function wdpropText(key, params) {
+    return (window.WDProp && window.WDProp.i18n) ? window.WDProp.i18n.t(key, params) : key;
+}
+
 const endpointUrl = 'https://www.wikidata.org/w/api.php';
 
 function showMediaWikiQuery(fullurl, divId) {
@@ -9,7 +17,7 @@ function showMediaWikiQuery(fullurl, divId) {
         }
         let a = document.createElement("a");
         a.setAttribute('href', fullurl);
-        let text = document.createTextNode("Run Query using Wikidata Mediawiki API. ");
+        let text = document.createTextNode(wdpropText("js.runApiQuery"));
         a.appendChild(text);
         queryLink.appendChild(a);
     }
@@ -68,7 +76,7 @@ function createDivLanguage(divId, json, url) {
         languages.appendChild(language);
     }
     var total = document.createElement("h4");
-    total.innerHTML = "Template translated in total " + count + " languages";
+    total.innerHTML = wdpropText("js.templateTranslated", [count]);
     languagesDiv.appendChild(total);
     languagesDiv.appendChild(languages);
 }
@@ -147,12 +155,12 @@ function createDivWikprojectsWithProperty(divId, json) {
     table.setAttribute("class", "alternate");
     let th = document.createElement("tr");
     let td = document.createElement("th");
-    td.innerHTML = "Projects";
+    td.innerHTML = wdpropText("js.projects");
     th.appendChild(td);
     table.appendChild(th);
 
     td = document.createElement("th");
-    td.innerHTML = "Link";
+    td.innerHTML = wdpropText("js.link");
     th.appendChild(td);
     table.appendChild(th);
 
@@ -225,7 +233,7 @@ function createDivWikprojectProperties(divId, json) {
             count++;
         }
     }
-    total.innerHTML = "Total " + count + " properties";
+    total.innerHTML = wdpropText("js.totalProperties", [count]);
 
     addDivPropertyLabels(divId, wdproperties);
 }
@@ -253,7 +261,7 @@ function createDivPropertyList(divId, json, url) {
             }
         }
     }
-    total.innerHTML = "Total " + count + " properties";
+    total.innerHTML = wdpropText("js.totalProperties", [count]);
 }
 
 function showWikiProjectProperties(project, divId) {

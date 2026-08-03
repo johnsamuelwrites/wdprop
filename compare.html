@@ -48,14 +48,14 @@
 
         <!-- Compare Hero -->
         <div class="compare-hero">
-            <h2 class="compare-hero-title">Compare Languages</h2>
-            <p class="compare-hero-subtitle">Compare translation coverage across Wikidata properties</p>
+            <h2 class="compare-hero-title" data-i18n="page.compareLanguages">Compare Languages</h2>
+            <p class="compare-hero-subtitle" data-i18n="page.compareIntro">Compare translation coverage across Wikidata properties</p>
 
             <form action="./compare.html" onsubmit="getComparisonResultsOnEvent(event, this)" class="compare-form">
                 <div class="compare-input-wrap">
                     <span class="compare-input-icon">🌍</span>
                     <input id="languages" name="languages" type="text" class="compare-field" placeholder="e.g. en, fr, de, es" autocomplete="off" value="en, fr" />
-                    <button type="submit" class="compare-submit-btn">Compare</button>
+                    <button type="submit" class="compare-submit-btn" data-i18n="page.compare">Compare</button>
                 </div>
             </form>
 
@@ -77,13 +77,13 @@
 
             <!-- Category tabs -->
             <div class="compare-tabs">
-                <button class="compare-tab active" id="ctab-labels" onclick="switchCompareTab('labels')">
+                <button class="compare-tab active" id="ctab-labels" onclick="switchCompareTab('labels')" data-i18n="page.tabLabels">
                     🏷️ Labels
                 </button>
-                <button class="compare-tab" id="ctab-descriptions" onclick="switchCompareTab('descriptions')">
+                <button class="compare-tab" id="ctab-descriptions" onclick="switchCompareTab('descriptions')" data-i18n="page.tabDescriptions">
                     📝 Descriptions
                 </button>
-                <button class="compare-tab" id="ctab-aliases" onclick="switchCompareTab('aliases')">
+                <button class="compare-tab" id="ctab-aliases" onclick="switchCompareTab('aliases')" data-i18n="page.tabAliases">
                     🔀 Aliases
                 </button>
             </div>

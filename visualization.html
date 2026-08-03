@@ -48,8 +48,8 @@
 
         <!-- Hero with search -->
         <div class="viz-hero">
-            <h2 class="viz-hero-title">Language Codes</h2>
-            <p class="viz-hero-subtitle">All languages supported by Wikidata properties — search by code or name</p>
+            <h2 class="viz-hero-title" data-i18n="page.languageCodes">Language Codes</h2>
+            <p class="viz-hero-subtitle" data-i18n="page.allLanguagesIntro">All languages supported by Wikidata properties — search by code or name</p>
             <div class="viz-search-wrap">
                 <span class="viz-search-icon">🔍</span>
                 <input id="viz-search" type="text" class="viz-search-field" placeholder="e.g. French, de, be-tarask…" autocomplete="off" />
@@ -58,7 +58,7 @@
 
         <!-- Status / error messages -->
         <div id="viz-loading" class="wdprop-loading" style="display:block;"></div>
-        <p id="viz-error" class="viz-status viz-status-error" style="display:none;">Failed to fetch data. Please check your connection and try again.</p>
+        <p id="viz-error" class="viz-status viz-status-error" style="display:none;" data-i18n="page.fetchFailed">Failed to fetch data. Please check your connection and try again.</p>
 
         <!-- Table -->
         <div class="viz-table-wrapper">
@@ -68,8 +68,8 @@
             <table class="viz-table">
                 <thead>
                     <tr>
-                        <th>Code</th>
-                        <th>Language</th>
+                        <th data-i18n="page.code">Code</th>
+                        <th data-i18n="page.language">Language</th>
                     </tr>
                 </thead>
                 <tbody id="viz-tbody">
