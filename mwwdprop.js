@@ -49,7 +49,13 @@ function queryMediaWiki(queryparams, func, divId, url) {
     });
 }
 
-function createDivLanguage(divId, json, url) {
+/*
+ * Lists the languages a property-discussion template has been translated
+ * into. Deliberately named apart from the same-named helper in wdprop.js,
+ * which renders language chips: property.html loads both files, and
+ * whichever was defined last used to win.
+ */
+function createDivTemplateLanguages(divId, json, url) {
     xml = json.parse["parsetree"]["*"];
     var languagesDiv = document.getElementById(divId);
     var count = 0;
@@ -126,22 +132,22 @@ function fetchWikidataPage(property, language) {
 
 function getTemplateTranslationStatistics() {
     var queryparams = "parse&page=Template:Support&prop=parsetree&origin=*";
-    queryMediaWiki(queryparams, createDivLanguage,
+    queryMediaWiki(queryparams, createDivTemplateLanguages,
         "translatedTemplateSupport",
         "https://www.wikidata.org/wiki/Template:Support");
 
     var queryparams = "parse&page=Template:Oppose&prop=parsetree&origin=*";
-    queryMediaWiki(queryparams, createDivLanguage,
+    queryMediaWiki(queryparams, createDivTemplateLanguages,
         "translatedTemplateOppose",
         "https://www.wikidata.org/wiki/Template:Oppose");
 
     var queryparams = "parse&page=Template:Neutral&prop=parsetree&origin=*";
-    queryMediaWiki(queryparams, createDivLanguage,
+    queryMediaWiki(queryparams, createDivTemplateLanguages,
         "translatedTemplateNeutral",
         "https://www.wikidata.org/wiki/Template:Neutral");
 
     var queryparams = "parse&page=Template:Comment&prop=parsetree&origin=*";
-    queryMediaWiki(queryparams, createDivLanguage,
+    queryMediaWiki(queryparams, createDivTemplateLanguages,
         "translatedTemplateComment",
         "https://www.wikidata.org/wiki/Template:Comment");
 }

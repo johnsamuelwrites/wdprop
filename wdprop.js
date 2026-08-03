@@ -223,10 +223,26 @@ specifiedPropertiesRequiringTranslationQuery = `
 SELECT DISTINCT ?property
 {
    VALUES ?property { {{property}} }
-   OPTIONAL{?property rdfs:label ?translation FILTER (lang(?translation)="{{language}}")}
+   OPTIONAL{?property {{translationType}} ?translation FILTER (lang(?translation)="{{language}}")}
    FILTER (!BOUND(?translation)).
 }
 `;
+
+/*
+ * Fills {{name}} placeholders in a query template and returns the result.
+ *
+ * The templates above are module-level values reused across calls, so they
+ * must never be written back to: substituting into the template itself
+ * destroys its placeholders, and any later call gets a query that is already
+ * filled in, or one whose placeholders can no longer be filled at all.
+ */
+function fillQuery(template, values) {
+    let query = template;
+    Object.keys(values).forEach(function (name) {
+        query = query.replaceAll("{{" + name + "}}", values[name]);
+    });
+    return query;
+}
 
 function getValueFromURL(regexp, defaultValue) {
     let reg, value;
@@ -891,14 +907,13 @@ function getClasses() {
     let property = getValueFromURL("property=([^&#=]*)", "");
 
     if (property == "" || property == undefined) {
-        allClassesQuery = allClassesQuery.replaceAll("{{language}}", language);
-        const sparqlQuery = allClassesQuery;
-        queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
+        queryWikidata(fillQuery(allClassesQuery, { language: language }),
+            createDivClasses, "propertyClasses");
     } else {
-        allClassesWithPropertyQuery = allClassesWithPropertyQuery.replaceAll("{{language}}", language);
-        allClassesWithPropertyQuery = allClassesWithPropertyQuery.replaceAll("{{property}}", property);
-        const sparqlQuery = allClassesWithPropertyQuery;
-        queryWikidata(sparqlQuery, createDivClasses, "propertyClasses");
+        queryWikidata(fillQuery(allClassesWithPropertyQuery, {
+            language: language,
+            property: property
+        }), createDivClasses, "propertyClasses");
     }
 }
 
@@ -1233,28 +1248,26 @@ function getCountOfTranslatedAliases() {
 }
 
 function getTranslationStatisticsForClass(className) {
-    translationStatisticsForClassQuery = translationStatisticsForClassQuery.replaceAll("{{class}}", className);
-    let sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "rdfs:label");
-    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
+    const forClass = fillQuery(translationStatisticsForClassQuery, { class: className });
 
-    sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "schema:description");
-    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
-
-    sparqlQuery = translationStatisticsForClassQuery.replaceAll("{{translationType}}", "skos:altLabel");
-    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
+    queryWikidata(fillQuery(forClass, { translationType: "rdfs:label" }),
+        createDivTranslatedLabelsCount, "translatedLabelsCount");
+    queryWikidata(fillQuery(forClass, { translationType: "schema:description" }),
+        createDivTranslatedLabelsCount, "translatedDescriptionsCount");
+    queryWikidata(fillQuery(forClass, { translationType: "skos:altLabel" }),
+        createDivTranslatedLabelsCount, "translatedAliasesCount");
 }
 
 function getTranslationStatisticsForWikiProject(wdproperties) {
     wikiprojectProperties = wdproperties;
-    translationStatisticsForWikiProjectQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{wdproperties}}", wdproperties);
-    let sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "rdfs:label");
-    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
+    const forProject = fillQuery(translationStatisticsForWikiProjectQuery, { wdproperties: wdproperties });
 
-    sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "schema:description");
-    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
-
-    sparqlQuery = translationStatisticsForWikiProjectQuery.replaceAll("{{translationType}}", "skos:altLabel");
-    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
+    queryWikidata(fillQuery(forProject, { translationType: "rdfs:label" }),
+        createDivTranslatedLabelsCount, "translatedLabelsCount");
+    queryWikidata(fillQuery(forProject, { translationType: "schema:description" }),
+        createDivTranslatedLabelsCount, "translatedDescriptionsCount");
+    queryWikidata(fillQuery(forProject, { translationType: "skos:altLabel" }),
+        createDivTranslatedLabelsCount, "translatedAliasesCount");
 }
 
 function getLanguagesWithUntranslatedLabels() {
@@ -1392,31 +1405,33 @@ function getPropertiesForClassRequiringTranslationQuery(propertyClass) {
     let language = getValueFromURL("language=([^&#=]*)", "en")
     getLanguage(language);
     getProperty(propertyClass, language);
-    propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{class}}", propertyClass);
-    propertiesForClassRequiringTranslationQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{language}}", language);
-    let sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "rdfs:label");
-    queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
+    const forClass = fillQuery(propertiesForClassRequiringTranslationQuery, {
+        class: propertyClass,
+        language: language
+    });
 
-    sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "schema:description");
-    queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
-
-    sparqlQuery = propertiesForClassRequiringTranslationQuery.replaceAll("{{translationType}}", "skos:altLabel");
-    queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
+    queryWikidata(fillQuery(forClass, { translationType: "rdfs:label" }),
+        createDivProperties, "propertyLabelsNeedingTranslation");
+    queryWikidata(fillQuery(forClass, { translationType: "schema:description" }),
+        createDivProperties, "propertyDescriptionsNeedingTranslation");
+    queryWikidata(fillQuery(forClass, { translationType: "skos:altLabel" }),
+        createDivProperties, "missingPropertyAliases");
 }
 
 function getSpecifiedPropertiesRequiringTranslation(property) {
     let language = getValueFromURL("language=([^&#=]*)", "en")
     getLanguage(language);
-    specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{property}}", property);
-    specifiedPropertiesRequiringTranslationQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{language}}", language);
-    let sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "rdfs:label");
-    queryWikidata(sparqlQuery, createDivProperties, "propertyLabelsNeedingTranslation");
+    const forProperty = fillQuery(specifiedPropertiesRequiringTranslationQuery, {
+        property: property,
+        language: language
+    });
 
-    sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "schema:description");
-    queryWikidata(sparqlQuery, createDivProperties, "propertyDescriptionsNeedingTranslation");
-
-    sparqlQuery = specifiedPropertiesRequiringTranslationQuery.replaceAll("{{translationType}}", "skos:altLabel");
-    queryWikidata(sparqlQuery, createDivProperties, "missingPropertyAliases");
+    queryWikidata(fillQuery(forProperty, { translationType: "rdfs:label" }),
+        createDivProperties, "propertyLabelsNeedingTranslation");
+    queryWikidata(fillQuery(forProperty, { translationType: "schema:description" }),
+        createDivProperties, "propertyDescriptionsNeedingTranslation");
+    queryWikidata(fillQuery(forProperty, { translationType: "skos:altLabel" }),
+        createDivProperties, "missingPropertyAliases");
 }
 
 function getPropertiesNeedingTranslation() {
