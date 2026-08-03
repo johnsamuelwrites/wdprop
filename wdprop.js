@@ -2612,6 +2612,28 @@ function loadTheme() {
 function toggleMobileMenu() {
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('mobile-open');
+
+    const toggle = document.getElementById('mobile-menu-toggle');
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', sidebar.classList.contains('mobile-open') ? 'true' : 'false');
+    }
+}
+
+/*
+ * The theme and menu controls are styled divs with role="button". A real
+ * button responds to Enter and Space; a div does not, so the keyboard has to
+ * be wired up by hand or these are unreachable without a mouse.
+ */
+function activateOnKey(element, action) {
+    if (!element) {
+        return;
+    }
+    element.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+            event.preventDefault();
+            action();
+        }
+    });
 }
 
 // Close mobile menu when clicking outside
@@ -2622,13 +2644,23 @@ document.addEventListener('click', function (event) {
     if (sidebar && menuToggle && sidebar.classList.contains('mobile-open')) {
         if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
             sidebar.classList.remove('mobile-open');
+            menuToggle.setAttribute('aria-expanded', 'false');
         }
     }
 });
 
+function wireKeyboardControls() {
+    activateOnKey(document.getElementById('theme-toggle'), toggleTheme);
+    activateOnKey(document.getElementById('mobile-menu-toggle'), toggleMobileMenu);
+}
+
 // Load theme on page load
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadTheme);
+    document.addEventListener('DOMContentLoaded', function () {
+        loadTheme();
+        wireKeyboardControls();
+    });
 } else {
     loadTheme();
+    wireKeyboardControls();
 }

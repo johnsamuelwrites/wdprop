@@ -88,6 +88,7 @@ window.WDProp = window.WDProp || {};
      *                          a link; message files are part of WDProp, not
      *                          user input, so this stays under our control
      *   data-i18n-title        sets the title attribute
+     *   data-i18n-label        sets aria-label, for icon-only controls
      *   data-i18n-placeholder  sets the placeholder attribute
      */
     function apply(root) {
@@ -108,6 +109,11 @@ window.WDProp = window.WDProp || {};
         each(scope, "[data-i18n-title]", function (node, key) {
             node.setAttribute("title", t(key));
         }, "i18nTitle");
+
+        /* Names a control that shows only an icon, for screen readers. */
+        each(scope, "[data-i18n-label]", function (node, key) {
+            node.setAttribute("aria-label", t(key));
+        }, "i18nLabel");
 
         each(scope, "[data-i18n-placeholder]", function (node, key) {
             node.setAttribute("placeholder", t(key));
@@ -205,7 +211,8 @@ window.WDProp = window.WDProp || {};
         var select = document.createElement("select");
         select.setAttribute("id", "language-switcher");
         select.setAttribute("class", "language-switcher");
-        select.setAttribute("title", "Interface language");
+        select.setAttribute("title", t("a11y.languageChooser"));
+        select.setAttribute("aria-label", t("a11y.languageChooser"));
 
         AVAILABLE.forEach(function (entry) {
             var option = document.createElement("option");

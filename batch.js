@@ -265,6 +265,10 @@ window.WDProp = window.WDProp || {};
 
     function renderSummary() {
         var container = document.getElementById("batchSummary");
+        if (!container.getAttribute("role")) {
+            container.setAttribute("role", "status");
+            container.setAttribute("aria-live", "polite");
+        }
         clear(container);
 
         var total = WDProp.cart.count();

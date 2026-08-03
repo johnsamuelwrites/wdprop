@@ -3,14 +3,18 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+    <title>WDProp: Terminology consistency: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript" src="i18n.js"></script>
     <script type="text/javascript" src="i18n/en.js"></script>
     <script type="text/javascript" src="wdprop.js"></script>
+    <script type="text/javascript" src="cart.js"></script>
+    <script type="text/javascript" src="validate.js"></script>
+    <script type="text/javascript" src="translate.js"></script>
+    <script type="text/javascript" src="terminology.js"></script>
 </head>
 
-<body onload="getTranslationPathTableOptimized()">
+<body>
     <a href="#content" class="skip-link" data-i18n="a11y.skip">Skip to main content</a>
     <div id="mobile-menu-toggle" role="button" tabindex="0" aria-expanded="false"
          onclick="toggleMobileMenu()" data-i18n-label="a11y.menuToggle">
@@ -48,18 +52,33 @@
     </div>
     <div id="content" role="main" tabindex="-1">
         <div class="section">
-            <h2 data-i18n="page.pathOfTranslation">Path of Translation</h2>
-            <p>
-                Color code:
-                <span style="color:white;line-height:4vh">
-        <span style="background-color:#002171">Add</span>
-                <span style="background-color:#0069c0">Update</span>
-                <span style="background-color:red">Remove</span>
-                </span>
-            </p>
-            <div id="translationPath"> </div>
-            <h3 data-i18n="page.query">Query</h3>
-            <div id="translationPathQuery"></div>
+            <h2 data-i18n="terminology.heading">Terminology consistency</h2>
+            <p class="wdp-muted" data-i18n="terminology.intro">Where one word in the source language has been translated several different ways. Wikidata has no way to see this, because each property is translated on its own — so the same term drifts apart over time. Each finding below is somewhere a language community may want to settle on one wording.</p>
+            <form id="terminologyControls" class="wb-controls">
+                <div class="wb-control">
+                    <label for="tmPivot" data-i18n="terminology.sourceLanguage">Source language</label>
+                    <input type="text" id="tmPivot" class="wdp-input wdp-input-small" size="6" autocomplete="off" />
+                </div>
+                <div class="wb-control">
+                    <label for="tmTarget" data-i18n="terminology.targetLanguage">Translated into</label>
+                    <input type="text" id="tmTarget" class="wdp-input wdp-input-small" size="6" autocomplete="off" />
+                </div>
+                <div class="wb-control">
+                    <label for="tmMin" data-i18n="terminology.minProperties">Seen in at least</label>
+                    <input type="number" id="tmMin" class="wdp-input wdp-input-small" min="2" max="50" />
+                </div>
+                <div class="wb-control">
+                    <button type="submit" class="wdp-button wdp-primary" data-i18n="terminology.analyse">Find inconsistencies</button>
+                </div>
+            </form>
+        </div>
+        <div class="section">
+            <div id="terminologySummary"></div>
+            <div id="terminologyResults"></div>
+        </div>
+        <div class="section">
+            <h3 data-i18n="terminology.howHeading">How this is worked out</h3>
+            <p class="wdp-muted" data-i18n="terminology.howText">There is no word-by-word alignment between a label and its translation, so this works by association: for each source word, WDProp looks at the properties whose label contains it and finds which words recur in their translations. A word only counts as a rendering if it is much more common in that group than in the language as a whole, which keeps ordinary frequent words out. Treat the findings as leads to check, not as errors.</p>
         </div>
     </div>
     <div id="footer" role="contentinfo">

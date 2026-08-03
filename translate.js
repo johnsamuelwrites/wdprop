@@ -52,14 +52,30 @@ window.WDProp = window.WDProp || {};
         return t("term." + type);
     }
 
-    /* Function words carry no terminology, so they are not worth matching on. */
+    /*
+     * Function words carry no terminology, so they are not worth matching on.
+     * A language without a list here still works — its function words simply
+     * show up as weak matches — so this can be extended one language at a time.
+     */
     var STOPWORDS = {
         en: ["that", "this", "with", "from", "which", "were", "have", "has", "been",
             "the", "and", "for", "are", "was", "its", "into", "than", "then",
             "such", "used", "using", "when", "where", "what", "some", "other",
             "their", "these", "those", "also", "only", "each", "both", "more",
             "of", "in", "to", "by", "on", "at", "as", "or", "is", "an", "it",
-            "be", "if", "no", "do", "a"]
+            "be", "if", "no", "do", "a"],
+        fr: ["de", "la", "le", "les", "des", "du", "un", "une", "et", "ou", "au",
+            "aux", "en", "dans", "pour", "par", "sur", "avec", "ce", "cette",
+            "qui", "que", "est", "sont", "se", "sa", "son", "ses", "leur", "aussi"],
+        es: ["de", "la", "el", "los", "las", "un", "una", "unos", "unas", "del",
+            "al", "en", "para", "por", "con", "que", "es", "son", "se", "su",
+            "sus", "lo", "como", "más", "este", "esta", "esto"],
+        hi: ["का", "की", "के", "में", "से", "को", "पर", "है", "हैं", "और", "या",
+            "एक", "यह", "वह", "जो", "कि", "ने", "तक", "भी", "इस", "उस", "हो",
+            "था", "थी", "थे", "गया", "गयी", "किसी", "कोई"],
+        ta: ["இது", "அது", "ஒரு", "மற்றும்", "அல்லது", "என்ற", "என்று", "ஆகும்",
+            "உள்ள", "இங்கே", "இங்கு", "அந்த", "இந்த", "ஆன", "மேலும்", "இவை",
+            "அவை", "எனும்", "ஆகிய", "உடைய"]
     };
 
     /*
@@ -493,6 +509,10 @@ window.WDProp = window.WDProp || {};
 
     function renderProgress() {
         var box = document.getElementById("workbenchProgress");
+        if (!box.getAttribute("role")) {
+            box.setAttribute("role", "status");
+            box.setAttribute("aria-live", "polite");
+        }
         clear(box);
 
         if (!state.worklist.length) {

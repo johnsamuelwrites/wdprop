@@ -191,6 +191,9 @@ window.WDProp = window.WDProp || {};
                 badge.innerHTML = "";
                 badge.appendChild(document.createTextNode("🧺 " + n));
                 badge.setAttribute("class", n > 0 ? "cart-badge has-items" : "cart-badge");
+                if (WDProp.i18n) {
+                    badge.setAttribute("aria-label", WDProp.i18n.t("a11y.batchCount", [n]));
+                }
             }
 
             cart.onChange(render);

@@ -3839,3 +3839,80 @@ tr.cn-changed {
         font-size: 12px;
     }
 }
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+/*
+ * Every page puts fifteen navigation links before its content. This lets a
+ * keyboard or screen-reader user step straight past them; it stays out of
+ * sight until it is focused.
+ */
+.skip-link {
+    position: absolute;
+    top: -60px;
+    left: 12px;
+    z-index: 300;
+    padding: 10px 18px;
+    border-radius: 0 0 8px 8px;
+    background: var(--accent-color);
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: none;
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+.skip-link:link,
+.skip-link:visited {
+    color: #ffffff;
+}
+
+/*
+ * A visible focus ring on every interactive control. Several of these are
+ * styled divs or bare buttons, which browsers give no useful default.
+ */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--accent-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+#header a:focus-visible,
+#sidebar a:focus-visible,
+.skip-link:focus-visible,
+.cart-badge:focus-visible,
+#theme-toggle:focus-visible,
+.language-switcher:focus-visible {
+    outline-color: #ffffff;
+}
+
+/* #content takes focus when the skip link is used; it needs no ring of its own. */
+#content:focus {
+    outline: none;
+}
+
+.wdp-status-cell .wdp-message {
+    max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

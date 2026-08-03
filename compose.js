@@ -47,6 +47,9 @@ window.WDProp = window.WDProp || {};
     var state = null;
     var backdrop = null;
 
+    /* Where focus was before the dialog opened, so it can be given back. */
+    var opener = null;
+
     function t(key, params) {
         return WDProp.i18n.t(key, params);
     }
@@ -251,12 +254,51 @@ window.WDProp = window.WDProp || {};
             backdrop = null;
             state = null;
             document.removeEventListener("keydown", onKeyDown);
+
+            /* Returning focus to whatever opened the dialog. */
+            if (opener && opener.focus) {
+                opener.focus();
+            }
+            opener = null;
         }
+    }
+
+    /* Everything inside the dialog that can take focus, in document order. */
+    function focusable() {
+        if (!backdrop) {
+            return [];
+        }
+        return Array.prototype.filter.call(
+            backdrop.querySelectorAll("button, input, select, textarea, a[href]"),
+            function (node) {
+                return !node.disabled;
+            });
     }
 
     function onKeyDown(event) {
         if (event.key === "Escape") {
             close();
+            return;
+        }
+
+        /*
+         * Tab must not walk out of the dialog and into the page behind it,
+         * which is still there and still focusable.
+         */
+        if (event.key === "Tab") {
+            var items = focusable();
+            if (!items.length) {
+                return;
+            }
+            var first = items[0];
+            var last = items[items.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
         }
     }
 
@@ -315,15 +357,23 @@ window.WDProp = window.WDProp || {};
             nodes: {}
         };
 
+        opener = document.activeElement;
+
         backdrop = element("div", "wdp-modal-backdrop");
         var modal = element("div", "wdp-modal");
+        modal.setAttribute("role", "dialog");
+        modal.setAttribute("aria-modal", "true");
+        modal.setAttribute("aria-labelledby", "wdp-modal-heading");
         backdrop.appendChild(modal);
 
         var head = element("div", "wdp-modal-head");
-        head.appendChild(element("h3", null, t("compose.heading")));
+        var heading = element("h3", null, t("compose.heading"));
+        heading.setAttribute("id", "wdp-modal-heading");
+        head.appendChild(heading);
         var closeButton = element("button", "wdp-close", "×");
         closeButton.setAttribute("type", "button");
-        closeButton.setAttribute("title", "Close");
+        closeButton.setAttribute("aria-label", t("a11y.closeDialog"));
+        closeButton.setAttribute("title", t("a11y.closeDialog"));
         closeButton.addEventListener("click", close);
         head.appendChild(closeButton);
         modal.appendChild(head);
@@ -349,9 +399,13 @@ window.WDProp = window.WDProp || {};
         });
         body.appendChild(form);
 
+        var fieldCount = 0;
         function field(labelText, control) {
             var wrapper = element("div", "wdp-field");
             var label = element("label", null, labelText);
+            var id = "wdp-field-" + (++fieldCount);
+            control.setAttribute("id", id);
+            label.setAttribute("for", id);
             wrapper.appendChild(label);
             wrapper.appendChild(control);
             form.appendChild(wrapper);
@@ -401,6 +455,8 @@ window.WDProp = window.WDProp || {};
         state.nodes.value = field(t("compose.translation"), valueInput);
 
         state.nodes.messages = element("div", "wdp-messages");
+        state.nodes.messages.setAttribute("role", "status");
+        state.nodes.messages.setAttribute("aria-live", "polite");
         form.appendChild(state.nodes.messages);
 
         var foot = element("div", "wdp-modal-foot");
@@ -499,6 +555,7 @@ window.WDProp = window.WDProp || {};
         var button = element("button", "wdp-add", "＋");
         button.setAttribute("type", "button");
         button.setAttribute("title", t("compose.proposeIn", [t("term." + type), lang]));
+        button.setAttribute("aria-label", t("compose.proposeIn", [t("term." + type), lang]));
         button.addEventListener("click", function (event) {
             event.preventDefault();
             event.stopPropagation();
@@ -523,7 +580,8 @@ window.WDProp = window.WDProp || {};
 
         var button = element("button", "wdp-add", "＋");
         button.setAttribute("type", "button");
-        button.setAttribute("title", "Propose a " + type + " in " + lang);
+        button.setAttribute("title", t("compose.proposeIn", [t("term." + type), lang]));
+        button.setAttribute("aria-label", t("compose.proposeIn", [t("term." + type), lang]));
         button.addEventListener("click", function (event) {
             event.preventDefault();
             event.stopPropagation();

@@ -288,6 +288,11 @@ window.WDProp = window.WDProp || {};
         box.appendChild(head);
 
         var track = element("div", "cm-bar");
+        track.setAttribute("role", "progressbar");
+        track.setAttribute("aria-valuemin", "0");
+        track.setAttribute("aria-valuemax", "100");
+        track.setAttribute("aria-valuenow", String(percent));
+        track.setAttribute("aria-label", t(goal.title) + ": " + t("a11y.progress", [percent]));
         var fill = element("div", "cm-bar-fill");
         fill.style.width = percent + "%";
         if (percent === 100) {

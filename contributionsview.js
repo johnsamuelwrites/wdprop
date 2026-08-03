@@ -125,12 +125,12 @@ window.WDProp = window.WDProp || {};
         if (counts.unknown) {
             summary.appendChild(element("span", "wdp-muted", t("contributions.uncheckedCount", [batch.entries.length])));
         } else {
-            summary.appendChild(element("span", "cn-pill cn-pill-live", t("contributions.liveCount", [counts.live])));
+            summary.appendChild(element("span", "cn-pill cn-pill-live", "\u2713 " + t("contributions.liveCount", [counts.live])));
             if (counts.missing) {
-                summary.appendChild(element("span", "cn-pill cn-pill-missing", t("contributions.missingCount", [counts.missing])));
+                summary.appendChild(element("span", "cn-pill cn-pill-missing", "\u2717 " + t("contributions.missingCount", [counts.missing])));
             }
             if (counts.changed) {
-                summary.appendChild(element("span", "cn-pill cn-pill-changed", t("contributions.changedCount", [counts.changed])));
+                summary.appendChild(element("span", "cn-pill cn-pill-changed", "\u2260 " + t("contributions.changedCount", [counts.changed])));
             }
         }
         head.appendChild(summary);
@@ -175,6 +175,8 @@ window.WDProp = window.WDProp || {};
 
     function renderSummary(all) {
         var box = document.getElementById("contributionsSummary");
+        box.setAttribute("role", "status");
+        box.setAttribute("aria-live", "polite");
         clear(box);
 
         if (!all.length) {
@@ -199,12 +201,12 @@ window.WDProp = window.WDProp || {};
 
         if (!totals.unknown) {
             var line = element("p");
-            line.appendChild(element("span", "cn-pill cn-pill-live", t("contributions.liveCount", [totals.live])));
+            line.appendChild(element("span", "cn-pill cn-pill-live", "\u2713 " + t("contributions.liveCount", [totals.live])));
             if (totals.missing) {
-                line.appendChild(element("span", "cn-pill cn-pill-missing", t("contributions.missingCount", [totals.missing])));
+                line.appendChild(element("span", "cn-pill cn-pill-missing", "\u2717 " + t("contributions.missingCount", [totals.missing])));
             }
             if (totals.changed) {
-                line.appendChild(element("span", "cn-pill cn-pill-changed", t("contributions.changedCount", [totals.changed])));
+                line.appendChild(element("span", "cn-pill cn-pill-changed", "\u2260 " + t("contributions.changedCount", [totals.changed])));
             }
             box.appendChild(line);
         }

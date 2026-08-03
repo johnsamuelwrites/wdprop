@@ -28,7 +28,9 @@
 * Translation campaigns: a shareable link pairing a language with a set of properties (a class, a datatype, a WikiProject or a list), showing live progress for labels, descriptions and aliases
 * Per-property context while translating: real usage examples, property constraints, and the same label in related languages and variants
 * Contributions: what you exported to QuickStatements, checked back against Wikidata, with anything that never arrived put back into your batch
+* Terminology consistency: find words that have been translated several different ways in a language, with the properties behind each rendering
 * Fully localised interface (English, French, Spanish), switchable from the header or with `?uselang=fr`; messages are plain JavaScript files, so WDProp works when opened directly from disk as well as when hosted. Adding a language means adding one file under `i18n/`
+* Keyboard and screen-reader accessible: skip links, landmarks, named controls, a focus-trapping dialog, and status that is never signalled by colour alone
 
 ## Author
 * John Samuel
