@@ -20,6 +20,10 @@ window.WDProp = window.WDProp || {};
     var overrides = {};
     var validation = { byId: {}, offline: false };
 
+    function t(key, params) {
+        return WDProp.i18n.t(key, params);
+    }
+
     function element(tag, className, text) {
         var node = document.createElement(tag);
         if (className) {
@@ -49,7 +53,7 @@ window.WDProp = window.WDProp || {};
             return { state: "conflict", messages: [result.conflict] };
         }
         if (result.conflict) {
-            return { state: "overridden", messages: [result.conflict + " Overwriting deliberately."] };
+            return { state: "overridden", messages: [result.conflict + t("batch.overwriting")] };
         }
         if (result.warnings.length) {
             return { state: "warning", messages: result.warnings };
@@ -71,13 +75,14 @@ window.WDProp = window.WDProp || {};
         var entries = WDProp.cart.list();
         if (!entries.length) {
             container.appendChild(element("p", "wdp-muted",
-                "The batch is empty. Open a property or a language page and use ＋ to propose a translation."));
+                t("batch.isEmpty")));
             return;
         }
 
         var table = element("table", "alternate wdp-batch-table");
         var head = element("tr");
-        ["Property", "Into", "Term", "Translation", "From", "Status", ""].forEach(function (title) {
+        [t("batch.colProperty"), t("batch.colInto"), t("batch.colTerm"), t("batch.colTranslation"),
+            t("batch.colFrom"), t("batch.colStatus"), ""].forEach(function (title) {
             head.appendChild(element("th", null, title));
         });
         table.appendChild(head);
@@ -119,7 +124,7 @@ window.WDProp = window.WDProp || {};
                 td.appendChild(element("span", "wdp-ok", "✓"));
             }
             if (status.state === "pending") {
-                td.appendChild(element("span", "wdp-muted", "not yet checked"));
+                td.appendChild(element("span", "wdp-muted", t("batch.notChecked")));
             }
             if (status.state === "conflict" || status.state === "overridden") {
                 var label = element("label", "wdp-override");
@@ -133,13 +138,13 @@ window.WDProp = window.WDProp || {};
                     render();
                 });
                 label.appendChild(box);
-                label.appendChild(document.createTextNode(" Replace it anyway"));
+                label.appendChild(document.createTextNode(t("batch.replaceAnyway")));
                 td.appendChild(label);
             }
             tr.appendChild(td);
 
             td = element("td");
-            var remove = element("button", "wdp-remove", "Remove");
+            var remove = element("button", "wdp-remove", t("common.remove"));
             remove.setAttribute("type", "button");
             remove.addEventListener("click", function () {
                 WDProp.cart.remove(entry.id);
@@ -163,13 +168,13 @@ window.WDProp = window.WDProp || {};
 
         if (!entries.length) {
             container.appendChild(element("p", "wdp-muted",
-                total ? "Nothing can be exported until the problems above are resolved." : "Nothing to export yet."));
+                total ? t("batch.blockedAll") : t("batch.nothingToExport")));
             return;
         }
 
         if (entries.length < total) {
             container.appendChild(element("p", "wdp-message wdp-warning",
-                (total - entries.length) + " of " + total + " proposals are held back and are not in the commands below."));
+                t("batch.heldBack", [total - entries.length, total])));
         }
 
         var pre = element("pre", "wdp-commands");
@@ -200,7 +205,7 @@ window.WDProp = window.WDProp || {};
         var link = WDProp.qs.urlFor(entries);
 
         if (link.ok) {
-            var open = element("a", "wdp-button wdp-primary", "Open in QuickStatements");
+            var open = element("a", "wdp-button wdp-primary", t("batch.openInQS"));
             open.setAttribute("href", link.url);
             open.setAttribute("target", "_blank");
             open.setAttribute("rel", "noopener");
@@ -212,32 +217,30 @@ window.WDProp = window.WDProp || {};
             var note = element("p", "wdp-message wdp-warning");
             if (link.reason === "too-long") {
                 note.appendChild(document.createTextNode(
-                    "This batch is too large for a one-click link (" + link.length +
-                    " characters). Copy the commands or download them and paste them into QuickStatements."));
+                    t("batch.tooLong", [link.length])));
             } else if (link.reason === "pipe-in-value") {
                 note.appendChild(document.createTextNode(
-                    "A translation contains “|”, which the one-click link uses as a separator. " +
-                    "Copy the commands or download them instead; pasting into QuickStatements is unaffected."));
+                    t("batch.pipeInValue")));
             }
             container.appendChild(note);
         }
 
-        var copy = element("button", "wdp-button", "Copy commands");
+        var copy = element("button", "wdp-button", t("batch.copy"));
         copy.setAttribute("type", "button");
         copy.addEventListener("click", function () {
             recordExport(entries);
             WDProp.qs.copy(WDProp.qs.batchText(entries)).then(function () {
-                copy.textContent = "Copied";
+                copy.textContent = t("batch.copied");
                 setTimeout(function () {
-                    copy.textContent = "Copy commands";
+                    copy.textContent = t("batch.copy");
                 }, 2000);
             }).catch(function () {
-                copy.textContent = "Copy failed — select the text above";
+                copy.textContent = t("batch.copyFailed");
             });
         });
         container.appendChild(copy);
 
-        var save = element("button", "wdp-button", "Download .txt");
+        var save = element("button", "wdp-button", t("batch.download"));
         save.setAttribute("type", "button");
         save.addEventListener("click", function () {
             recordExport(entries);
@@ -246,17 +249,17 @@ window.WDProp = window.WDProp || {};
         container.appendChild(save);
 
         var help = element("p", "wdp-muted");
-        help.appendChild(document.createTextNode("The edits are made under your own account, after you authorise QuickStatements. See "));
-        var helpLink = element("a", null, "Help:QuickStatements");
+        help.appendChild(document.createTextNode(t("batch.helpBefore")));
+        var helpLink = element("a", null, t("batch.helpLink"));
         helpLink.setAttribute("href", "https://www.wikidata.org/wiki/Help:QuickStatements");
         helpLink.setAttribute("target", "_blank");
         helpLink.setAttribute("rel", "noopener");
         help.appendChild(helpLink);
-        help.appendChild(document.createTextNode(". Afterwards, "));
-        var mine = element("a", null, "your contributions");
+        help.appendChild(document.createTextNode(t("batch.helpAfter")));
+        var mine = element("a", null, t("batch.helpContributions"));
         mine.setAttribute("href", "contributions.html");
         help.appendChild(mine);
-        help.appendChild(document.createTextNode(" shows what arrived."));
+        help.appendChild(document.createTextNode(t("batch.helpArrived")));
         container.appendChild(help);
     }
 
@@ -268,12 +271,11 @@ window.WDProp = window.WDProp || {};
         var ready = exportable().length;
 
         container.appendChild(element("h3", null,
-            total === 0 ? "No proposals yet" : ready + " of " + total + " ready to export"));
+            total === 0 ? t("batch.noneYet") : t("batch.readyCount", [ready, total])));
 
         if (validation.offline) {
             container.appendChild(element("p", "wdp-message wdp-warning",
-                "Wikidata could not be reached, so only the local checks have run. " +
-                "Duplicate labels and terms added in the meantime have not been verified."));
+                t("batch.offline")));
         }
     }
 
@@ -294,7 +296,7 @@ window.WDProp = window.WDProp || {};
 
         var status = document.getElementById("batchSummary");
         clear(status);
-        status.appendChild(element("p", "wdprop-loading", "Checking the batch against Wikidata…"));
+        status.appendChild(element("p", "wdprop-loading", t("batch.checking")));
 
         WDProp.validate.batch(entries).then(function (result) {
             validation = result;
@@ -306,7 +308,7 @@ window.WDProp = window.WDProp || {};
         var clearButton = document.getElementById("batchClear");
         if (clearButton) {
             clearButton.addEventListener("click", function () {
-                if (WDProp.cart.count() && window.confirm("Remove all " + WDProp.cart.count() + " proposals from the batch?")) {
+                if (WDProp.cart.count() && window.confirm(t("batch.confirmClear", [WDProp.cart.count()]))) {
                     WDProp.cart.clear();
                     overrides = {};
                     revalidate();

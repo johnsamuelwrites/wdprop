@@ -20,9 +20,9 @@ window.WDProp = window.WDProp || {};
     var API = "https://www.wikidata.org/w/api.php";
 
     var TYPES = [
-        { value: "label", text: "Label" },
-        { value: "description", text: "Description" },
-        { value: "alias", text: "Alias" }
+        { value: "label", text: "term.labels" },
+        { value: "description", text: "term.descriptions" },
+        { value: "alias", text: "term.aliases" }
     ];
 
     /*
@@ -46,6 +46,10 @@ window.WDProp = window.WDProp || {};
 
     var state = null;
     var backdrop = null;
+
+    function t(key, params) {
+        return WDProp.i18n.t(key, params);
+    }
 
     function urlValue(name, fallback) {
         var match = new RegExp(name + "=([^&#=]*)").exec(window.location.search);
@@ -107,7 +111,7 @@ window.WDProp = window.WDProp || {};
         clear(box);
 
         if (!state.entity) {
-            box.appendChild(element("p", "wdp-muted", "Loading the existing terms…"));
+            box.appendChild(element("p", "wdp-muted", t("compose.loadingTerms")));
             return;
         }
 
@@ -130,14 +134,14 @@ window.WDProp = window.WDProp || {};
             if (terms.label) {
                 td.appendChild(element("strong", null, terms.label));
             } else {
-                td.appendChild(element("span", "wdp-missing", "no label"));
+                td.appendChild(element("span", "wdp-missing", t("compose.noLabel")));
             }
             if (terms.description) {
                 td.appendChild(element("span", "wdp-sep", " — "));
                 td.appendChild(element("span", "wdp-desc", terms.description));
             }
             if (terms.aliases.length) {
-                td.appendChild(element("div", "wdp-aliases", "also: " + terms.aliases.join(", ")));
+                td.appendChild(element("div", "wdp-aliases", t("compose.alsoKnown", [terms.aliases.join(", ")])));
             }
             tr.appendChild(td);
             return tr;
@@ -202,8 +206,7 @@ window.WDProp = window.WDProp || {};
         var existing = existingTerm();
         if (existing) {
             box.appendChild(element("p", "wdp-message wdp-blocking",
-                "This property already has a " + state.type + " in " + state.lang +
-                " (“" + existing + "”). WDProp only proposes missing terms."));
+                t("compose.onlyMissing", [t("term." + state.type), state.lang, existing])));
         }
 
         state.nodes.submit.disabled = result.blocking.length > 0 || existing !== null;
@@ -238,7 +241,7 @@ window.WDProp = window.WDProp || {};
             }
             clear(state.nodes.context);
             state.nodes.context.appendChild(
-                element("p", "wdp-message wdp-warning", "Could not load existing terms: " + e.message));
+                element("p", "wdp-message wdp-warning", t("compose.termsFailed", [e.message])));
         });
     }
 
@@ -284,7 +287,7 @@ window.WDProp = window.WDProp || {};
 
         clear(state.nodes.messages);
         state.nodes.messages.appendChild(element("p", "wdp-message wdp-success",
-            "Added to the batch. " + WDProp.cart.count() + " waiting to be exported."));
+            t("compose.added", [WDProp.cart.count()])));
         state.nodes.value.value = "";
         state.nodes.value.focus();
         state.nodes.submit.disabled = true;
@@ -317,7 +320,7 @@ window.WDProp = window.WDProp || {};
         backdrop.appendChild(modal);
 
         var head = element("div", "wdp-modal-head");
-        head.appendChild(element("h3", null, "Propose a translation"));
+        head.appendChild(element("h3", null, t("compose.heading")));
         var closeButton = element("button", "wdp-close", "×");
         closeButton.setAttribute("type", "button");
         closeButton.setAttribute("title", "Close");
@@ -363,7 +366,7 @@ window.WDProp = window.WDProp || {};
             state.pivot = pivotInput.value.trim() || "en";
             loadEntity();
         });
-        state.nodes.pivot = field("I am translating from", pivotInput);
+        state.nodes.pivot = field(t("compose.from"), pivotInput);
 
         var langInput = element("input", "wdp-input wdp-input-small");
         langInput.setAttribute("type", "text");
@@ -373,13 +376,13 @@ window.WDProp = window.WDProp || {};
             state.lang = langInput.value.trim();
             loadEntity();
         });
-        state.nodes.lang = field("into", langInput);
+        state.nodes.lang = field(t("compose.into"), langInput);
 
         var typeSelect = element("select", "wdp-input");
-        TYPES.forEach(function (t) {
-            var option = element("option", null, t.text);
-            option.setAttribute("value", t.value);
-            if (t.value === state.type) {
+        TYPES.forEach(function (kind) {
+            var option = element("option", null, t(kind.text));
+            option.setAttribute("value", kind.value);
+            if (kind.value === state.type) {
                 option.setAttribute("selected", "selected");
             }
             typeSelect.appendChild(option);
@@ -388,27 +391,27 @@ window.WDProp = window.WDProp || {};
             state.type = typeSelect.value;
             renderMessages();
         });
-        state.nodes.type = field("Term", typeSelect);
+        state.nodes.type = field(t("compose.term"), typeSelect);
 
         var valueInput = element("input", "wdp-input wdp-input-value");
         valueInput.setAttribute("type", "text");
         valueInput.setAttribute("autocomplete", "off");
         valueInput.setAttribute("dir", "auto");
         valueInput.addEventListener("input", renderMessages);
-        state.nodes.value = field("Translation", valueInput);
+        state.nodes.value = field(t("compose.translation"), valueInput);
 
         state.nodes.messages = element("div", "wdp-messages");
         form.appendChild(state.nodes.messages);
 
         var foot = element("div", "wdp-modal-foot");
-        var submitButton = element("button", "wdp-button wdp-primary", "Add to batch");
+        var submitButton = element("button", "wdp-button wdp-primary", t("compose.addToBatch"));
         submitButton.setAttribute("type", "button");
         submitButton.disabled = true;
         submitButton.addEventListener("click", submit);
         state.nodes.submit = submitButton;
         foot.appendChild(submitButton);
 
-        var batchLink = element("a", "wdp-button", "Review batch");
+        var batchLink = element("a", "wdp-button", t("compose.reviewBatch"));
         batchLink.setAttribute("href", (window.WDPropPathPrefix || "./") + "batch.html");
         foot.appendChild(batchLink);
         modal.appendChild(foot);
@@ -495,7 +498,7 @@ window.WDProp = window.WDProp || {};
 
         var button = element("button", "wdp-add", "＋");
         button.setAttribute("type", "button");
-        button.setAttribute("title", "Propose a " + type + " in " + lang);
+        button.setAttribute("title", t("compose.proposeIn", [t("term." + type), lang]));
         button.addEventListener("click", function (event) {
             event.preventDefault();
             event.stopPropagation();

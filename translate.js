@@ -43,11 +43,14 @@ window.WDProp = window.WDProp || {};
         alias: "skos:altLabel"
     };
 
-    var TERM_NOUN = {
-        label: "label",
-        description: "description",
-        alias: "alias"
-    };
+    function t(key, params) {
+        return WDProp.i18n.t(key, params);
+    }
+
+    /* "label", "description" or "alias" as a word inside a sentence. */
+    function termNoun(type) {
+        return t("term." + type);
+    }
 
     /* Function words carry no terminology, so they are not worth matching on. */
     var STOPWORDS = {
@@ -500,21 +503,19 @@ window.WDProp = window.WDProp || {};
         var start = state.page * PAGE_SIZE;
 
         var heading = element("h3", null,
-            state.worklist.length.toLocaleString() + " properties still need a " +
-            TERM_NOUN[state.type] + " in " + state.target);
+            t("translate.stillNeed", [state.worklist.length.toLocaleString(), termNoun(state.type), state.target]));
         box.appendChild(heading);
 
         var line = element("p", "wdp-muted");
         line.appendChild(document.createTextNode(
-            view.total ? "Showing " + (start + 1) + "–" + Math.min(start + PAGE_SIZE, view.total) +
-                " of " + view.total.toLocaleString() + " remaining. " : "Nothing left to show. "));
+            view.total ? t("translate.showing", [start + 1, Math.min(start + PAGE_SIZE, view.total), view.total.toLocaleString()]) : t("translate.nothingLeft")));
         line.appendChild(document.createTextNode(
-            state.added + " added this session, " + skippedCount() + " skipped."));
+            t("translate.sessionCounts", [state.added, skippedCount()])));
         box.appendChild(line);
 
         if (skippedCount()) {
             var toggle = element("button", "wdp-button",
-                state.showSkipped ? "Hide skipped" : "Show skipped (" + skippedCount() + ")");
+                state.showSkipped ? t("translate.hideSkipped") : t("translate.showSkipped", [skippedCount()]));
             toggle.setAttribute("type", "button");
             toggle.addEventListener("click", function () {
                 state.showSkipped = !state.showSkipped;
@@ -527,10 +528,10 @@ window.WDProp = window.WDProp || {};
 
         if (state.glossaryStatus === "loading") {
             box.appendChild(element("p", "wdp-muted",
-                "Collecting how these words were translated into " + state.target + " before…"));
+                t("translate.glossaryLoading", [state.target])));
         } else if (state.glossaryStatus === "failed") {
             box.appendChild(element("p", "wdp-message wdp-warning",
-                "Earlier translations could not be loaded, so no terminology suggestions are shown. Everything else works."));
+                t("translate.glossaryFailed")));
         }
     }
 
@@ -542,7 +543,7 @@ window.WDProp = window.WDProp || {};
         }
 
         container.appendChild(element("span", "wb-terms-title",
-            "Already translated into " + state.target + ":"));
+            t("translate.alreadyTranslated", [state.target])));
 
         matches.forEach(function (match) {
             var item = element("span", "wb-term");
@@ -691,7 +692,7 @@ window.WDProp = window.WDProp || {};
     function renderContextPanel(box, property) {
         clear(box);
         var loading = element("div", "wdprop-loading");
-        loading.innerHTML = '<span class="wdprop-loading-spinner"></span> Looking this property up…';
+        loading.innerHTML = '<span class="wdprop-loading-spinner"></span> ' + t("translate.lookingUp");
         box.appendChild(loading);
 
         var cached = state.context[property];
@@ -734,9 +735,9 @@ window.WDProp = window.WDProp || {};
                     item.appendChild(element("strong", null, example.value));
                     list.appendChild(item);
                 });
-                section("Used like this", list);
+                section(t("translate.usedLikeThis"), list);
             } else if (context.examples) {
-                section("Used like this", element("p", "wdp-muted", "No statements use this property yet."));
+                section(t("translate.usedLikeThis"), element("p", "wdp-muted", t("translate.noStatements")));
             }
 
             if (context.constraints && context.constraints.length) {
@@ -745,7 +746,7 @@ window.WDProp = window.WDProp || {};
                     rules.appendChild(element("span", "wb-constraint",
                         constraint.name + (constraint.count > 1 ? " ×" + constraint.count : "")));
                 });
-                section("Constraints", rules);
+                section(t("translate.constraints"), rules);
             }
 
             if (context.related && context.related.length) {
@@ -753,18 +754,18 @@ window.WDProp = window.WDProp || {};
                 context.related.forEach(function (entry) {
                     var chip = element("span", entry.variant ? "wb-related-item wb-variant" : "wb-related-item");
                     chip.setAttribute("title", entry.variant ?
-                        entry.code + " is a variant of " + state.target :
-                        entry.code + " is written in a related language");
+                        t("translate.isVariant", [entry.code, state.target]) :
+                        t("translate.isRelated", [entry.code]));
                     chip.appendChild(element("span", "wb-lang-code", entry.code));
                     chip.appendChild(document.createTextNode(" " + entry.value));
                     languages.appendChild(chip);
                 });
-                section("In related languages", languages);
+                section(t("translate.relatedLanguages"), languages);
             }
 
             if (!box.firstChild) {
                 box.appendChild(element("p", "wdp-muted",
-                    "Nothing further to show for this property."));
+                    t("translate.nothingFurther")));
             }
         });
     }
@@ -799,11 +800,11 @@ window.WDProp = window.WDProp || {};
             head.appendChild(element("span", "wdp-tag", entity.datatype));
         }
 
-        var details = element("a", "wb-link", "in WDProp");
+        var details = element("a", "wb-link", t("translate.inWDProp"));
         details.setAttribute("href", "property.html?property=" + property);
         head.appendChild(details);
 
-        var talk = element("a", "wb-link", "discussion");
+        var talk = element("a", "wb-link", t("translate.discussion"));
         talk.setAttribute("href", "https://www.wikidata.org/wiki/Property_talk:" + property);
         talk.setAttribute("target", "_blank");
         talk.setAttribute("rel", "noopener");
@@ -834,8 +835,7 @@ window.WDProp = window.WDProp || {};
         });
         if (!context.firstChild) {
             context.appendChild(element("p", "wdp-missing",
-                "No label or description in " + state.pivots.join(", ") +
-                ". Open the property to find another language to work from."));
+                t("translate.noSource", [state.pivots.join(", ")])));
         }
         row.appendChild(context);
 
@@ -848,7 +848,7 @@ window.WDProp = window.WDProp || {};
         if (existing && state.type !== "alias") {
             var done = element("div", "wb-done");
             done.appendChild(document.createTextNode(
-                "Someone has since added a " + TERM_NOUN[state.type] + " in " + state.target + ": "));
+                t("translate.sinceAdded", [termNoun(state.type), state.target])));
             done.appendChild(element("strong", null, existing));
             row.appendChild(done);
             return row;
@@ -861,14 +861,14 @@ window.WDProp = window.WDProp || {};
         input.setAttribute("type", "text");
         input.setAttribute("dir", "auto");
         input.setAttribute("autocomplete", "off");
-        input.setAttribute("placeholder", TERM_NOUN[state.type] + " in " + state.target);
+        input.setAttribute("placeholder", t("translate.fieldPlaceholder", [termNoun(state.type), state.target]));
         entry.appendChild(input);
 
-        var add = element("button", "wdp-button wdp-primary wb-add", "Add");
+        var add = element("button", "wdp-button wdp-primary wb-add", t("common.add"));
         add.setAttribute("type", "button");
         entry.appendChild(add);
 
-        var skip = element("button", "wdp-button wb-skip", "Skip");
+        var skip = element("button", "wdp-button wb-skip", t("common.skip"));
         skip.setAttribute("type", "button");
         entry.appendChild(skip);
         row.appendChild(entry);
@@ -881,7 +881,7 @@ window.WDProp = window.WDProp || {};
          * fetched when asked for rather than for every row on the page.
          */
         var more = element("details", "wb-more");
-        var summary = element("summary", null, "Examples, constraints and related languages");
+        var summary = element("summary", null, t("translate.moreContext"));
         more.appendChild(summary);
         var moreBody = element("div", "wb-more-body");
         more.appendChild(moreBody);
@@ -952,7 +952,7 @@ window.WDProp = window.WDProp || {};
             row.setAttribute("class", "wb-row wb-committed");
             clear(messages);
             messages.appendChild(element("p", "wdp-message wdp-success",
-                "Added to the batch: " + input.value.trim()));
+                t("translate.addedToBatch", [input.value.trim()])));
             input.setAttribute("disabled", "disabled");
             add.disabled = true;
             skip.disabled = true;
@@ -1011,8 +1011,8 @@ window.WDProp = window.WDProp || {};
         if (!view.page.length) {
             box.appendChild(element("p", "wdp-muted",
                 state.worklist.length ?
-                    "Nothing left on this page. Everything here is either in your batch or skipped." :
-                    "Choose the languages you work with and load a worklist."));
+                    t("translate.emptyPage") :
+                    t("translate.chooseLanguages")));
             return;
         }
 
@@ -1031,7 +1031,7 @@ window.WDProp = window.WDProp || {};
             return;
         }
 
-        var previous = element("button", "wdp-button", "← Previous");
+        var previous = element("button", "wdp-button", t("translate.previous"));
         previous.setAttribute("type", "button");
         previous.disabled = state.page === 0;
         previous.addEventListener("click", function () {
@@ -1041,9 +1041,9 @@ window.WDProp = window.WDProp || {};
         box.appendChild(previous);
 
         box.appendChild(element("span", "wdp-muted",
-            " Page " + (state.page + 1) + " of " + pages.toLocaleString() + " "));
+            t("translate.page", [state.page + 1, pages.toLocaleString()])));
 
-        var next = element("button", "wdp-button", "Next →");
+        var next = element("button", "wdp-button", t("translate.next"));
         next.setAttribute("type", "button");
         next.disabled = state.page >= pages - 1;
         next.addEventListener("click", function () {
@@ -1076,7 +1076,7 @@ window.WDProp = window.WDProp || {};
         var box = document.getElementById("workbenchRows");
         clear(box);
         var loading = element("div", "wdprop-loading");
-        loading.innerHTML = '<span class="wdprop-loading-spinner"></span> Fetching the properties…';
+        loading.innerHTML = '<span class="wdprop-loading-spinner"></span> ' + t("translate.fetchingProperties");
         box.appendChild(loading);
 
         var batches = [];
@@ -1095,7 +1095,7 @@ window.WDProp = window.WDProp || {};
         }).catch(function (e) {
             clear(box);
             box.appendChild(element("p", "wdp-message wdp-blocking",
-                "Could not fetch the properties: " + e.message));
+                t("translate.propertiesFailed", [e.message])));
         });
     }
 
@@ -1121,21 +1121,21 @@ window.WDProp = window.WDProp || {};
     function validateSettings(settings) {
         var problems = [];
         if (!LANGUAGE_RE.test(settings.target)) {
-            problems.push("“" + settings.target + "” does not look like a language code.");
+            problems.push(t("translate.badLanguage", [settings.target]));
         }
         settings.pivots.forEach(function (lang) {
             if (!LANGUAGE_RE.test(lang)) {
-                problems.push("“" + lang + "” does not look like a language code.");
+                problems.push(t("translate.badLanguage", [lang]));
             }
         });
         if (settings.scope.kind === "class" && !CLASS_RE.test(settings.scope.value)) {
-            problems.push("A property class is an item identifier, for example Q18616576.");
+            problems.push(t("translate.badClass"));
         }
         if (settings.scope.kind === "datatype" && !DATATYPE_RE.test(settings.scope.value)) {
-            problems.push("A datatype looks like wikibase:WikibaseItem.");
+            problems.push(t("translate.badDatatype"));
         }
         if (settings.scope.kind === "properties" && !PROPERTY_LIST_RE.test(settings.scope.value)) {
-            problems.push("A property list looks like P31,P17,P1476.");
+            problems.push(t("translate.badPropertyList"));
         }
         return problems;
     }
@@ -1182,8 +1182,7 @@ window.WDProp = window.WDProp || {};
 
         var loading = element("div", "wdprop-loading");
         loading.innerHTML = '<span class="wdprop-loading-spinner"></span> ' +
-            "Asking Wikidata which properties still need a " + TERM_NOUN[state.type] +
-            " in " + state.target + ". This takes a few seconds…";
+            t("translate.askingWikidata", [termNoun(state.type), state.target]);
         box.appendChild(loading);
 
         loadWorklist().then(function (numbers) {
@@ -1192,8 +1191,7 @@ window.WDProp = window.WDProp || {};
             if (!numbers.length) {
                 clear(box);
                 box.appendChild(element("p", "wdp-message wdp-success",
-                    "Nothing is missing here — every property in this selection has a " +
-                    TERM_NOUN[state.type] + " in " + state.target + "."));
+                    t("translate.nothingMissing", [termNoun(state.type), state.target])));
                 return;
             }
             return loadPage().then(function () {
@@ -1204,7 +1202,7 @@ window.WDProp = window.WDProp || {};
         }).catch(function (e) {
             clear(box);
             box.appendChild(element("p", "wdp-message wdp-blocking",
-                "Could not load the worklist: " + e.message));
+                t("translate.worklistFailed", [e.message])));
         });
     }
 

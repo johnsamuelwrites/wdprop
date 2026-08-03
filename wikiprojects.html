@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WDProp: WikiProjects: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
+    <script type="text/javascript" src="i18n.js"></script>
+    <script type="text/javascript" src="i18n/en.js"></script>
     <script type="text/javascript" src="mwwdprop.js"></script>
     <script type="text/javascript" src="wdprop.js"></script>
     <script type="text/javascript" src="wikiprojects.js"></script>
@@ -19,27 +21,27 @@
     </div>
     <div id="header">
         <div id="logo"><a href="./index.html">WDProp</a>
-            <span id="subtitle">Everything about Wikidata properties</span>
+            <span id="subtitle" data-i18n="app.subtitle">Everything about Wikidata properties</span>
         </div>
         <div id="theme-toggle" onclick="toggleTheme()" title="Toggle theme"></div>
     </div>
     <div id="sidebar">
         <div id="sidebarlinks">
             <ul>
-                <li><a href="./index.html">📊 Dashboard</a></li>
-                <li><a href="./translate.html">✍️ Translate</a></li>
-                <li><a href="./campaign.html">🎯 Campaigns</a></li>
-                <li><a href="./contributions.html">✅ My contributions</a></li>
-                <li><a href="./languages.html">🌍 Languages</a></li>
-                <li><a href="./datatypes.html">📊 Data types</a></li>
-                <li><a href="./properties.html">🔧 Properties</a></li>
-                <li><a href="./classes.html">📦 Property Classes</a></li>
-                <li><a href="./provenance.html">📜 Provenance</a></li>
-                <li><a href="./search.html">🔍 Search</a></li>
-                <li><a href="./compare.html">⚖️ Compare</a></li>
-                <li><a href="templates/translated.html">💬 Property Discussion</a></li>
-                <li><a href="./wikiprojects.html">🚀 Wikiprojects</a></li>
-                <li><a href="./wdprop.html">ℹ️ About</a> </li>
+                <li><a href="./index.html" data-i18n="nav.dashboard">📊 Dashboard</a></li>
+                <li><a href="./translate.html" data-i18n="nav.translate">✍️ Translate</a></li>
+                <li><a href="./campaign.html" data-i18n="nav.campaigns">🎯 Campaigns</a></li>
+                <li><a href="./contributions.html" data-i18n="nav.contributions">✅ My contributions</a></li>
+                <li><a href="./languages.html" data-i18n="nav.languages">🌍 Languages</a></li>
+                <li><a href="./datatypes.html" data-i18n="nav.datatypes">📊 Data types</a></li>
+                <li><a href="./properties.html" data-i18n="nav.properties">🔧 Properties</a></li>
+                <li><a href="./classes.html" data-i18n="nav.classes">📦 Property Classes</a></li>
+                <li><a href="./provenance.html" data-i18n="nav.provenance">📜 Provenance</a></li>
+                <li><a href="./search.html" data-i18n="nav.search">🔍 Search</a></li>
+                <li><a href="./compare.html" data-i18n="nav.compare">⚖️ Compare</a></li>
+                <li><a href="templates/translated.html" data-i18n="nav.discussion">💬 Property Discussion</a></li>
+                <li><a href="./wikiprojects.html" data-i18n="nav.wikiprojects">🚀 Wikiprojects</a></li>
+                <li><a href="./wdprop.html" data-i18n="nav.about">ℹ️ About</a> </li>
             </ul>
         </div>
     </div>
@@ -89,7 +91,7 @@
 
     </div>
     <div id="footer">
-        <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
+        <p id="footertext" data-i18n-html="app.footer">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
 
     <script>

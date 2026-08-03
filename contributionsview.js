@@ -12,13 +12,11 @@ window.WDProp = window.WDProp || {};
 (function (WDProp) {
     "use strict";
 
-    var STATE_LABEL = {
-        live: "on Wikidata",
-        missing: "not there",
-        changed: "different value"
-    };
-
     var reports = {};
+
+    function t(key, params) {
+        return WDProp.i18n.t(key, params);
+    }
 
     function element(tag, className, text) {
         var node = document.createElement(tag);
@@ -57,7 +55,8 @@ window.WDProp = window.WDProp || {};
         var report = reports[batch.id];
         var table = element("table", "alternate wdp-batch-table");
         var head = element("tr");
-        ["Property", "Language", "Term", "What you proposed", "Now on Wikidata", ""].forEach(function (title) {
+        [t("batch.colProperty"), t("campaign.language"), t("batch.colTerm"),
+            t("contributions.colProposed"), t("contributions.colNow"), ""].forEach(function (title) {
             head.appendChild(element("th", null, title));
         });
         table.appendChild(head);
@@ -84,25 +83,25 @@ window.WDProp = window.WDProp || {};
             cell = element("td");
             cell.setAttribute("dir", "auto");
             if (!result) {
-                cell.appendChild(element("span", "wdp-muted", "not checked"));
+                cell.appendChild(element("span", "wdp-muted", t("contributions.notChecked")));
             } else if (result.state === "live") {
                 cell.appendChild(element("span", "wdp-ok", "✓ "));
-                cell.appendChild(document.createTextNode(STATE_LABEL.live));
+                cell.appendChild(document.createTextNode(t("contributions.live")));
             } else if (result.state === "changed") {
                 cell.appendChild(document.createTextNode(result.current));
             } else {
                 cell.appendChild(element("span", "wdp-muted",
-                    result.current ? "still: " + result.current : STATE_LABEL.missing));
+                    result.current ? t("contributions.stillThere", [result.current]) : t("contributions.missing")));
             }
             row.appendChild(cell);
 
             cell = element("td");
             if (result && result.state === "missing") {
-                var retry = element("button", "wdp-remove", "Put back in batch");
+                var retry = element("button", "wdp-remove", t("contributions.putBack"));
                 retry.setAttribute("type", "button");
                 retry.addEventListener("click", function () {
                     WDProp.cart.add(entry);
-                    retry.textContent = "In your batch";
+                    retry.textContent = t("contributions.inYourBatch");
                     retry.disabled = true;
                 });
                 cell.appendChild(retry);
@@ -120,18 +119,18 @@ window.WDProp = window.WDProp || {};
         var counts = countStates(batch);
 
         var head = element("div", "cn-batch-head");
-        head.appendChild(element("h3", null, "Exported " + formatDate(batch.exported)));
+        head.appendChild(element("h3", null, t("contributions.exportedOn", [formatDate(batch.exported)])));
 
         var summary = element("span", "cn-summary");
         if (counts.unknown) {
-            summary.appendChild(element("span", "wdp-muted", batch.entries.length + " proposals, not yet checked"));
+            summary.appendChild(element("span", "wdp-muted", t("contributions.uncheckedCount", [batch.entries.length])));
         } else {
-            summary.appendChild(element("span", "cn-pill cn-pill-live", counts.live + " on Wikidata"));
+            summary.appendChild(element("span", "cn-pill cn-pill-live", t("contributions.liveCount", [counts.live])));
             if (counts.missing) {
-                summary.appendChild(element("span", "cn-pill cn-pill-missing", counts.missing + " not there"));
+                summary.appendChild(element("span", "cn-pill cn-pill-missing", t("contributions.missingCount", [counts.missing])));
             }
             if (counts.changed) {
-                summary.appendChild(element("span", "cn-pill cn-pill-changed", counts.changed + " different"));
+                summary.appendChild(element("span", "cn-pill cn-pill-changed", t("contributions.changedCount", [counts.changed])));
             }
         }
         head.appendChild(summary);
@@ -142,7 +141,7 @@ window.WDProp = window.WDProp || {};
         var actions = element("p", "cn-actions");
 
         if (counts.missing) {
-            var retryAll = element("button", "wdp-button", "Put all " + counts.missing + " back in my batch");
+            var retryAll = element("button", "wdp-button", t("contributions.putAllBack", [counts.missing]));
             retryAll.setAttribute("type", "button");
             retryAll.addEventListener("click", function () {
                 var report = reports[batch.id];
@@ -154,16 +153,16 @@ window.WDProp = window.WDProp || {};
                         restored++;
                     }
                 });
-                retryAll.textContent = restored + " put back — open your batch";
+                retryAll.textContent = t("contributions.putBackDone", [restored]);
                 retryAll.disabled = true;
             });
             actions.appendChild(retryAll);
         }
 
-        var forget = element("button", "wdp-button", "Forget this export");
+        var forget = element("button", "wdp-button", t("contributions.forget"));
         forget.setAttribute("type", "button");
         forget.addEventListener("click", function () {
-            if (window.confirm("Remove this export from your history? It does not undo anything on Wikidata.")) {
+            if (window.confirm(t("contributions.confirmForget"))) {
                 WDProp.contributions.removeBatch(batch.id);
                 render();
             }
@@ -180,8 +179,7 @@ window.WDProp = window.WDProp || {};
 
         if (!all.length) {
             box.appendChild(element("p", "wdp-muted",
-                "Nothing exported yet. Once you send a batch to QuickStatements it is " +
-                "recorded here, and you can come back to see what arrived."));
+                t("contributions.none")));
             return;
         }
 
@@ -196,17 +194,17 @@ window.WDProp = window.WDProp || {};
         });
 
         box.appendChild(element("h3", null,
-            totals.all.toLocaleString() + " translations proposed across " +
-            all.length + (all.length === 1 ? " export" : " exports")));
+            all.length === 1 ? t("contributions.proposedAcrossOne", [totals.all.toLocaleString()]) :
+                t("contributions.proposedAcross", [totals.all.toLocaleString(), all.length])));
 
         if (!totals.unknown) {
             var line = element("p");
-            line.appendChild(element("span", "cn-pill cn-pill-live", totals.live + " on Wikidata"));
+            line.appendChild(element("span", "cn-pill cn-pill-live", t("contributions.liveCount", [totals.live])));
             if (totals.missing) {
-                line.appendChild(element("span", "cn-pill cn-pill-missing", totals.missing + " not there"));
+                line.appendChild(element("span", "cn-pill cn-pill-missing", t("contributions.missingCount", [totals.missing])));
             }
             if (totals.changed) {
-                line.appendChild(element("span", "cn-pill cn-pill-changed", totals.changed + " different"));
+                line.appendChild(element("span", "cn-pill cn-pill-changed", t("contributions.changedCount", [totals.changed])));
             }
             box.appendChild(line);
         }
@@ -233,7 +231,7 @@ window.WDProp = window.WDProp || {};
         var box = document.getElementById("contributionsBatches");
         clear(box);
         var loading = element("div", "wdprop-loading");
-        loading.innerHTML = '<span class="wdprop-loading-spinner"></span> Asking Wikidata what is there now…';
+        loading.innerHTML = '<span class="wdprop-loading-spinner"></span> ' + t("contributions.checking");
         box.appendChild(loading);
 
         /*
@@ -253,7 +251,7 @@ window.WDProp = window.WDProp || {};
         }).catch(function (e) {
             clear(box);
             box.appendChild(element("p", "wdp-message wdp-blocking",
-                "Could not check against Wikidata: " + e.message));
+                t("contributions.checkFailed", [e.message])));
         });
     }
 
@@ -270,7 +268,7 @@ window.WDProp = window.WDProp || {};
         var forgetAll = document.getElementById("contributionsClear");
         if (forgetAll) {
             forgetAll.addEventListener("click", function () {
-                if (window.confirm("Forget every recorded export? This does not undo anything on Wikidata.")) {
+                if (window.confirm(t("contributions.confirmForgetAll"))) {
                     WDProp.contributions.clear();
                     reports = {};
                     render();

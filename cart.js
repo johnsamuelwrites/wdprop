@@ -177,7 +177,7 @@ window.WDProp = window.WDProp || {};
             var badge = document.createElement("a");
             badge.setAttribute("id", "cart-badge");
             badge.setAttribute("href", prefix + "batch.html");
-            badge.setAttribute("title", "Translation batch");
+            badge.setAttribute("title", WDProp.i18n ? WDProp.i18n.t("batch.heading") : "Translation batch");
 
             var themeToggle = document.getElementById("theme-toggle");
             if (themeToggle) {

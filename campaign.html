@@ -5,6 +5,8 @@
     <meta charset="utf-8" />
     <title>WDProp: Translation campaign: John Samuel</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
+    <script type="text/javascript" src="i18n.js"></script>
+    <script type="text/javascript" src="i18n/en.js"></script>
     <script type="text/javascript" src="wdprop.js">
     </script>
     <script type="text/javascript" src="cart.js">
@@ -23,56 +25,52 @@
     </div>
     <div id="header">
         <div id="logo"><a href="./index.html">WDProp</a>
-            <span id="subtitle">Everything about Wikidata properties</span>
+            <span id="subtitle" data-i18n="app.subtitle">Everything about Wikidata properties</span>
         </div>
         <div id="theme-toggle" onclick="toggleTheme()" title="Toggle theme"></div>
     </div>
     <div id="sidebar">
         <div id="sidebarlinks">
             <ul>
-                <li><a href="./index.html">📊 Dashboard</a></li>
-                <li><a href="./translate.html">✍️ Translate</a></li>
-                <li><a href="./campaign.html">🎯 Campaigns</a></li>
-                <li><a href="./contributions.html">✅ My contributions</a></li>
-                <li><a href="./languages.html">🌍 Languages</a></li>
-                <li><a href="./datatypes.html">📊 Data types</a></li>
-                <li><a href="./properties.html">🔧 Properties</a></li>
-                <li><a href="./classes.html">📦 Property Classes</a></li>
-                <li><a href="./provenance.html">📜 Provenance</a></li>
-                <li><a href="./search.html">🔍 Search</a></li>
-                <li><a href="./compare.html">⚖️ Compare</a></li>
-                <li><a href="templates/translated.html">💬 Property Discussion</a></li>
-                <li><a href="./wikiprojects.html">🚀 Wikiprojects</a></li>
-                <li><a href="./wdprop.html">ℹ️ About</a> </li>
+                <li><a href="./index.html" data-i18n="nav.dashboard">📊 Dashboard</a></li>
+                <li><a href="./translate.html" data-i18n="nav.translate">✍️ Translate</a></li>
+                <li><a href="./campaign.html" data-i18n="nav.campaigns">🎯 Campaigns</a></li>
+                <li><a href="./contributions.html" data-i18n="nav.contributions">✅ My contributions</a></li>
+                <li><a href="./languages.html" data-i18n="nav.languages">🌍 Languages</a></li>
+                <li><a href="./datatypes.html" data-i18n="nav.datatypes">📊 Data types</a></li>
+                <li><a href="./properties.html" data-i18n="nav.properties">🔧 Properties</a></li>
+                <li><a href="./classes.html" data-i18n="nav.classes">📦 Property Classes</a></li>
+                <li><a href="./provenance.html" data-i18n="nav.provenance">📜 Provenance</a></li>
+                <li><a href="./search.html" data-i18n="nav.search">🔍 Search</a></li>
+                <li><a href="./compare.html" data-i18n="nav.compare">⚖️ Compare</a></li>
+                <li><a href="templates/translated.html" data-i18n="nav.discussion">💬 Property Discussion</a></li>
+                <li><a href="./wikiprojects.html" data-i18n="nav.wikiprojects">🚀 Wikiprojects</a></li>
+                <li><a href="./wdprop.html" data-i18n="nav.about">ℹ️ About</a> </li>
             </ul>
         </div>
     </div>
     <div id="content">
         <div class="section">
-            <h2>Translation campaign</h2>
-            <p class="wdp-muted">A language and a set of properties, with how far
-                the translation has got. A campaign is only a link — there is nothing
-                to create and nothing stored: everyone who opens it sees figures
-                measured from Wikidata at that moment. Useful for an edit-a-thon, a
-                course, or dividing work between people.</p>
+            <h2 data-i18n="campaign.heading">Translation campaign</h2>
+            <p class="wdp-muted" data-i18n="campaign.intro">A language and a set of properties.</p>
             <form id="campaignForm" class="wb-controls">
                 <div class="wb-control">
-                    <label for="cmTarget">Language</label>
+                    <label for="cmTarget" data-i18n="campaign.language">Language</label>
                     <input type="text" id="cmTarget" class="wdp-input wdp-input-small" size="6" autocomplete="off" />
                 </div>
                 <div class="wb-control">
-                    <label for="cmScope">Properties</label>
+                    <label for="cmScope" data-i18n="campaign.properties">Properties</label>
                     <select id="cmScope" class="wdp-input">
-                        <option value="class">In a property class</option>
-                        <option value="datatype">With a datatype</option>
-                        <option value="wikiproject">Linked from a WikiProject</option>
-                        <option value="properties">A list I paste</option>
+                        <option value="class" data-i18n="campaign.scopeClass">In a property class</option>
+                        <option value="datatype" data-i18n="campaign.scopeDatatype">With a datatype</option>
+                        <option value="wikiproject" data-i18n="campaign.scopeWikiProject">Linked from a WikiProject</option>
+                        <option value="properties" data-i18n="campaign.scopeList">A list I paste</option>
                     </select>
                     <input type="text" id="cmScopeValue" class="wdp-input" size="26" autocomplete="off"
                            placeholder="Q18616576" />
                 </div>
                 <div class="wb-control">
-                    <button type="submit" class="wdp-button wdp-primary">Measure progress</button>
+                    <button type="submit" class="wdp-button wdp-primary" data-i18n="campaign.measure">Measure progress</button>
                 </div>
             </form>
         </div>
@@ -81,12 +79,12 @@
             <div id="campaignGoals"></div>
         </div>
         <div class="section">
-            <h3>Share this campaign</h3>
+            <h3 data-i18n="campaign.shareHeading">Share this campaign</h3>
             <div id="campaignShare"></div>
         </div>
     </div>
     <div id="footer">
-        <p id="footertext">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
+        <p id="footertext" data-i18n-html="app.footer">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
 </body>
 

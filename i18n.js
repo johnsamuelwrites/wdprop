@@ -1,0 +1,253 @@
+/*
+ * WDProp - Interface localisation
+ *
+ * Messages are JavaScript, not JSON, and arrive through ordinary <script>
+ * tags. That is deliberate: a browser treats a page opened from the file
+ * system as an opaque origin and refuses fetch() and module imports against
+ * it, so a JSON message store would leave WDProp blank when the pages are
+ * opened directly from disk. Script tags are not subject to that rule, which
+ * is why wdprop.js and d3 already work that way.
+ *
+ * English is loaded by every page as a plain script tag, so it is always
+ * present. Any other language is added afterwards by injecting a script; if
+ * that file is missing or fails to load, English simply remains. The default
+ * cannot break, because it is the only thing loaded unconditionally.
+ *
+ * Author: John Samuel
+ */
+
+window.WDProp = window.WDProp || {};
+
+(function (WDProp) {
+    "use strict";
+
+    var FALLBACK = "en";
+    var STORAGE_KEY = "wdprop-language";
+
+    var AVAILABLE = [
+        { code: "en", name: "English" },
+        { code: "fr", name: "Français" },
+        { code: "es", name: "Español" }
+    ];
+
+    var messages = {};
+    var current = FALLBACK;
+    var requested = null;
+
+    /*
+     * Where the other message files live, worked out from this script's own
+     * location so that pages in subdirectories load them correctly.
+     */
+    var base = (function () {
+        var script = document.currentScript;
+        if (script && script.src) {
+            return script.src.replace(/i18n\.js(\?.*)?$/, "");
+        }
+        return "";
+    })();
+
+    function add(language, dictionary) {
+        messages[language] = messages[language] || {};
+        Object.keys(dictionary).forEach(function (key) {
+            messages[language][key] = dictionary[key];
+        });
+
+        // A language may arrive after the page has been laid out.
+        if (language === current || language === requested) {
+            current = language;
+            apply();
+        }
+    }
+
+    /*
+     * The message for a key, falling back to English and then to the key
+     * itself, so a missing translation shows something usable rather than
+     * nothing. $1, $2 … are replaced by the given parameters.
+     */
+    function t(key, params) {
+        var text = (messages[current] && messages[current][key]);
+        if (text === undefined) {
+            text = (messages[FALLBACK] && messages[FALLBACK][key]);
+        }
+        if (text === undefined) {
+            return key;
+        }
+        if (params && params.length) {
+            params.forEach(function (value, index) {
+                text = text.split("$" + (index + 1)).join(String(value));
+            });
+        }
+        return text;
+    }
+
+    /*
+     * Applies the current language to the page.
+     *
+     *   data-i18n              replaces the element's text
+     *   data-i18n-html         replaces its markup, for messages that contain
+     *                          a link; message files are part of WDProp, not
+     *                          user input, so this stays under our control
+     *   data-i18n-title        sets the title attribute
+     *   data-i18n-placeholder  sets the placeholder attribute
+     */
+    function apply(root) {
+        var scope = root || document;
+
+        each(scope, "[data-i18n]", function (node, key) {
+            var text = t(key);
+            while (node.firstChild) {
+                node.removeChild(node.firstChild);
+            }
+            node.appendChild(document.createTextNode(text));
+        }, "i18n");
+
+        each(scope, "[data-i18n-html]", function (node, key) {
+            node.innerHTML = t(key);
+        }, "i18nHtml");
+
+        each(scope, "[data-i18n-title]", function (node, key) {
+            node.setAttribute("title", t(key));
+        }, "i18nTitle");
+
+        each(scope, "[data-i18n-placeholder]", function (node, key) {
+            node.setAttribute("placeholder", t(key));
+        }, "i18nPlaceholder");
+
+        var title = document.querySelector("[data-i18n-title-tag]");
+        if (title) {
+            document.title = t(title.getAttribute("data-i18n-title-tag"));
+        }
+
+        document.documentElement.setAttribute("lang", current);
+    }
+
+    function each(scope, selector, fn, dataKey) {
+        var nodes = scope.querySelectorAll(selector);
+        for (var i = 0; i < nodes.length; i++) {
+            fn(nodes[i], nodes[i].dataset[dataKey]);
+        }
+    }
+
+    function known(language) {
+        return AVAILABLE.some(function (entry) {
+            return entry.code === language;
+        });
+    }
+
+    /*
+     * Loads a language and switches to it. English is already present, so it
+     * never needs fetching.
+     */
+    function setLanguage(language) {
+        if (!known(language)) {
+            language = FALLBACK;
+        }
+
+        try {
+            localStorage.setItem(STORAGE_KEY, language);
+        } catch (e) {
+            // Remembering the choice is optional.
+        }
+
+        /*
+         * English arrives through its own script tag on every page, so it is
+         * never fetched here — asking for it again would load the same file
+         * twice if this runs before that tag has executed.
+         */
+        if (language === FALLBACK || messages[language]) {
+            current = language;
+            apply();
+            return;
+        }
+
+        requested = language;
+        var script = document.createElement("script");
+        script.src = base + "i18n/" + language + ".js";
+        script.onerror = function () {
+            // The file is missing or blocked: English stays, nothing breaks.
+            requested = null;
+        };
+        document.head.appendChild(script);
+    }
+
+    /*
+     * uselang in the address follows MediaWiki, so a link can carry the
+     * language; otherwise the last choice, then what the browser asks for.
+     */
+    function detect() {
+        var match = /[?&]uselang=([^&#]*)/.exec(window.location.search);
+        if (match) {
+            var fromUrl = decodeURIComponent(match[1]);
+            if (known(fromUrl)) {
+                return fromUrl;
+            }
+        }
+
+        try {
+            var stored = localStorage.getItem(STORAGE_KEY);
+            if (stored && known(stored)) {
+                return stored;
+            }
+        } catch (e) {
+            // No stored preference available.
+        }
+
+        var browser = (navigator.language || "").toLowerCase().split("-")[0];
+        return known(browser) ? browser : FALLBACK;
+    }
+
+    function mountSwitcher() {
+        var header = document.getElementById("header");
+        if (!header || document.getElementById("language-switcher")) {
+            return;
+        }
+
+        var select = document.createElement("select");
+        select.setAttribute("id", "language-switcher");
+        select.setAttribute("class", "language-switcher");
+        select.setAttribute("title", "Interface language");
+
+        AVAILABLE.forEach(function (entry) {
+            var option = document.createElement("option");
+            option.setAttribute("value", entry.code);
+            if (entry.code === current) {
+                option.setAttribute("selected", "selected");
+            }
+            option.appendChild(document.createTextNode(entry.name));
+            select.appendChild(option);
+        });
+
+        select.addEventListener("change", function () {
+            setLanguage(select.value);
+        });
+
+        var themeToggle = document.getElementById("theme-toggle");
+        if (themeToggle) {
+            header.insertBefore(select, themeToggle);
+        } else {
+            header.appendChild(select);
+        }
+    }
+
+    WDProp.i18n = {
+        add: add,
+        t: t,
+        apply: apply,
+        setLanguage: setLanguage,
+        available: AVAILABLE,
+        current: function () {
+            return current;
+        }
+    };
+
+    function init() {
+        mountSwitcher();
+        setLanguage(detect());
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+    } else {
+        init();
+    }
+})(window.WDProp);

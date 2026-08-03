@@ -33,9 +33,9 @@ window.WDProp = window.WDProp || {};
     var PROPERTY_LIST_RE = /^P[0-9]+(,P[0-9]+)*$/;
 
     var GOALS = [
-        { type: "label", field: "hasLabel", title: "Labels" },
-        { type: "description", field: "hasDescription", title: "Descriptions" },
-        { type: "alias", field: "hasAlias", title: "Aliases" }
+        { type: "label", field: "hasLabel", title: "term.labels" },
+        { type: "description", field: "hasDescription", title: "term.descriptions" },
+        { type: "alias", field: "hasAlias", title: "term.aliases" }
     ];
 
     var state = {
@@ -44,6 +44,10 @@ window.WDProp = window.WDProp || {};
         name: null,
         rows: []
     };
+
+    function t(key, params) {
+        return WDProp.i18n.t(key, params);
+    }
 
     function element(tag, className, text) {
         var node = document.createElement(tag);
@@ -113,13 +117,13 @@ window.WDProp = window.WDProp || {};
 
     function scopeProblem(scope) {
         if (scope.kind === "class" && !CLASS_RE.test(scope.value)) {
-            return "A property class is an item identifier, for example Q18616576.";
+            return t("translate.badClass");
         }
         if (scope.kind === "datatype" && !DATATYPE_RE.test(scope.value)) {
-            return "A datatype looks like wikibase:WikibaseItem.";
+            return t("translate.badDatatype");
         }
         if (scope.kind === "properties" && !PROPERTY_LIST_RE.test(scope.value)) {
-            return "A property list looks like P31,P17,P1476.";
+            return t("translate.badPropertyList");
         }
         return null;
     }
@@ -143,7 +147,7 @@ window.WDProp = window.WDProp || {};
             var properties = [];
             Object.keys(pages).forEach(function (key) {
                 if (pages[key].missing !== undefined) {
-                    throw new Error("There is no page called “" + project + "” on Wikidata.");
+                    throw new Error(t("campaign.noSuchPage", [project]));
                 }
                 (pages[key].links || []).forEach(function (link) {
                     var id = link.title.replace("Property:", "");
@@ -278,9 +282,9 @@ window.WDProp = window.WDProp || {};
         var box = element("div", "cm-goal");
 
         var head = element("div", "cm-goal-head");
-        head.appendChild(element("h3", null, goal.title));
+        head.appendChild(element("h3", null, t(goal.title)));
         head.appendChild(element("span", "cm-goal-count",
-            done.toLocaleString() + " of " + total.toLocaleString() + " · " + percent + "%"));
+            t("campaign.goalDone", [done.toLocaleString(), total.toLocaleString(), percent])));
         box.appendChild(head);
 
         var track = element("div", "cm-bar");
@@ -294,7 +298,7 @@ window.WDProp = window.WDProp || {};
 
         if (!remaining) {
             box.appendChild(element("p", "wdp-message wdp-success",
-                "Every property in this campaign has a " + goal.type + " in " + state.target + "."));
+                t("campaign.allDone", [t("term." + goal.type), state.target])));
             return box;
         }
 
@@ -304,14 +308,14 @@ window.WDProp = window.WDProp || {};
 
         var actions = element("p", "cm-actions");
         var work = element("a", "wdp-button wdp-primary",
-            "Translate the " + remaining.toLocaleString() + " remaining");
+            t("campaign.translateRemaining", [remaining.toLocaleString()]));
         work.setAttribute("href", workbenchLink(goal, missing));
         actions.appendChild(work);
         box.appendChild(actions);
 
         /* Which properties are outstanding, for anyone dividing up the work. */
         var details = element("details", "cm-remaining");
-        var summary = element("summary", null, "Show the " + missing.length.toLocaleString() + " properties still missing a " + goal.type);
+        var summary = element("summary", null, t("campaign.showRemaining", [missing.length.toLocaleString(), t("term." + goal.type)]));
         details.appendChild(summary);
         var list = element("div", "cm-property-list");
         missing.forEach(function (row) {
@@ -337,13 +341,13 @@ window.WDProp = window.WDProp || {};
         link.value = window.location.href;
         box.appendChild(link);
 
-        var copy = element("button", "wdp-button", "Copy link");
+        var copy = element("button", "wdp-button", t("campaign.copyLink"));
         copy.setAttribute("type", "button");
         copy.addEventListener("click", function () {
             WDProp.qs.copy(window.location.href).then(function () {
-                copy.textContent = "Copied";
+                copy.textContent = t("campaign.copied");
                 setTimeout(function () {
-                    copy.textContent = "Copy link";
+                    copy.textContent = t("campaign.copyLink");
                 }, 2000);
             }).catch(function () {
                 link.select();
@@ -351,13 +355,13 @@ window.WDProp = window.WDProp || {};
         });
         box.appendChild(copy);
 
-        var refresh = element("button", "wdp-button", "Refresh");
+        var refresh = element("button", "wdp-button", t("campaign.refresh"));
         refresh.setAttribute("type", "button");
         refresh.addEventListener("click", run);
         box.appendChild(refresh);
 
         box.appendChild(element("p", "wdp-muted",
-            "Anyone opening this link sees the current figures, recomputed from Wikidata."));
+            t("campaign.shareHint")));
     }
 
     function renderCampaign() {
@@ -366,8 +370,7 @@ window.WDProp = window.WDProp || {};
         heading.appendChild(element("h2", null,
             state.name || (state.target + " · " + state.scope.label)));
         heading.appendChild(element("p", "wdp-muted",
-            state.rows.length.toLocaleString() + " properties in this campaign, translated into " +
-            state.target + "."));
+            t("campaign.propertyCount", [state.rows.length.toLocaleString(), state.target])));
 
         var goals = document.getElementById("campaignGoals");
         clear(goals);
@@ -389,7 +392,7 @@ window.WDProp = window.WDProp || {};
         var box = document.getElementById("campaignGoals");
         clear(box);
         var loading = element("div", "wdprop-loading");
-        loading.innerHTML = '<span class="wdprop-loading-spinner"></span> Measuring progress against Wikidata…';
+        loading.innerHTML = '<span class="wdprop-loading-spinner"></span> ' + t("campaign.measuring");
         box.appendChild(loading);
 
         var scope = state.scope;
@@ -397,10 +400,7 @@ window.WDProp = window.WDProp || {};
         var resolved = scope.kind === "wikiproject" ?
             resolveWikiProject(scope.value).then(function (properties) {
                 if (!properties.length) {
-                    throw new Error("“" + scope.value + "” does not link to any properties directly, " +
-                        "so its properties cannot be read from the page. Many WikiProjects list them " +
-                        "through templates or on a subpage. Use a property class, a datatype, or paste " +
-                        "the property identifiers into the link as properties=P31,P17,…");
+                    throw new Error(t("campaign.noWikiProjectLinks", [scope.value]));
                 }
                 state.resolvedProperties = properties;
                 return { kind: "properties", value: properties.join(","), label: scope.label };
@@ -411,7 +411,7 @@ window.WDProp = window.WDProp || {};
             return loadProgress(effective, state.target);
         }).then(function (rows) {
             if (!rows.length) {
-                fail("This selection contains no properties. Check the class or datatype in the link.");
+                fail(t("campaign.emptyScope"));
                 return;
             }
             state.rows = rows;
@@ -455,11 +455,11 @@ window.WDProp = window.WDProp || {};
             return;
         }
         if (!LANGUAGE_RE.test(state.target)) {
-            fail("Give a language to translate into, for example target=ta.");
+            fail(t("campaign.needLanguage"));
             return;
         }
         if (!state.scope) {
-            fail("A campaign needs a selection of properties: a class, a datatype, a WikiProject, or a list.");
+            fail(t("campaign.needScope"));
             return;
         }
         var problem = scopeProblem(state.scope);

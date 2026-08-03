@@ -3812,3 +3812,30 @@ tr.cn-changed {
     font-weight: 600;
     text-transform: uppercase;
 }
+
+/* Interface language chooser, added to the header by i18n.js */
+
+.language-switcher {
+    margin-right: 16px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-accent);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.language-switcher option {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+}
+
+@media (max-width: 768px) {
+    .language-switcher {
+        margin-right: 8px;
+        padding: 4px 6px;
+        font-size: 12px;
+    }
+}

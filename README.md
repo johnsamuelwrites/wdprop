@@ -28,6 +28,7 @@
 * Translation campaigns: a shareable link pairing a language with a set of properties (a class, a datatype, a WikiProject or a list), showing live progress for labels, descriptions and aliases
 * Per-property context while translating: real usage examples, property constraints, and the same label in related languages and variants
 * Contributions: what you exported to QuickStatements, checked back against Wikidata, with anything that never arrived put back into your batch
+* Localised interface (English, French, Spanish), switchable from the header or with `?uselang=fr`; messages are plain JavaScript files, so WDProp works when opened directly from disk as well as when hosted
 
 ## Author
 * John Samuel
