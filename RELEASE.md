@@ -25,9 +25,19 @@ Human-driven translation, alongside the existing analysis.
   when the pages are opened directly from disk
 * Keyboard and screen-reader accessible: skip links, landmarks, named controls,
   a focus-trapping dialog, and status never signalled by colour alone
+* The sidebar shows which section you are in, and pages reached by a shared or
+  bookmarked link — a property, a class, a WikiProject — carry a breadcrumb
+  back to the listing they belong to
+* Headings of the long tables stay in place as the rows scroll past
 
 Fixes
 
+* All fifteen sidebar entries now fit on a laptop screen; the last few sat
+  below the fold behind a scrollbar that was almost invisible
+* templates/translated.html loaded neither script defining toggleTheme or
+  toggleMobileMenu, so its theme switch and menu button did nothing, and it
+  was missing the Dashboard entry the other pages have
+* Downloading the batch as a file reported nothing at all; it now confirms
 * Six SPARQL templates were overwritten in place, destroying their own
   placeholders on first use
 * On the language page for a chosen property, the description and alias

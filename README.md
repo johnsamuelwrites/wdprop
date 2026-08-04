@@ -31,6 +31,7 @@
 * Terminology consistency: find words that have been translated several different ways in a language, with the properties behind each rendering
 * Fully localised interface (English, French, Spanish), switchable from the header or with `?uselang=fr`; messages are plain JavaScript files, so WDProp works when opened directly from disk as well as when hosted. Adding a language means adding one file under `i18n/`
 * Keyboard and screen-reader accessible: skip links, landmarks, named controls, a focus-trapping dialog, and status that is never signalled by colour alone
+* The sidebar marks the section you are in, and a page reached by a shared link — a single property, class, datatype, language or WikiProject — shows a breadcrumb back to the listing it belongs to
 
 ## Tests
 

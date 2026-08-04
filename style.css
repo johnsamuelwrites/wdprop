@@ -37,6 +37,13 @@
     --shadow-color: var(--light-shadow);
     --accent-color: var(--light-accent);
     --accent-hover: var(--light-accent-hover);
+
+    /*
+     * The header is fixed at this height. The sidebar navigation starts below
+     * it and sticky table headings come to rest against it, so the three stay
+     * aligned if it ever changes.
+     */
+    --header-height: 80px;
 }
 
 body.dark-theme {
@@ -67,6 +74,11 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/*
+ * The sidebar is a column: a fixed gap matching the header, then the list of
+ * links taking whatever height is left. The list scrolls, not the sidebar, so
+ * the gap at the top cannot be scrolled away.
+ */
 #sidebar {
     position: fixed;
     background: var(--sidebar-bg);
@@ -74,36 +86,49 @@ body {
     left: 0;
     bottom: 0;
     width: 280px;
+    display: flex;
+    flex-direction: column;
+    padding-top: var(--header-height);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border-right: 1px solid var(--border-color);
     box-shadow: 4px 0 20px var(--shadow-color);
     z-index: 100;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
-#sidebar::-webkit-scrollbar {
-    width: 6px;
+#sidebarlinks::-webkit-scrollbar {
+    width: 8px;
 }
 
-#sidebar::-webkit-scrollbar-track {
+#sidebarlinks::-webkit-scrollbar-track {
     background: transparent;
 }
 
-#sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
+#sidebarlinks::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 4px;
 }
 
-#sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+#sidebarlinks::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
 }
 
+/*
+ * min-height: 0 is what lets this shrink at all. A flex item will not go
+ * below the height of its content without it, so the list would overflow the
+ * sidebar instead of scrolling inside it.
+ */
 #sidebarlinks {
     position: relative;
-    margin-top: 100px;
-    padding: 20px 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 0 20px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+    overscroll-behavior: contain;
 }
 
 #sidebarlinks ul {
@@ -114,7 +139,7 @@ body {
 
 #sidebarlinks li {
     position: relative;
-    margin: 4px 12px;
+    margin: 2px 10px;
     border-radius: 12px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -124,9 +149,10 @@ body {
     display: none;
 }
 
+/* Kept small: the list can carry a scrollbar, and a wider shift clips against it. */
 #sidebarlinks li:hover {
     background: rgba(255, 255, 255, 0.1);
-    transform: translateX(8px);
+    transform: translateX(4px);
 }
 
 #sidebarlinks li::after {
@@ -146,16 +172,24 @@ body {
     height: 70%;
 }
 
+/*
+ * Fifteen entries at a fixed 14px of padding came to more than a short laptop
+ * screen can show, leaving the last few below the fold behind a scrollbar
+ * nobody notices. Sizing the rows against the viewport instead keeps them all
+ * visible on a short screen and unchanged on a tall one; the clamps stop the
+ * rows becoming too small to read or to hit.
+ */
 #sidebar a {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 20px 14px 24px;
+    gap: 10px;
+    padding: clamp(7px, 1.1vh, 14px) 18px;
     text-decoration: none;
     color: var(--text-accent);
-    font-size: 15px;
+    font-size: clamp(13px, 1.55vh, 15px);
     font-weight: 500;
     letter-spacing: 0.3px;
+    line-height: 1.25;
     transition: all 0.3s ease;
     position: relative;
 }
@@ -168,6 +202,26 @@ body {
 #sidebar a:hover {
     color: #ffffff;
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+/*
+ * The entry for the page being shown, marked by wdprop.js. The sidebar is
+ * written out again in every page rather than generated, so nothing in the
+ * markup says which entry that is.
+ *
+ * The bar on the left carries the same meaning as the lighter background, so
+ * this does not rest on colour alone.
+ */
+#sidebarlinks li.wdp-current {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+#sidebarlinks li.wdp-current::after {
+    height: 70%;
+}
+
+#sidebar a[aria-current="page"] {
+    font-weight: 700;
 }
 
 #header {
@@ -605,7 +659,13 @@ body.dark-theme .search-field:focus {
 #translatedTemplateNeutral,
 #translatedTemplateComment,
 #searchResults {
-    overflow: hidden;
+    /*
+     * clip, not hidden: hidden would make each of these a scroll container,
+     * and a sticky table heading inside one comes to rest against the box
+     * rather than against the page, which means it never sticks at all.
+     * clip trims the corners the same way without that side effect.
+     */
+    overflow: clip;
 }
 
 table {
@@ -614,7 +674,7 @@ table {
     border-spacing: 0;
     margin: 20px 0;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: clip;
     box-shadow: 0 2px 15px var(--shadow-color);
 }
 
@@ -638,6 +698,22 @@ tr>td {
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
     transition: background 0.2s ease;
+}
+
+/*
+ * These tables run to hundreds of rows, and the heading scrolls away long
+ * before the rows do, which leaves the columns unlabelled. Holding it in
+ * place keeps them readable; it comes to rest just under the fixed header.
+ *
+ * Only the heading row, not every th: the tables are generated without a
+ * <thead>, so the first row of the body is matched instead, and the context
+ * table is left out because its th is the row's own label, one per row.
+ */
+table:not(.wdp-context-table)>thead>tr>th,
+table:not(.wdp-context-table)>tbody>tr:first-child>th {
+    position: sticky;
+    top: var(--header-height);
+    z-index: 2;
 }
 
 tr:hover>td {
@@ -2016,7 +2092,8 @@ body.dark-theme .viz-search-field:focus {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    overflow: hidden;
+    /* clip rather than hidden, so the sticky heading row inside still sticks. */
+    overflow: clip;
     box-shadow: 0 4px 20px var(--shadow-color);
 }
 
@@ -3927,4 +4004,151 @@ summary:focus-visible,
 
 .wb-usage:empty {
     display: none;
+}
+
+/* ==========================================================================
+   Breadcrumb
+   ========================================================================== */
+
+/*
+ * Pages such as a single property or a single WikiProject are reached by a
+ * bookmarked or shared link as often as by navigation, and until now they
+ * offered no way back to the listing they belong to. Added by wdprop.js.
+ */
+
+.wdp-breadcrumb {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.wdp-breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wdp-breadcrumb li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* The separator is decoration, so it is drawn rather than written as text. */
+.wdp-breadcrumb li+li::before {
+    content: "›";
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.wdp-breadcrumb a {
+    color: var(--accent-color);
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.wdp-breadcrumb a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+/*
+ * The last step names the page you are already on. It can be a long
+ * WikiProject title, so it is cut off rather than allowed to wrap away.
+ */
+.wdp-breadcrumb [aria-current="page"] {
+    max-width: 40ch;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   Transient messages
+   ========================================================================== */
+
+/*
+ * Confirmation for an action that changes nothing on screen — downloading the
+ * batch, emptying it — which otherwise finishes in silence and leaves the
+ * reader unsure whether anything happened.
+ *
+ * The region is announced politely and is always in the document, because a
+ * live region added at the same moment as its text is not reliably read out.
+ */
+
+.wdp-toast-region {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 400;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    pointer-events: none;
+}
+
+.wdp-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: min(360px, calc(100vw - 48px));
+    padding: 14px 18px;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent-color);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.4;
+    box-shadow: 0 8px 30px var(--shadow-color);
+    animation: wdprop-toast-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Failure is marked by the wording and this glyph, not by the colour alone. */
+.wdp-toast.wdp-toast-error {
+    border-left-color: #d64545;
+}
+
+.wdp-toast::before {
+    content: "✓";
+    flex-shrink: 0;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+.wdp-toast.wdp-toast-error::before {
+    content: "!";
+    color: #d64545;
+}
+
+.wdp-toast.wdp-toast-leaving {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+@keyframes wdprop-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+}
+
+@media (max-width: 768px) {
+    .wdp-toast-region {
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        align-items: stretch;
+    }
+
+    .wdp-toast {
+        max-width: none;
+    }
 }

@@ -2654,13 +2654,305 @@ function wireKeyboardControls() {
     activateOnKey(document.getElementById('mobile-menu-toggle'), toggleMobileMenu);
 }
 
+/*
+ * ===========================================================================
+ * Where you are
+ * ===========================================================================
+ *
+ * The sidebar is written out again in the markup of every page rather than
+ * generated once, so nothing in it says which entry is the current one. And a
+ * page showing a single property, class or WikiProject is reached by a
+ * bookmarked or shared link at least as often as by navigation, with nothing
+ * on it pointing back to the listing it belongs to.
+ *
+ * Both are worked out here from the address: the current sidebar entry is
+ * marked, and pages below a sidebar entry are given a breadcrumb.
+ */
+
+/*
+ * Pages that are not themselves sidebar entries.
+ *
+ *   under    the sidebar entry the page belongs beneath
+ *   subject  the query parameter naming what the page is about, used as the
+ *            last step of the breadcrumb
+ *   label    a message key for that last step, for pages about no one thing
+ */
+var wdpropPagesBelow = {
+    "property.html":           { under: "properties.html",   subject: "property" },
+    "propertydesc.html":       { under: "properties.html",   label: "page.propsDescribing" },
+    "class.html":              { under: "classes.html",      subject: "class" },
+    "datatype.html":           { under: "datatypes.html",    subject: "datatype" },
+    "language.html":           { under: "languages.html",    subject: "language" },
+    "labels.html":             { under: "languages.html",    label: "page.labelsNeeding" },
+    "descriptions.html":       { under: "languages.html",    label: "page.descriptionsNeeding" },
+    "translated.html":         { under: "languages.html",    label: "page.translationStats" },
+    "untranslated.html":       { under: "languages.html",    label: "page.missingStats" },
+    "visualization.html":      { under: "languages.html",    label: "page.languageCodes" },
+    "wikiproject.html":        { under: "wikiprojects.html", subject: "project" },
+    "path.html":               { under: "provenance.html",   label: "page.pathOfTranslation" },
+    "pathviz.html":            { under: "provenance.html",   label: "page.pathVisualization" },
+    "propertyprovenance.html": { under: "provenance.html",   label: "page.statementsReferences" },
+    "batch.html":              { under: "translate.html",    label: "batch.heading" }
+};
+
+/* The sidebar entries a page can sit beneath, named without their icon. */
+var wdpropSectionNames = {
+    "properties.html":   "crumb.properties",
+    "classes.html":      "crumb.classes",
+    "datatypes.html":    "crumb.datatypes",
+    "languages.html":    "crumb.languages",
+    "provenance.html":   "crumb.provenance",
+    "wikiprojects.html": "crumb.wikiprojects",
+    "translate.html":    "crumb.translate"
+};
+
+/*
+ * Identifies a page from a path or a link, so that the address of the page
+ * being shown and the href of a sidebar entry can be compared whatever form
+ * either takes: "./index.html", "../properties.html", a full pathname, or the
+ * bare "/" a web server hands out for the front page.
+ *
+ * The directory is dropped except for templates/, because that directory
+ * holds a translated.html of its own and the root has another; on filename
+ * alone the two are indistinguishable.
+ */
+function wdpropPageKey(path) {
+    var parts = String(path || "").split(/[?#]/)[0].split("/").filter(function (part) {
+        return part && part !== "." && part !== "..";
+    });
+    var file = parts.pop() || "index.html";
+    return parts.pop() === "templates" ? "templates/" + file : file;
+}
+
+/* The sidebar entry a page belongs to: itself, or the one it sits beneath. */
+function wdpropSectionOf(pageKey) {
+    var below = wdpropPagesBelow[pageKey];
+    return below ? below.under : pageKey;
+}
+
+function wdpropValueFromSearch(search, name) {
+    var found = new RegExp("[?&]" + name + "=([^&#]*)").exec(String(search || ""));
+    if (!found) {
+        return "";
+    }
+    try {
+        return decodeURIComponent(found[1].replace(/\+/g, " ")).trim();
+    } catch (e) {
+        // A malformed escape must not cost the page its breadcrumb.
+        return found[1];
+    }
+}
+
+/*
+ * What the last step of the breadcrumb should read. Datatypes and WikiProjects
+ * arrive with a prefix that is the same on every one of them and so tells the
+ * reader nothing: wikibase:WikibaseItem, Wikidata:WikiProject Sports.
+ */
+function wdpropSubjectLabel(name, value) {
+    if (name === "datatype") {
+        return value.replace(/^wikibase:/, "");
+    }
+    if (name === "project") {
+        return value.replace(/^Wikidata:WikiProject\s*/, "");
+    }
+    return value;
+}
+
+/*
+ * The trail for a page, as data: each step is either a message `key` or plain
+ * `text`, with `file` on the steps that are links. Empty for a page that is
+ * itself a sidebar entry, which needs no trail.
+ */
+function wdpropBreadcrumbTrail(pageKey, search) {
+    var below = wdpropPagesBelow[pageKey];
+    if (!below) {
+        return [];
+    }
+
+    var trail = [{ file: "index.html", key: "crumb.home" }];
+
+    var sectionKey = wdpropSectionNames[below.under];
+    if (sectionKey) {
+        trail.push({ file: below.under, key: sectionKey });
+    }
+
+    if (below.subject) {
+        var value = wdpropValueFromSearch(search, below.subject);
+        if (value) {
+            trail.push({ text: wdpropSubjectLabel(below.subject, value), current: true });
+        }
+    } else if (below.label) {
+        trail.push({ key: below.label, current: true });
+    }
+
+    return trail;
+}
+
+/*
+ * Where wdprop.js was loaded from, which is the root of WDProp whatever
+ * directory the page itself sits in. Pages under templates/ need it to link
+ * back out, and cart.js and compose.js already look for it.
+ */
+var wdpropBase = (function () {
+    var script = document.currentScript;
+    if (script && script.src) {
+        return script.src.replace(/wdprop\.js(\?.*)?$/, "");
+    }
+    return "./";
+})();
+
+window.WDPropPathPrefix = wdpropBase;
+
+/* Marks the sidebar entry for the page being shown. */
+function wdpropMarkCurrentSection() {
+    var links = document.querySelectorAll("#sidebarlinks a");
+    var section = wdpropSectionOf(wdpropPageKey(window.location.pathname));
+
+    for (var i = 0; i < links.length; i++) {
+        var href = links[i].getAttribute("href");
+        if (!href || wdpropPageKey(href) !== section) {
+            continue;
+        }
+
+        links[i].setAttribute("aria-current", "page");
+
+        var item = links[i].parentNode;
+        if (item) {
+            var classes = item.getAttribute("class");
+            item.setAttribute("class", classes ? classes + " wdp-current" : "wdp-current");
+        }
+    }
+}
+
+/*
+ * Puts the trail at the top of the content, ahead of everything else on the
+ * page. The steps carry data-i18n so that changing the interface language
+ * retranslates them; the text is also set here, because i18n.js has already
+ * been over the page by the time this runs.
+ */
+function wdpropMountBreadcrumb() {
+    var content = document.getElementById("content");
+    if (!content) {
+        return;
+    }
+
+    var trail = wdpropBreadcrumbTrail(
+        wdpropPageKey(window.location.pathname), window.location.search);
+    if (!trail.length) {
+        return;
+    }
+
+    var nav = document.createElement("nav");
+    nav.setAttribute("class", "wdp-breadcrumb");
+    nav.setAttribute("data-i18n-label", "a11y.breadcrumb");
+    nav.setAttribute("aria-label", wdpropText("a11y.breadcrumb"));
+
+    var list = document.createElement("ol");
+
+    trail.forEach(function (step) {
+        var item = document.createElement("li");
+        var cell = document.createElement(step.file ? "a" : "span");
+
+        if (step.file) {
+            cell.setAttribute("href", wdpropBase + step.file);
+        }
+        if (step.current) {
+            cell.setAttribute("aria-current", "page");
+        }
+        if (step.key) {
+            cell.setAttribute("data-i18n", step.key);
+            cell.appendChild(document.createTextNode(wdpropText(step.key)));
+        } else {
+            cell.setAttribute("title", step.text);
+            cell.appendChild(document.createTextNode(step.text));
+        }
+
+        item.appendChild(cell);
+        list.appendChild(item);
+    });
+
+    nav.appendChild(list);
+    content.insertBefore(nav, content.firstChild);
+}
+
+/*
+ * ===========================================================================
+ * Transient messages
+ * ===========================================================================
+ *
+ * For an action whose result is not visible on the page — downloading the
+ * batch, copying it to the clipboard — which otherwise finishes in silence.
+ *
+ * The region is put in place once and kept there: a live region that arrives
+ * carrying its message is not reliably announced, because assistive software
+ * has had no chance to start watching it.
+ */
+function wdpropToastRegion() {
+    var region = document.getElementById("wdp-toast-region");
+    if (region) {
+        return region;
+    }
+
+    region = document.createElement("div");
+    region.setAttribute("id", "wdp-toast-region");
+    region.setAttribute("class", "wdp-toast-region");
+    region.setAttribute("role", "status");
+    region.setAttribute("aria-live", "polite");
+    document.body.appendChild(region);
+    return region;
+}
+
+/*
+ * Shows a message that takes itself away again. `kind` is "error" for
+ * something that did not work, which stays longer because it asks the reader
+ * to do something about it.
+ */
+function wdpropToast(message, kind) {
+    var region = wdpropToastRegion();
+    var failed = (kind === "error");
+
+    var toast = document.createElement("div");
+    toast.setAttribute("class", failed ? "wdp-toast wdp-toast-error" : "wdp-toast");
+    toast.appendChild(document.createTextNode(message));
+    region.appendChild(toast);
+
+    setTimeout(function () {
+        toast.setAttribute("class", toast.getAttribute("class") + " wdp-toast-leaving");
+        setTimeout(function () {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, failed ? 6000 : 4000);
+
+    return toast;
+}
+
+window.WDProp = window.WDProp || {};
+window.WDProp.toast = wdpropToast;
+
+/*
+ * Exposed for the tests, which exercise the path handling without a browser.
+ */
+window.WDProp.nav = {
+    pageKey: wdpropPageKey,
+    sectionOf: wdpropSectionOf,
+    trail: wdpropBreadcrumbTrail
+};
+
 // Load theme on page load
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
         loadTheme();
         wireKeyboardControls();
+        wdpropMarkCurrentSection();
+        wdpropMountBreadcrumb();
+        wdpropToastRegion();
     });
 } else {
     loadTheme();
     wireKeyboardControls();
+    wdpropMarkCurrentSection();
+    wdpropMountBreadcrumb();
+    wdpropToastRegion();
 }

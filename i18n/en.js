@@ -29,6 +29,20 @@ WDProp.i18n.add("en", {
     "nav.wikiprojects": "🚀 Wikiprojects",
     "nav.about": "ℹ️ About",
 
+    /*
+     * Breadcrumb steps. These name the same sections as nav.*, but without an
+     * icon and phrased to be read in the middle of a trail, so they are kept
+     * apart from the sidebar wording.
+     */
+    "crumb.home": "Dashboard",
+    "crumb.properties": "Properties",
+    "crumb.classes": "Property classes",
+    "crumb.datatypes": "Data types",
+    "crumb.languages": "Languages",
+    "crumb.provenance": "Provenance",
+    "crumb.wikiprojects": "WikiProjects",
+    "crumb.translate": "Translate",
+
     /* Words for the three kinds of term, used in sentences */
     "term.label": "label",
     "term.description": "description",
@@ -127,6 +141,7 @@ WDProp.i18n.add("en", {
     "batch.copied": "Copied",
     "batch.copyFailed": "Copy failed — select the text above",
     "batch.download": "Download .txt",
+    "batch.downloaded": "Saved wdprop-quickstatements.txt, $1 commands",
     "batch.tooLong": "This batch is too large for a one-click link ($1 characters). Copy the commands or download them and paste them into QuickStatements.",
     "batch.pipeInValue": "A translation contains “|”, which the one-click link uses as a separator. Copy the commands or download them instead; pasting into QuickStatements is unaffected.",
     "batch.confirmClear": "Remove all $1 proposals from the batch?",
@@ -366,6 +381,7 @@ WDProp.i18n.add("en", {
     "a11y.batchCount": "Translation batch, $1 waiting",
     "a11y.progress": "$1 per cent complete",
     "a11y.closeDialog": "Close this dialog",
+    "a11y.breadcrumb": "Where you are",
     "translate.usedOn": "on $1 items",
     "translate.sortByUsage": "Most used first",
     "translate.sortByNumber": "Back to property order",

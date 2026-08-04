@@ -62,9 +62,23 @@ s.check("term.* covers all three kinds",
     ["label", "description", "alias", "labels", "descriptions", "aliases"]
         .filter(x => !(("term." + x) in dicts.en)), []);
 
-const used = new Set([...usedInJs, ...usedInHtml,
-    "term.label", "term.description", "term.alias", "term.labels", "term.descriptions", "term.aliases",
-    "batch.heading"]);
+/*
+ * Some keys are reached through a lookup table rather than a call written out
+ * in full: the breadcrumb decides what each step says from a table of pages.
+ * Such a key is live without ever appearing inside t(...), so for the purpose
+ * of finding dead keys, any string literal that is exactly a defined key
+ * counts as a use. This only widens what counts as used — whether a key that
+ * is called for actually exists is still decided by the calls above.
+ */
+const mentioned = new Set();
+for (const f of MODULES) {
+    for (const m of fs.readFileSync(path.join(ROOT, f), "utf8").matchAll(/"([a-z][A-Za-z0-9.]+)"/g)) {
+        if (m[1] in dicts.en) mentioned.add(m[1]);
+    }
+}
+
+const used = new Set([...usedInJs, ...usedInHtml, ...mentioned,
+    "term.label", "term.description", "term.alias", "term.labels", "term.descriptions", "term.aliases"]);
 s.check("no unused keys", Object.keys(dicts.en).filter(k => !used.has(k)), []);
 
 process.exit(s.done());

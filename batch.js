@@ -245,6 +245,14 @@ window.WDProp = window.WDProp || {};
         save.addEventListener("click", function () {
             recordExport(entries);
             WDProp.qs.download(entries, "wdprop-quickstatements.txt");
+            /*
+             * A download changes nothing on the page and browsers put the
+             * file away without saying where, so say it here; copy has the
+             * button itself to report with, and this has nothing.
+             */
+            if (WDProp.toast) {
+                WDProp.toast(t("batch.downloaded", [entries.length]));
+            }
         });
         container.appendChild(save);
 
