@@ -9,6 +9,7 @@
         <script type="text/javascript" src="i18n.js"></script>
         <script type="text/javascript" src="i18n/en.js"></script>
         <script type="text/javascript" src="wdprop.js"></script>
+        <script type="text/javascript" src="usage.js"></script>
         <script type="text/javascript" src="dashboard.js"></script>
     </head>
 
@@ -31,31 +32,36 @@
             <div id="sidebarlinks"></div>
         </div>
         <div id="content" role="main" tabindex="-1">
-            <!-- Hero Stats Section -->
+            <!--
+                Hero Stats. The figures are left empty here on purpose: every
+                one of them is counted live, and a number written into the
+                markup is a number that goes on being shown after the count
+                behind it has failed.
+            -->
             <div class="dashboard-hero">
                 <div class="stat-card" onclick="window.location.href='./properties.html'">
                     <span class="stat-icon">🔧</span>
-                    <div class="stat-label">Total Properties</div>
-                    <div class="stat-value" data-target="12847">0</div>
-                    <div class="stat-change">Wikidata</div>
+                    <div class="stat-label" data-i18n="dash.totalProperties">Total properties</div>
+                    <div class="stat-value" id="statProperties"></div>
+                    <div class="stat-change" data-i18n="dash.inWikidata">in Wikidata</div>
                 </div>
                 <div class="stat-card" onclick="window.location.href='./languages.html'">
                     <span class="stat-icon">🌍</span>
-                    <div class="stat-label">Languages</div>
-                    <div class="stat-value" data-target="450">0</div>
-                    <div class="stat-change">Supported</div>
+                    <div class="stat-label" data-i18n="dash.languages">Languages</div>
+                    <div class="stat-value" id="statLanguages"></div>
+                    <div class="stat-change" data-i18n="dash.supported">supported</div>
                 </div>
                 <div class="stat-card" onclick="window.location.href='./datatypes.html'">
                     <span class="stat-icon">📊</span>
-                    <div class="stat-label">Data Types</div>
-                    <div class="stat-value" data-target="18">0</div>
-                    <div class="stat-change">Available</div>
+                    <div class="stat-label" data-i18n="dash.datatypes">Data types</div>
+                    <div class="stat-value" id="statDatatypes"></div>
+                    <div class="stat-change" data-i18n="dash.available">available</div>
                 </div>
                 <div class="stat-card" onclick="window.location.href='./classes.html'">
                     <span class="stat-icon">📦</span>
-                    <div class="stat-label">Property Classes</div>
-                    <div class="stat-value" data-target="847">0</div>
-                    <div class="stat-change">Categories</div>
+                    <div class="stat-label" data-i18n="dash.propertyClasses">Property classes</div>
+                    <div class="stat-value" id="statClasses"></div>
+                    <div class="stat-change" data-i18n="dash.categories">categories</div>
                 </div>
             </div>
 
@@ -63,19 +69,19 @@
             <div class="quick-actions">
                 <a href="./search.html" class="action-btn">
                     <span class="icon">🔍</span>
-                    <span>Search Properties</span>
+                    <span data-i18n="dash.searchProperties">Search properties</span>
                 </a>
                 <a href="./compare.html" class="action-btn">
                     <span class="icon">⚖️</span>
-                    <span>Compare Languages</span>
+                    <span data-i18n="dash.compareLanguages">Compare languages</span>
                 </a>
                 <a href="./properties.html" class="action-btn">
                     <span class="icon">📈</span>
-                    <span>Browse All</span>
+                    <span data-i18n="dash.browseAll">Browse all</span>
                 </a>
                 <a href="./wikiprojects.html" class="action-btn">
                     <span class="icon">🚀</span>
-                    <span>WikiProjects</span>
+                    <span data-i18n="dash.wikiprojects">WikiProjects</span>
                 </a>
             </div>
 
@@ -84,16 +90,17 @@
                 <div class="widget-header">
                     <h2 class="widget-title">
                         <span class="icon">🔍</span>
-                        Search Properties
+                        <span data-i18n="dash.searchProperties">Search properties</span>
                     </h2>
                 </div>
                 <div class="search-input-container">
                     <span class="search-icon">🔍</span>
-                    <input type="text" class="search-input" placeholder="Search by name, ID, or description..."
+                    <input type="text" class="search-input" data-i18n-placeholder="dash.searchPlaceholder"
+                        placeholder="Search by name, id or description…"
                         onkeypress="if(event.key==='Enter'){window.location.href='./search.html?search='+encodeURIComponent(this.value)+'&language=en';}" />
                 </div>
                 <div class="popular-searches">
-                    <span style="font-size: 13px; color: var(--text-secondary); margin-right: 8px;">Popular:</span>
+                    <span class="popular-label" data-i18n="dash.popular">Popular:</span>
                     <a href="./search.html?search=software&language=en" class="search-tag">software</a>
                     <a href="./search.html?search=heritage&language=en" class="search-tag">heritage</a>
                     <a href="./search.html?search=person&language=en" class="search-tag">person</a>
@@ -103,62 +110,22 @@
 
             <!-- Dashboard Grid -->
             <div class="dashboard-grid">
-                <!-- Translation Progress -->
+                <!--
+                    Translation Coverage and Top Properties are both filled in
+                    from live queries. Neither carries a specimen row: the rows
+                    that used to sit here were invented, and they stayed on
+                    screen looking authoritative whenever the query behind them
+                    failed.
+                -->
                 <div class="dashboard-widget">
                     <div class="widget-header">
                         <h2 class="widget-title">
                             <span class="icon">🌍</span>
-                            Translation Coverage
+                            <span data-i18n="dash.translationCoverage">Translation coverage</span>
                         </h2>
-                        <a href="./languages.html" class="widget-action">View all →</a>
+                        <a href="./languages.html" class="widget-action" data-i18n="dash.viewAll">View all →</a>
                     </div>
-                    <div class="progress-list">
-                        <div class="progress-item">
-                            <div class="progress-header">
-                                <span class="progress-label">English (en)</span>
-                                <span class="progress-value">98%</span>
-                            </div>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar high" style="width: 98%"></div>
-                            </div>
-                        </div>
-                        <div class="progress-item">
-                            <div class="progress-header">
-                                <span class="progress-label">German (de)</span>
-                                <span class="progress-value">81%</span>
-                            </div>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar medium" style="width: 81%"></div>
-                            </div>
-                        </div>
-                        <div class="progress-item">
-                            <div class="progress-header">
-                                <span class="progress-label">French (fr)</span>
-                                <span class="progress-value">76%</span>
-                            </div>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar medium" style="width: 76%"></div>
-                            </div>
-                        </div>
-                        <div class="progress-item">
-                            <div class="progress-header">
-                                <span class="progress-label">Spanish (es)</span>
-                                <span class="progress-value">72%</span>
-                            </div>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar medium" style="width: 72%"></div>
-                            </div>
-                        </div>
-                        <div class="progress-item">
-                            <div class="progress-header">
-                                <span class="progress-label">Japanese (ja)</span>
-                                <span class="progress-value">43%</span>
-                            </div>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar low" style="width: 43%"></div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="progress-list" id="translationProgress"></div>
                 </div>
 
                 <!-- Top Properties -->
@@ -166,52 +133,12 @@
                     <div class="widget-header">
                         <h2 class="widget-title">
                             <span class="icon">⭐</span>
-                            Top Properties
+                            <span data-i18n="dash.topProperties">Most used properties</span>
                         </h2>
-                        <a href="./properties.html#tophundredProperties" class="widget-action">View Top 100 →</a>
+                        <a href="./properties.html#tophundredProperties" class="widget-action"
+                           data-i18n="dash.viewTop100">View the top 100 →</a>
                     </div>
-                    <table class="top-properties-table">
-                        <tr>
-                            <td class="rank">#1</td>
-                            <td>
-                                <div class="property-name">instance of</div>
-                                <div class="property-id">P31</div>
-                            </td>
-                            <td class="usage-count">89.2M</td>
-                        </tr>
-                        <tr>
-                            <td class="rank">#2</td>
-                            <td>
-                                <div class="property-name">subclass of</div>
-                                <div class="property-id">P279</div>
-                            </td>
-                            <td class="usage-count">45.7M</td>
-                        </tr>
-                        <tr>
-                            <td class="rank">#3</td>
-                            <td>
-                                <div class="property-name">country</div>
-                                <div class="property-id">P17</div>
-                            </td>
-                            <td class="usage-count">38.1M</td>
-                        </tr>
-                        <tr>
-                            <td class="rank">#4</td>
-                            <td>
-                                <div class="property-name">located in...</div>
-                                <div class="property-id">P131</div>
-                            </td>
-                            <td class="usage-count">32.5M</td>
-                        </tr>
-                        <tr>
-                            <td class="rank">#5</td>
-                            <td>
-                                <div class="property-name">official website</div>
-                                <div class="property-id">P856</div>
-                            </td>
-                            <td class="usage-count">28.9M</td>
-                        </tr>
-                    </table>
+                    <table class="top-properties-table" id="topProperties"></table>
                 </div>
             </div>
 
@@ -220,70 +147,52 @@
                 <div class="widget-header">
                     <h2 class="widget-title">
                         <span class="icon">🚀</span>
-                        WikiProjects
+                        <span data-i18n="dash.wikiprojects">WikiProjects</span>
                     </h2>
-                    <a href="./wikiprojects.html" class="widget-action">View all →</a>
+                    <a href="./wikiprojects.html" class="widget-action" data-i18n="dash.viewAll">View all →</a>
                 </div>
                 <div class="projects-grid">
                     <a href="./wikiproject.html?project=Wikidata:WikiProject Heritage Collections" class="project-card">
                         <div class="project-icon">🏛️</div>
-                        <div class="project-name">Cultural Heritage</div>
+                        <div class="project-name" data-i18n="dash.projectHeritage">Cultural heritage</div>
                     </a>
                     <a href="./wikiproject.html?project=Wikidata:WikiProject Informatics/FLOSS" class="project-card">
                         <div class="project-icon">💻</div>
-                        <div class="project-name">Informatics</div>
+                        <div class="project-name" data-i18n="dash.projectInformatics">Informatics</div>
                     </a>
                     <a href="./wikiproject.html?project=Wikidata:WikiProject Biography/Model" class="project-card">
                         <div class="project-icon">👤</div>
-                        <div class="project-name">Biography</div>
+                        <div class="project-name" data-i18n="dash.projectBiography">Biography</div>
                     </a>
                     <a href="./wikiproject.html?project=Wikidata:WikiProject Medicine/Properties" class="project-card">
                         <div class="project-icon">⚕️</div>
-                        <div class="project-name">Medicine</div>
+                        <div class="project-name" data-i18n="dash.projectMedicine">Medicine</div>
                     </a>
                     <a href="./wikiproject.html?project=Wikidata:WikiProject Sports" class="project-card">
                         <div class="project-icon">⚽</div>
-                        <div class="project-name">Sports</div>
+                        <div class="project-name" data-i18n="dash.projectSports">Sport</div>
                     </a>
                     <a href="./wikiproject.html?project=Wikidata:WikiProject Movies/Properties" class="project-card">
                         <div class="project-icon">🎬</div>
-                        <div class="project-name">Film</div>
+                        <div class="project-name" data-i18n="dash.projectFilm">Film</div>
                     </a>
                 </div>
             </div>
 
-            <!-- System Status -->
+            <!--
+                Service status. Every value is filled in by dashboard.js from
+                what the page's own requests actually did. It used to say
+                "Online" in the markup, with a green dot, whether or not
+                anything had been asked of either service.
+            -->
             <div class="section">
                 <div class="widget-header">
                     <h2 class="widget-title">
                         <span class="icon">⚙️</span>
-                        System Status
+                        <span data-i18n="dash.systemStatus">Service status</span>
                     </h2>
                 </div>
-                <div class="status-grid">
-                    <div class="status-item">
-                        <span class="status-label">Wikidata API</span>
-                        <span class="status-value">
-                            <span class="status-dot"></span>
-                            Online
-                        </span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">MediaWiki API</span>
-                        <span class="status-value">
-                            <span class="status-dot"></span>
-                            Online
-                        </span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Last Updated</span>
-                        <span class="status-value">2 minutes ago</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Cache Status</span>
-                        <span class="status-value">Fresh</span>
-                    </div>
-                </div>
+                <div class="status-grid" id="serviceStatus"></div>
             </div>
         </div>
         <div id="footer" role="contentinfo">

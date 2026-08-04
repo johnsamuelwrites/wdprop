@@ -31,8 +31,14 @@ const MODULES = ["translate.js", "batch.js", "campaign.js", "contributionsview.j
 const usedInJs = new Set();
 for (const f of MODULES) {
     const src = fs.readFileSync(path.join(ROOT, f), "utf8");
-    for (const re of [/\bt\(\s*"([a-z][A-Za-z0-9.]+)"/g, /i18n\.t\(\s*"([a-z][A-Za-z0-9.]+)"/g,
-                      /wdpropText\(\s*"([a-z][A-Za-z0-9.]+)"/g]) {
+    /*
+     * Both quote styles: the older files write "…" and dashboard.js writes
+     * '…', and a key called for with the wrong one read as never called at
+     * all, which let a missing key through and a live key look dead.
+     */
+    for (const re of [/\bt\(\s*["']([a-z][A-Za-z0-9.]+)["']/g,
+                      /i18n\.t\(\s*["']([a-z][A-Za-z0-9.]+)["']/g,
+                      /wdpropText\(\s*["']([a-z][A-Za-z0-9.]+)["']/g]) {
         for (const m of src.matchAll(re)) usedInJs.add(m[1]);
     }
 }
@@ -72,7 +78,7 @@ s.check("term.* covers all three kinds",
  */
 const mentioned = new Set();
 for (const f of MODULES) {
-    for (const m of fs.readFileSync(path.join(ROOT, f), "utf8").matchAll(/"([a-z][A-Za-z0-9.]+)"/g)) {
+    for (const m of fs.readFileSync(path.join(ROOT, f), "utf8").matchAll(/["']([a-z][A-Za-z0-9.]+)["']/g)) {
         if (m[1] in dicts.en) mentioned.add(m[1]);
     }
 }

@@ -25,6 +25,7 @@ requests out altogether:
 | `nav.test.js` | Working out the current sidebar entry and the breadcrumb from the address, and building the sidebar |
 | `states.test.js` | What a section shows while its query runs, when it finds nothing, and when it fails; paging a long table |
 | `layout.test.js` | Stylesheet rules other rules depend on: the boxes that contain the floated chips |
+| `dashboard.test.js` | That the landing page shows only what it fetched, says so when it cannot, and ranks correctly |
 
 Suites for the batch, workbench, campaigns, contributions, terminology and
 accessibility work still need porting into this directory.

@@ -1689,6 +1689,25 @@ body.dark-theme .search-input:focus {
     font-size: 14px;
 }
 
+/*
+ * The figures are counted live and the markup carries none, so each of these
+ * starts empty. Holding the line's height keeps the cards from jumping as the
+ * counts arrive one by one.
+ */
+.stat-value {
+    min-height: 42px;
+}
+
+.wdp-stat-unknown {
+    color: var(--text-secondary);
+}
+
+.popular-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-right: 8px;
+}
+
 /* WikiProjects Cards */
 .projects-grid {
     display: grid;

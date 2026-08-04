@@ -12,23 +12,61 @@ function wdpropText(key, params) {
 }
 
 const dashboardEndpoint = 'https://query.wikidata.org/sparql';
+const mediawikiEndpoint = 'https://www.wikidata.org/w/api.php';
 
-// Counter animation for stat cards
-function animateCounter(element, target) {
-    const duration = 2000; // 2 seconds
-    const start = 0;
-    const increment = target / (duration / 16); // 60fps
-    let current = start;
+/*
+ * Which services have answered.
+ *
+ * The status panel used to be written into the markup as "Online", with a
+ * green dot, whether or not anything had been asked of either service — so it
+ * said the same thing when Wikidata was down. Nothing is claimed here that
+ * the page has not seen for itself: each service stays "checking" until one
+ * of its own requests has either worked or failed, and no request is made
+ * merely to find out.
+ */
+const serviceState = {
+    wdqs: null,
+    mediawiki: null,
+    at: null
+};
 
-    const timer = setInterval(() => {
-        current += increment;
-        if (current >= target) {
-            element.textContent = target.toLocaleString();
-            clearInterval(timer);
-        } else {
-            element.textContent = Math.floor(current).toLocaleString();
-        }
-    }, 16);
+function record(service, ok) {
+    /* One failure is enough to report; one success does not undo it. */
+    if (serviceState[service] !== false) {
+        serviceState[service] = ok;
+    }
+    if (ok) {
+        serviceState.at = new Date();
+    }
+    renderServiceStatus();
+}
+
+function clearNode(node) {
+    while (node.firstChild) {
+        node.removeChild(node.firstChild);
+    }
+}
+
+function textNode(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) {
+        node.setAttribute('class', className);
+    }
+    if (text !== undefined) {
+        node.appendChild(document.createTextNode(text));
+    }
+    return node;
+}
+
+/* What a widget shows in place of results it could not get. */
+function showWidgetFailure(container) {
+    if (!container) {
+        return;
+    }
+    clearNode(container);
+    const note = textNode('p', 'wdp-empty', wdpropText('dash.loadFailed'));
+    note.setAttribute('role', 'status');
+    container.appendChild(note);
 }
 
 // Fetch data from Wikidata
@@ -37,64 +75,66 @@ function queryDashboardData(sparqlQuery) {
     const headers = { 'Accept': 'application/sparql-results+json' };
 
     return fetch(fullUrl, { headers })
-        .then(response => response.json())
+        .then(response => {
+            /*
+             * Checked before parsing: the query service answers a refusal in
+             * prose, and reading that as JSON fails with a message about an
+             * unexpected token that says nothing about what happened.
+             */
+            if (!response.ok) {
+                throw new Error('The query service answered ' + response.status);
+            }
+            return response.json();
+        })
+        .then(json => {
+            record('wdqs', true);
+            return json;
+        })
         .catch(error => {
-            console.error('Dashboard query error:', error);
-            return null;
+            record('wdqs', false);
+            throw error;
         });
 }
 
-// Get total count of properties
-function getTotalPropertiesCount() {
-    const query = `PREFIX wikibase: <http://wikiba.se/ontology#>
+/* The single number a COUNT query returns. */
+function countFrom(json) {
+    if (json && json.results && json.results.bindings.length > 0) {
+        const binding = json.results.bindings[0];
+        const key = Object.keys(binding)[0];
+        return parseInt(binding[key].value, 10);
+    }
+    throw new Error('The query returned no count.');
+}
+
+const HERO = [
+    {
+        id: 'statProperties',
+        query: `PREFIX wikibase: <http://wikiba.se/ontology#>
     SELECT (COUNT(DISTINCT ?property) as ?count)
     WHERE {
       ?property rdf:type wikibase:Property.
-    }`;
-
-    return queryDashboardData(query).then(json => {
-        if (json && json.results && json.results.bindings.length > 0) {
-            return parseInt(json.results.bindings[0].count.value);
-        }
-        return 0;
-    });
-}
-
-// Get total count of languages
-function getLanguagesCount() {
-    const query = `SELECT (COUNT(DISTINCT ?language) as ?count)
+    }`
+    },
+    {
+        id: 'statLanguages',
+        query: `SELECT (COUNT(DISTINCT ?language) as ?count)
     WHERE {
        [] wdt:P31 wd:Q10876391;
           wdt:P407 [wdt:P424 ?language]
-    }`;
-
-    return queryDashboardData(query).then(json => {
-        if (json && json.results && json.results.bindings.length > 0) {
-            return parseInt(json.results.bindings[0].count.value);
-        }
-        return 0;
-    });
-}
-
-// Get total count of datatypes
-function getDatatypesCount() {
-    const query = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    }`
+    },
+    {
+        id: 'statDatatypes',
+        query: `PREFIX wikibase: <http://wikiba.se/ontology#>
     SELECT (COUNT(DISTINCT ?datatype) as ?count)
     WHERE {
        [] wikibase:propertyType ?datatype.
-    }`;
-
-    return queryDashboardData(query).then(json => {
-        if (json && json.results && json.results.bindings.length > 0) {
-            return parseInt(json.results.bindings[0].count.value);
-        }
-        return 0;
-    });
-}
-
-// Get total count of property classes (mirrors allClassesQuery in wdprop.js)
-function getPropertyClassesCount() {
-    const query = `PREFIX wikibase: <http://wikiba.se/ontology#>
+    }`
+    },
+    {
+        /* Mirrors allClassesQuery in wdprop.js. */
+        id: 'statClasses',
+        query: `PREFIX wikibase: <http://wikiba.se/ontology#>
     SELECT (COUNT(DISTINCT ?item) as ?count)
     WHERE {
       {
@@ -105,151 +145,370 @@ function getPropertyClassesCount() {
         ?property a wikibase:Property;
                   (wdt:P31|wdt:P279) ?item.
       }
-    }`;
+    }`
+    }
+];
 
-    return queryDashboardData(query).then(json => {
-        if (json && json.results && json.results.bindings.length > 0) {
-            return parseInt(json.results.bindings[0].count.value);
+/*
+ * Counting up to a figure is decoration, and someone who has asked for less
+ * movement gets the figure itself.
+ */
+function animateCounter(element, target) {
+    const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still) {
+        element.textContent = target.toLocaleString();
+        return;
+    }
+
+    const duration = 2000;
+    const increment = target / (duration / 16);
+    let current = 0;
+
+    /*
+     * let, and assigned rather than initialised: the callback names the timer
+     * it is stopping, and a const would not yet be readable if anything ever
+     * called it before setInterval had returned.
+     */
+    let timer = null;
+    timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            element.textContent = target.toLocaleString();
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.floor(current).toLocaleString();
         }
-        return 0;
-    });
-}
-
-// Get translation statistics for top languages
-function getTranslationStats() {
-    const languages = [
-        { code: 'en', name: 'English' },
-        { code: 'de', name: 'German' },
-        { code: 'fr', name: 'French' },
-        { code: 'es', name: 'Spanish' },
-        { code: 'ja', name: 'Japanese' }
-    ];
-
-    const promises = languages.map(lang => {
-        const query = `PREFIX wikibase: <http://wikiba.se/ontology#>
-        SELECT
-          (COUNT(DISTINCT ?property) as ?total)
-          (COUNT(DISTINCT ?label) as ?translated)
-        WHERE {
-          ?property rdf:type wikibase:Property.
-          OPTIONAL {
-            ?property rdfs:label ?label.
-            FILTER(lang(?label)="${lang.code}")
-          }
-        }`;
-
-        return queryDashboardData(query).then(json => {
-            if (json && json.results && json.results.bindings.length > 0) {
-                const binding = json.results.bindings[0];
-                const total = parseInt(binding.total.value);
-                const translated = parseInt(binding.translated.value);
-                const percentage = total > 0 ? Math.round((translated / total) * 100) : 0;
-
-                return {
-                    code: lang.code,
-                    name: lang.name,
-                    percentage: percentage,
-                    translated: translated,
-                    total: total
-                };
-            }
-            return { code: lang.code, name: lang.name, percentage: 0, translated: 0, total: 0 };
-        });
-    });
-
-    return Promise.all(promises);
+    }, 16);
 }
 
 // Update hero stats with real data
 function updateHeroStats() {
-    const stats = document.querySelectorAll('.stat-value[data-target]');
-
-    // Update Total Properties
-    getTotalPropertiesCount().then(count => {
-        if (count > 0 && stats[0]) {
-            stats[0].setAttribute('data-target', count);
-            animateCounter(stats[0], count);
+    HERO.forEach(stat => {
+        const element = document.getElementById(stat.id);
+        if (!element) {
+            return;
         }
-    });
 
-    // Update Languages
-    getLanguagesCount().then(count => {
-        if (count > 0 && stats[1]) {
-            stats[1].setAttribute('data-target', count);
-            animateCounter(stats[1], count);
+        element.textContent = '';
+
+        queryDashboardData(stat.query).then(json => {
+            const count = countFrom(json);
+            element.setAttribute('class', 'stat-value');
+            animateCounter(element, count);
+        }).catch(() => {
+            /*
+             * A dash, not a nought and not the figure that was in the markup:
+             * "we could not count this" and "there are none" are different
+             * things, and only one of them is true.
+             */
+            element.setAttribute('class', 'stat-value wdp-stat-unknown');
+            element.textContent = '—';
+            element.setAttribute('title', wdpropText('dash.countFailed'));
+        });
+    });
+}
+
+/*
+ * Translation coverage for a handful of widely read languages.
+ *
+ * One query rather than one per language: each is a count over every property
+ * in Wikidata, and five of those in parallel is a heavy thing to ask on a page
+ * someone has merely opened.
+ */
+const COVERAGE_LANGUAGES = [
+    { code: 'en', name: 'lang.en' },
+    { code: 'de', name: 'lang.de' },
+    { code: 'fr', name: 'lang.fr' },
+    { code: 'es', name: 'lang.es' },
+    { code: 'ja', name: 'lang.ja' }
+];
+
+function coverageQuery() {
+    const counts = COVERAGE_LANGUAGES.map(({ code }) => `
+      (COUNT(DISTINCT ?label_${code}) as ?n_${code})`).join('');
+    const optionals = COVERAGE_LANGUAGES.map(({ code }) => `
+      OPTIONAL { ?property rdfs:label ?label_${code} FILTER(lang(?label_${code})="${code}") }`).join('');
+
+    return `PREFIX wikibase: <http://wikiba.se/ontology#>
+    SELECT (COUNT(DISTINCT ?property) as ?total)${counts}
+    WHERE {
+      ?property rdf:type wikibase:Property.${optionals}
+    }`;
+}
+
+function renderCoverage(binding) {
+    const list = document.getElementById('translationProgress');
+    if (!list) {
+        return;
+    }
+    clearNode(list);
+
+    const total = parseInt(binding.total.value, 10);
+    if (!total) {
+        throw new Error('No properties were counted.');
+    }
+
+    COVERAGE_LANGUAGES.forEach(({ code, name }) => {
+        const translated = parseInt(binding['n_' + code].value, 10);
+        const percentage = Math.round((translated / total) * 100);
+
+        const item = textNode('div', 'progress-item');
+        const header = textNode('div', 'progress-header');
+        header.appendChild(textNode('span', 'progress-label',
+            wdpropText('dash.languageNamed', [wdpropText(name), code])));
+        header.appendChild(textNode('span', 'progress-value', percentage + '%'));
+        item.appendChild(header);
+
+        const track = textNode('div', 'progress-bar-container');
+        /*
+         * The bar is one way of reading the figure beside it, not the only
+         * one, so it is hidden from screen readers rather than repeated.
+         */
+        track.setAttribute('aria-hidden', 'true');
+        track.setAttribute('title',
+            wdpropText('dash.coverageOf', [translated.toLocaleString(), total.toLocaleString()]));
+
+        const level = percentage >= 90 ? 'high' : (percentage >= 50 ? 'medium' : 'low');
+        const bar = textNode('div', 'progress-bar ' + level);
+        bar.style.width = percentage + '%';
+        track.appendChild(bar);
+        item.appendChild(track);
+
+        list.appendChild(item);
+    });
+}
+
+function updateTranslationProgress() {
+    const list = document.getElementById('translationProgress');
+    if (list) {
+        clearNode(list);
+        list.appendChild(textNode('p', 'wdp-empty', wdpropText('js.fetching')));
+    }
+
+    queryDashboardData(coverageQuery()).then(json => {
+        if (!json.results || !json.results.bindings.length) {
+            throw new Error('The coverage query returned nothing.');
         }
+        renderCoverage(json.results.bindings[0]);
+    }).catch(() => {
+        showWidgetFailure(list);
     });
+}
 
-    // Update Data Types
-    getDatatypesCount().then(count => {
-        if (count > 0 && stats[2]) {
-            stats[2].setAttribute('data-target', count);
-            animateCounter(stats[2], count);
+/*
+ * The most used properties, from the report the Wikidata community keeps.
+ */
+function topPropertyIds() {
+    const url = mediawikiEndpoint + '?action=query&prop=links&pllimit=500&origin=*' +
+        '&titles=Wikidata:Database_reports/List_of_properties/Top100&format=json';
+
+    return fetch(url).then(response => {
+        if (!response.ok) {
+            throw new Error('Wikidata answered ' + response.status);
         }
-    });
+        return response.json();
+    }).then(json => {
+        record('mediawiki', true);
+        if (json.error) {
+            throw new Error(json.error.code || 'api');
+        }
 
-    // Update Property Classes
-    getPropertyClassesCount().then(count => {
-        if (count > 0 && stats[3]) {
-            stats[3].setAttribute('data-target', count);
-            animateCounter(stats[3], count);
+        const properties = [];
+        const pages = (json.query && json.query.pages) || {};
+        for (const page of Object.keys(pages)) {
+            for (const link of pages[page].links || []) {
+                if (link.title.indexOf('Property:') !== -1 && link.title !== 'Property:P') {
+                    properties.push(link.title.replace('Property:', ''));
+                }
+            }
+        }
+        if (!properties.length) {
+            throw new Error('The report page listed no properties.');
+        }
+        return properties.slice(0, 5);
+    }).catch(error => {
+        record('mediawiki', false);
+        throw error;
+    });
+}
+
+/*
+ * Labels for all of them in one query. They used to be fetched one at a time
+ * and each row appended as its own answer came back, so the rows arrived in
+ * whichever order the network happened to return them — the ranks read #3,
+ * #1, #5 down the page.
+ */
+function propertyLabels(ids) {
+    const values = ids.map(id => 'wd:' + id).join(' ');
+    const query = `SELECT ?property ?label WHERE {
+      VALUES ?property { ${values} }
+      ?property rdfs:label ?label.
+      FILTER(lang(?label)="en")
+    }`;
+
+    return queryDashboardData(query).then(json => {
+        const labels = {};
+        for (const binding of json.results.bindings) {
+            const id = binding.property.value.replace('http://www.wikidata.org/entity/', '');
+            labels[id] = binding.label.value;
+        }
+        return labels;
+    }).catch(() => {
+        /* Without labels the identifiers still name the properties. */
+        return {};
+    });
+}
+
+function renderTopProperties(ids, labels, counts) {
+    const table = document.getElementById('topProperties');
+    if (!table) {
+        return;
+    }
+    clearNode(table);
+
+    ids.forEach((id, index) => {
+        const row = document.createElement('tr');
+        row.appendChild(textNode('td', 'rank', '#' + (index + 1)));
+
+        const cell = document.createElement('td');
+        const link = textNode('a', 'property-name', labels[id] || id);
+        link.setAttribute('href', './property.html?property=' + id);
+        cell.appendChild(link);
+        cell.appendChild(textNode('div', 'property-id', id));
+        row.appendChild(cell);
+
+        /*
+         * The real figure, or nothing. This column used to read "Top 1",
+         * "Top 2" — the rank again, in a column headed by a usage count.
+         */
+        const used = counts && typeof counts[id] === 'number' ?
+            WDProp.usage.format(counts[id]) : '';
+        const usage = textNode('td', 'usage-count', used);
+        if (used) {
+            usage.setAttribute('title', wdpropText('translate.usedOn', [counts[id].toLocaleString()]));
+        }
+        row.appendChild(usage);
+
+        table.appendChild(row);
+    });
+}
+
+function updateTopProperties() {
+    const table = document.getElementById('topProperties');
+    if (table) {
+        clearNode(table);
+        const row = document.createElement('tr');
+        const cell = textNode('td', null, wdpropText('js.fetching'));
+        cell.setAttribute('colspan', '3');
+        row.appendChild(cell);
+        table.appendChild(row);
+    }
+
+    topPropertyIds().then(ids => {
+        /*
+         * Labels and usage counts are both optional decoration on a list that
+         * is already correct, so the rows are not held back for either.
+         */
+        renderTopProperties(ids, {}, null);
+
+        propertyLabels(ids).then(labels => {
+            const counting = (window.WDProp && WDProp.usage) ?
+                WDProp.usage.counts(ids).catch(() => null) : Promise.resolve(null);
+            return counting.then(counts => renderTopProperties(ids, labels, counts));
+        });
+    }).catch(() => {
+        if (table) {
+            clearNode(table);
+            const row = document.createElement('tr');
+            const cell = textNode('td', 'wdp-empty', wdpropText('dash.loadFailed'));
+            cell.setAttribute('colspan', '3');
+            row.appendChild(cell);
+            table.appendChild(row);
         }
     });
 }
 
-// Update translation progress bars with real data
-function updateTranslationProgress() {
-    getTranslationStats().then(stats => {
-        stats.forEach((lang, index) => {
-            const progressItems = document.querySelectorAll('.progress-item');
-            if (progressItems[index]) {
-                const labelEl = progressItems[index].querySelector('.progress-label');
-                const valueEl = progressItems[index].querySelector('.progress-value');
-                const barEl = progressItems[index].querySelector('.progress-bar');
+/*
+ * How long ago, in words. Anything within the minute is "just now"; past an
+ * hour the clock time is more use than a count of minutes.
+ */
+function whenText(at) {
+    if (!at) {
+        return wdpropText('dash.notYet');
+    }
+    const minutes = Math.floor((Date.now() - at.getTime()) / 60000);
+    if (minutes < 1) {
+        return wdpropText('dash.justNow');
+    }
+    if (minutes < 60) {
+        return wdpropText('dash.minutesAgo', [minutes]);
+    }
+    return at.toLocaleTimeString();
+}
 
-                if (labelEl) labelEl.textContent = `${lang.name} (${lang.code})`;
-                if (valueEl) valueEl.textContent = `${lang.percentage}%`;
-                if (barEl) {
-                    barEl.style.width = `${lang.percentage}%`;
+/*
+ * What the local cache of usage figures holds. usage.js keeps them for a day,
+ * so this says how many are being reused rather than fetched again.
+ */
+function cacheText() {
+    let cached = 0;
+    try {
+        const held = JSON.parse(localStorage.getItem('wdprop-usage-counts')) || {};
+        const day = 24 * 60 * 60 * 1000;
+        cached = Object.keys(held).filter(id => (Date.now() - held[id].at) < day).length;
+    } catch (e) {
+        cached = 0;
+    }
+    return cached ? wdpropText('dash.cacheHolding', [cached]) : wdpropText('dash.cacheEmpty');
+}
 
-                    // Update color class based on percentage
-                    barEl.classList.remove('high', 'medium', 'low');
-                    if (lang.percentage >= 90) {
-                        barEl.classList.add('high');
-                    } else if (lang.percentage >= 50) {
-                        barEl.classList.add('medium');
-                    } else {
-                        barEl.classList.add('low');
-                    }
-                }
-            }
-        });
-    });
+function statusRow(labelKey, value, state) {
+    const item = textNode('div', 'status-item');
+    item.appendChild(textNode('span', 'status-label', wdpropText(labelKey)));
+
+    const shown = textNode('span', 'status-value');
+    if (state !== undefined) {
+        /*
+         * The dot repeats what the word beside it already says, so it is not
+         * the only thing carrying the answer, and it is not announced twice.
+         */
+        const dot = textNode('span',
+            state === true ? 'status-dot' : (state === false ? 'status-dot error' : 'status-dot warning'));
+        dot.setAttribute('aria-hidden', 'true');
+        shown.appendChild(dot);
+    }
+    shown.appendChild(document.createTextNode(value));
+    item.appendChild(shown);
+    return item;
+}
+
+function renderServiceStatus() {
+    const grid = document.getElementById('serviceStatus');
+    if (!grid) {
+        return;
+    }
+    clearNode(grid);
+
+    function word(state) {
+        if (state === null) {
+            return wdpropText('dash.checking');
+        }
+        return state ? wdpropText('dash.answering') : wdpropText('dash.notAnswering');
+    }
+
+    grid.appendChild(statusRow('dash.wikidataQueryService',
+        word(serviceState.wdqs), serviceState.wdqs));
+    grid.appendChild(statusRow('dash.mediawikiApi',
+        word(serviceState.mediawiki), serviceState.mediawiki));
+    grid.appendChild(statusRow('dash.lastUpdated', whenText(serviceState.at)));
+    grid.appendChild(statusRow('dash.cacheStatus', cacheText()));
 }
 
 // Animate all stat values on page load
 function initDashboard() {
-    // Show loading state
-    const statValues = document.querySelectorAll('.stat-value[data-target]');
-    statValues.forEach(stat => {
-        stat.textContent = '...';
-    });
-
-    // Fetch and update real data
+    renderServiceStatus();
     updateHeroStats();
     updateTranslationProgress();
-
-    // Animate progress bars
-    setTimeout(() => {
-        const progressBars = document.querySelectorAll('.progress-bar');
-        progressBars.forEach((bar, index) => {
-            const width = bar.style.width;
-            bar.style.width = '0%';
-            setTimeout(() => {
-                bar.style.width = width;
-            }, 500 + (index * 100));
-        });
-    }, 1000);
 
     // Add entrance animations to cards
     const cards = document.querySelectorAll('.stat-card, .dashboard-widget, .project-card');
@@ -261,21 +520,6 @@ function initDashboard() {
             card.style.opacity = '1';
             card.style.transform = 'translateY(0)';
         }, 100 + (index * 50));
-    });
-}
-
-// Update last updated time
-function updateLastUpdatedTime() {
-    const statusItems = document.querySelectorAll('.status-item');
-    statusItems.forEach(item => {
-        const label = item.querySelector('.status-label');
-        if (label && label.textContent === 'Last Updated') {
-            const valueElement = item.querySelector('.status-value');
-            if (valueElement) {
-                const now = new Date();
-                valueElement.textContent = 'Just now';
-            }
-        }
     });
 }
 
@@ -362,91 +606,19 @@ function addRippleStyles() {
     document.head.appendChild(style);
 }
 
-// Get Top Properties from MediaWiki
-function getTopPropertiesFromMediaWiki() {
-    const url = 'https://www.wikidata.org/w/api.php?action=query&prop=links&pllimit=500&origin=*&titles=Wikidata:Database_reports/List_of_properties/Top100&format=json';
-
-    return fetch(url)
-        .then(response => response.json())
-        .then(json => {
-            const properties = [];
-            for (const page of Object.keys(json.query.pages)) {
-                for (const link of json.query.pages[page].links || []) {
-                    if (link.title.indexOf("Property:") !== -1 && link.title !== "Property:P") {
-                        const propertyId = link.title.replace("Property:", "");
-                        properties.push(propertyId);
-                    }
-                }
-            }
-            return properties.slice(0, 5); // Return top 5
-        })
-        .catch(error => {
-            console.error('Error fetching top properties:', error);
-            return [];
-        });
-}
-
-// Get property label for a given property ID
-function getPropertyLabel(propertyId) {
-    const query = `
-        SELECT ?label WHERE {
-          wd:${propertyId} rdfs:label ?label.
-          FILTER(lang(?label)="en")
-        }
-    `;
-
-    return queryDashboardData(query).then(json => {
-        if (json && json.results && json.results.bindings.length > 0) {
-            return json.results.bindings[0].label.value;
-        }
-        return propertyId;
-    });
-}
-
-// Update Top Properties table with real data
-function updateTopProperties() {
-    getTopPropertiesFromMediaWiki().then(propertyIds => {
-        if (propertyIds.length === 0) return;
-
-        const table = document.querySelector('.top-properties-table');
-        if (!table) return;
-
-        // Clear existing rows
-        table.innerHTML = '';
-
-        // Add new rows with real data
-        propertyIds.forEach((propId, index) => {
-            getPropertyLabel(propId).then(label => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="rank">#${index + 1}</td>
-                    <td>
-                        <div class="property-name">${label}</div>
-                        <div class="property-id">${propId}</div>
-                    </td>
-                    <td class="usage-count">Top ${index + 1}</td>
-                `;
-                table.appendChild(tr);
-            });
-        });
-    });
+function start() {
+    initDashboard();
+    initSearchInput();
+    initRippleEffects();
+    addRippleStyles();
+    updateTopProperties();
 }
 
 // Initialize everything when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        initDashboard();
-        initSearchInput();
-        initRippleEffects();
-        addRippleStyles();
-        updateLastUpdatedTime();
-        updateTopProperties();
+        start();
     });
 } else {
-    initDashboard();
-    initSearchInput();
-    initRippleEffects();
-    addRippleStyles();
-    updateLastUpdatedTime();
-    updateTopProperties();
+    start();
 }

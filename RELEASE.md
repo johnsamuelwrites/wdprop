@@ -37,6 +37,19 @@ Human-driven translation, alongside the existing analysis.
 
 Fixes
 
+* The dashboard stated things it had not checked. The service panel said
+  "Online" with a green dot whether or not either service had been asked, and
+  every widget carried a specimen figure written into the markup — 12,847
+  properties, English 98%, P31 with 89.2M uses — which stayed on screen,
+  looking authoritative, whenever the query behind it failed. Nothing is now
+  shown that was not fetched: a figure that could not be counted reads as a
+  dash rather than a nought, a widget that could not load says so, and each
+  service is reported from what this page's own requests actually did
+* The most used properties were appended as each label came back, so the ranks
+  read #3, #1, #5 down the page depending on the network; and the column
+  headed by a usage count repeated the rank instead ("Top 1", "Top 2")
+* Property labels from Wikidata were written into the dashboard with innerHTML
+* The dashboard was the one page with no translation at all
 * All fifteen sidebar entries now fit on a laptop screen; the last few sat
   below the fold behind a scrollbar that was almost invisible
 * A query that failed left its spinner turning for good: nothing caught the
