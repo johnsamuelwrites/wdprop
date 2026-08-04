@@ -1,6 +1,39 @@
 # v0.13 (under progress)
 ===============================================================================
-*
+Human-driven translation, alongside the existing analysis.
+
+* Propose translations of property labels, descriptions and aliases, and export
+  them as QuickStatements commands. WDProp never edits Wikidata itself: the
+  commands are run by the contributor, under their own account
+* Translation workbench: work through the properties still missing a term in a
+  language, with the property's meaning shown in one or more languages the
+  translator reads, and a keyboard-driven flow
+* Validate proposals before export — duplicate property labels, length limits,
+  script mismatches, and terms added to Wikidata since the batch was started
+* Per-property context while translating: real usage examples, property
+  constraints, and the same label in related languages and variants
+* Terminology suggestions drawn from how the same words were translated before
+* Translation campaigns: a shareable link pairing a language with a set of
+  properties, showing live progress for labels, descriptions and aliases
+* Contributions: what was exported to QuickStatements, checked back against
+  Wikidata, with anything that never arrived returned to the batch
+* Terminology consistency report: find words translated several different ways
+  in a language, with the properties behind each rendering
+* Show how heavily each property is used, and order a page by it
+* Localised interface in English, French and Spanish, switchable from the header
+  or with ?uselang=; messages are plain JavaScript files, so WDProp still works
+  when the pages are opened directly from disk
+* Keyboard and screen-reader accessible: skip links, landmarks, named controls,
+  a focus-trapping dialog, and status never signalled by colour alone
+
+Fixes
+
+* Six SPARQL templates were overwritten in place, destroying their own
+  placeholders on first use
+* On the language page for a chosen property, the description and alias
+  sections ran the label query, so all three showed the same result
+* mwwdprop.js and wdprop.js both defined createDivLanguage; on the property
+  page, which one ran depended on script order
 
 # v0.12 
 ===============================================================================

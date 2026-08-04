@@ -3916,3 +3916,15 @@ summary:focus-visible,
         scroll-behavior: auto !important;
     }
 }
+
+/* How heavily a property is used, shown beside it in the workbench */
+
+.wb-usage {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.wb-usage:empty {
+    display: none;
+}

@@ -32,6 +32,12 @@
 * Fully localised interface (English, French, Spanish), switchable from the header or with `?uselang=fr`; messages are plain JavaScript files, so WDProp works when opened directly from disk as well as when hosted. Adding a language means adding one file under `i18n/`
 * Keyboard and screen-reader accessible: skip links, landmarks, named controls, a focus-trapping dialog, and status that is never signalled by colour alone
 
+## Tests
+
+    node tests/run.js
+
+Plain Node, no dependencies. See [tests/README.md](tests/README.md).
+
 ## Author
 * John Samuel
 * [List of all contributors](https://github.com/johnsamuelwrites/wdprop/graphs/contributors)

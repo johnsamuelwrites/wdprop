@@ -356,4 +356,8 @@ WDProp.i18n.add("fr", {
     "a11y.batchCount": "Lot de traduction, $1 en attente",
     "a11y.progress": "$1 pour cent terminé",
     "a11y.closeDialog": "Fermer cette boîte de dialogue",
+    "translate.usedOn": "sur $1 éléments",
+    "translate.sortByUsage": "Les plus utilisées d'abord",
+    "translate.sortByNumber": "Revenir à l'ordre des propriétés",
+    "translate.scopeTop": "Les 100 propriétés les plus utilisées",
 });

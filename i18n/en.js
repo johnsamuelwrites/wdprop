@@ -366,4 +366,8 @@ WDProp.i18n.add("en", {
     "a11y.batchCount": "Translation batch, $1 waiting",
     "a11y.progress": "$1 per cent complete",
     "a11y.closeDialog": "Close this dialog",
+    "translate.usedOn": "on $1 items",
+    "translate.sortByUsage": "Most used first",
+    "translate.sortByNumber": "Back to property order",
+    "translate.scopeTop": "The 100 most used properties",
 });

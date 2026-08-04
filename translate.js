@@ -97,6 +97,8 @@ window.WDProp = window.WDProp || {};
         glossaryStatus: "idle",
         context: {},
         showSkipped: false,
+        sortByUsage: false,
+        usage: {},
         added: 0,
         skippedThisSession: 0
     };
@@ -229,18 +231,6 @@ window.WDProp = window.WDProp || {};
                 "}";
         }
 
-        /*
-         * A campaign hands over an explicit list, which is how WikiProject
-         * and hand-picked selections reach the workbench.
-         */
-        if (settings.scope.kind === "properties") {
-            return "PREFIX wikibase: <http://wikiba.se/ontology#>\n" +
-                "SELECT DISTINCT ?property WHERE {\n" +
-                "  VALUES ?property { wd:" + settings.scope.value.split(",").join(" wd:") + " }\n" +
-                missing +
-                "}";
-        }
-
         if (settings.scope.kind === "datatype") {
             return "PREFIX wikibase: <http://wikiba.se/ontology#>\n" +
                 "SELECT DISTINCT ?property WHERE {\n" +
@@ -266,7 +256,78 @@ window.WDProp = window.WDProp || {};
      * runs to thirteen thousand entries, and the URIs the query service
      * returns are a hundred times larger than the numbers inside them.
      */
+    /*
+     * When the selection is an explicit list of properties, the terms are read
+     * from the MediaWiki API rather than SPARQL. Naming a hundred properties in
+     * a VALUES clause takes seconds; asking the API for the same hundred takes
+     * about one.
+     */
+    function loadWorklistByApi(ids) {
+        var batches = [];
+        for (var i = 0; i < ids.length; i += API_BATCH) {
+            batches.push(ids.slice(i, i + API_BATCH));
+        }
+
+        return Promise.all(batches.map(function (batch) {
+            var url = API + "?action=wbgetentities" +
+                "&ids=" + encodeURIComponent(batch.join("|")) +
+                "&props=" + encodeURIComponent("labels|descriptions|aliases") +
+                "&languages=" + encodeURIComponent(state.target) +
+                "&format=json&origin=*";
+            return fetch(url).then(function (r) {
+                return r.json();
+            });
+        })).then(function (results) {
+            var missing = [];
+            results.forEach(function (json) {
+                var entities = json.entities || {};
+                Object.keys(entities).forEach(function (id) {
+                    var entity = entities[id];
+                    if (entity.missing !== undefined) {
+                        return;
+                    }
+                    var has;
+                    if (state.type === "alias") {
+                        var aliases = entity.aliases && entity.aliases[state.target];
+                        has = !!(aliases && aliases.length);
+                    } else {
+                        var field = state.type === "label" ? "labels" : "descriptions";
+                        has = !!(entity[field] && entity[field][state.target]);
+                    }
+                    if (!has) {
+                        missing.push(propertyNumber(id));
+                    }
+                });
+            });
+            return missing;
+        });
+    }
+
     function loadWorklist() {
+        /* A ranked list, so its order is kept rather than sorted by number. */
+        if (state.scope.kind === "top") {
+            return WDProp.usage.topProperties().then(function (ids) {
+                state.rankedOrder = ids.map(propertyNumber);
+                return loadWorklistByApi(ids);
+            }).then(function (numbers) {
+                var rank = {};
+                state.rankedOrder.forEach(function (n, i) {
+                    rank[n] = i;
+                });
+                return numbers.sort(function (a, b) {
+                    return rank[a] - rank[b];
+                });
+            });
+        }
+
+        if (state.scope.kind === "properties") {
+            return loadWorklistByApi(state.scope.value.split(",")).then(function (numbers) {
+                return numbers.sort(function (a, b) {
+                    return a - b;
+                });
+            });
+        }
+
         var key = worklistCacheKey();
         try {
             var cached = sessionStorage.getItem(key);
@@ -499,12 +560,19 @@ window.WDProp = window.WDProp || {};
     /* Properties on the current page. */
     function visibleProperties() {
         var start = state.page * PAGE_SIZE;
-        return {
-            total: state.remaining.length,
-            page: state.remaining.slice(start, start + PAGE_SIZE).map(function (n) {
-                return "P" + n;
-            })
-        };
+        var page = state.remaining.slice(start, start + PAGE_SIZE).map(function (n) {
+            return "P" + n;
+        });
+
+        if (state.sortByUsage) {
+            page = page.slice().sort(function (a, b) {
+                var left = typeof state.usage[a] === "number" ? state.usage[a] : -1;
+                var right = typeof state.usage[b] === "number" ? state.usage[b] : -1;
+                return right - left;
+            });
+        }
+
+        return { total: state.remaining.length, page: page };
     }
 
     function renderProgress() {
@@ -532,6 +600,23 @@ window.WDProp = window.WDProp || {};
         line.appendChild(document.createTextNode(
             t("translate.sessionCounts", [state.added, skippedCount()])));
         box.appendChild(line);
+
+        /*
+         * Ordering the page by usage, rather than the whole worklist: a full
+         * ranking would need a count for every one of thousands of properties.
+         */
+        var sort = element("button", "wdp-button",
+            state.sortByUsage ? t("translate.sortByNumber") : t("translate.sortByUsage"));
+        sort.setAttribute("type", "button");
+        sort.addEventListener("click", function () {
+            state.sortByUsage = !state.sortByUsage;
+            if (state.sortByUsage) {
+                loadUsage(visibleProperties().page).then(renderAll);
+            } else {
+                renderAll();
+            }
+        });
+        box.appendChild(sort);
 
         if (skippedCount()) {
             var toggle = element("button", "wdp-button",
@@ -820,6 +905,14 @@ window.WDProp = window.WDProp || {};
             head.appendChild(element("span", "wdp-tag", entity.datatype));
         }
 
+        var used = element("span", "wb-usage");
+        used.setAttribute("data-usage-for", property);
+        if (typeof state.usage[property] === "number") {
+            used.appendChild(document.createTextNode(
+                t("translate.usedOn", [WDProp.usage.format(state.usage[property])])));
+        }
+        head.appendChild(used);
+
         var details = element("a", "wb-link", t("translate.inWDProp"));
         details.setAttribute("href", "property.html?property=" + property);
         head.appendChild(details);
@@ -1079,6 +1172,39 @@ window.WDProp = window.WDProp || {};
         renderPager();
     }
 
+    /*
+     * Usage figures arrive after the page is already usable: they inform the
+     * choice of what to work on, so they must never hold up the work itself.
+     */
+    function loadUsage(ids) {
+        var wanted = ids.filter(function (id) {
+            return typeof state.usage[id] !== "number";
+        });
+        if (!wanted.length) {
+            applyUsage();
+            return Promise.resolve();
+        }
+
+        return WDProp.usage.counts(wanted).then(function (found) {
+            Object.keys(found).forEach(function (id) {
+                state.usage[id] = found[id];
+            });
+            applyUsage();
+        });
+    }
+
+    function applyUsage() {
+        var slots = document.querySelectorAll("[data-usage-for]");
+        for (var i = 0; i < slots.length; i++) {
+            var id = slots[i].getAttribute("data-usage-for");
+            clear(slots[i]);
+            if (typeof state.usage[id] === "number") {
+                slots[i].appendChild(document.createTextNode(
+                    t("translate.usedOn", [WDProp.usage.format(state.usage[id])])));
+            }
+        }
+    }
+
     /* ------------------------------------------------------------- controls */
 
     function loadPage() {
@@ -1112,6 +1238,7 @@ window.WDProp = window.WDProp || {};
             });
             renderAll();
             window.scrollTo({ top: 0, behavior: "smooth" });
+            loadUsage(visibleProperties().page);
         }).catch(function (e) {
             clear(box);
             box.appendChild(element("p", "wdp-message wdp-blocking",
@@ -1154,6 +1281,9 @@ window.WDProp = window.WDProp || {};
         if (settings.scope.kind === "datatype" && !DATATYPE_RE.test(settings.scope.value)) {
             problems.push(t("translate.badDatatype"));
         }
+        if (settings.scope.kind === "top") {
+            return problems;
+        }
         if (settings.scope.kind === "properties" && !PROPERTY_LIST_RE.test(settings.scope.value)) {
             problems.push(t("translate.badPropertyList"));
         }
@@ -1164,7 +1294,9 @@ window.WDProp = window.WDProp || {};
         var params = ["target=" + encodeURIComponent(state.target),
             "pivots=" + encodeURIComponent(state.pivots.join(",")),
             "type=" + encodeURIComponent(state.type)];
-        if (state.scope.kind !== "all") {
+        if (state.scope.kind === "top") {
+            params.push("top=1");
+        } else if (state.scope.kind !== "all") {
             params.push(state.scope.kind + "=" + encodeURIComponent(state.scope.value));
         }
         window.history.replaceState(null, "", "translate.html?" + params.join("&"));
@@ -1239,6 +1371,7 @@ window.WDProp = window.WDProp || {};
         var scopeClass = urlValue("class", "");
         var scopeDatatype = urlValue("datatype", "");
         var scopeProperties = urlValue("properties", "");
+        var scopeTop = urlValue("top", "");
 
         document.getElementById("wbTarget").value = target;
         document.getElementById("wbPivots").value = pivots;
@@ -1255,10 +1388,13 @@ window.WDProp = window.WDProp || {};
         } else if (scopeProperties) {
             scopeSelect.value = "properties";
             scopeValue.value = scopeProperties;
+        } else if (scopeTop) {
+            scopeSelect.value = "top";
         }
 
         function updateScopeVisibility() {
-            scopeValue.style.display = scopeSelect.value === "all" ? "none" : "";
+            var needsValue = scopeSelect.value !== "all" && scopeSelect.value !== "top";
+            scopeValue.style.display = needsValue ? "" : "none";
             scopeValue.setAttribute("placeholder",
                 scopeSelect.value === "datatype" ? "wikibase:WikibaseItem" :
                     scopeSelect.value === "properties" ? "P31,P17,P1476" : "Q18616576");
