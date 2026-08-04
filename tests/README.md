@@ -26,6 +26,7 @@ requests out altogether:
 | `states.test.js` | What a section shows while its query runs, when it finds nothing, and when it fails; paging a long table |
 | `layout.test.js` | Stylesheet rules other rules depend on: the boxes that contain the floated chips |
 | `dashboard.test.js` | That the landing page shows only what it fetched, says so when it cannot, and ranks correctly |
+| `markup.test.js` | Page structure the stylesheet relies on: nothing outside the main region, where the sidebar covers it |
 
 Suites for the batch, workbench, campaigns, contributions, terminology and
 accessibility work still need porting into this directory.

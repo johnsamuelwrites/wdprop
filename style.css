@@ -3358,9 +3358,43 @@ body.dark-theme {
     background: var(--bg-primary);
 }
 
+/*
+ * Two columns inside a panel: a language code, and what the property says in
+ * it. Nothing like the full-width data tables the rules at the top of this
+ * file are written for, so it takes none of their decoration — the shadow,
+ * the rounded corners, the standing margins, the accent-coloured heading
+ * cell and the rules between rows all belong to those and not to this.
+ *
+ * table-layout: fixed is the part that matters. Left to work the widths out
+ * from the content, a browser treats the 60px below as a suggestion and gives
+ * whatever the second column asks for — and a label, a description and a list
+ * of aliases ask for a great deal, more still in a script that does not break
+ * at spaces. The first column was squeezed away to nothing underneath the
+ * second. Fixed makes the gutter a gutter, and the long content wraps.
+ */
 .wdp-context-table {
     width: 100%;
+    table-layout: fixed;
+    margin: 0;
     border-collapse: collapse;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+}
+
+.wdp-context-table th,
+.wdp-context-table td {
+    background: transparent;
+    border-bottom: none;
+    font-weight: 400;
+    letter-spacing: normal;
+    line-height: 1.5;
+    /* A single long term must wrap rather than push the column wider. */
+    overflow-wrap: anywhere;
+}
+
+.wdp-context-table tr:hover>td {
+    background: transparent;
 }
 
 .wdp-context-table th {
@@ -3375,6 +3409,7 @@ body.dark-theme {
 
 .wdp-context-table td {
     padding: 6px 0;
+    font-size: 14px;
     vertical-align: top;
 }
 

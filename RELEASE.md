@@ -64,6 +64,12 @@ Fixes
   loaded neither script defining toggleTheme or toggleMobileMenu, so its theme
   switch and menu button did nothing
 * Downloading the batch as a file reported nothing at all; it now confirms
+* The Top Properties section of properties.html was written beside the main
+  region rather than inside it, so it did not take the margin that keeps a
+  page clear of the sidebar and its first column was covered by it
+* The context table beside a translation took the styling meant for the
+  full-width data tables, including a layout worked out from the content: its
+  second column claimed every pixel and squeezed the first away underneath it
 * The chips on the languages, properties and property pages disappeared: the
   boxes holding them had their overflow changed to clip, which trims the same
   corners but establishes no block formatting context, so the floated chips

@@ -77,4 +77,19 @@ s.check("no heading row on a generated table claims to be sticky",
         .flatMap(r => r.selectors)
         .filter(sel => /(^|\s|>)th\b/.test(sel) && !INERT.includes(sel)), []);
 
+/*
+ * The rules for `table` are written for the full-width generated tables. A
+ * small table that borrows the element gets all of it, wanted or not: the
+ * context table in the compose panel was inheriting the shadow, the corners,
+ * the standing margins and — the one that showed — a layout worked out from
+ * the content, which let its second column take every pixel and squeeze the
+ * first away underneath it.
+ */
+const context = ruleFor(".wdp-context-table");
+s.check("the context table fixes its own column widths",
+    /table-layout:\s*fixed/.test(context ? context.body : ""), true);
+s.check("and does not keep the decoration meant for the big tables",
+    ["box-shadow", "margin", "border-radius"].filter(prop =>
+        !new RegExp(prop + ":").test(context ? context.body : "")), []);
+
 process.exit(s.done());
