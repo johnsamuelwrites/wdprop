@@ -28,16 +28,33 @@ Human-driven translation, alongside the existing analysis.
 * The sidebar shows which section you are in, and pages reached by a shared or
   bookmarked link — a property, a class, a WikiProject — carry a breadcrumb
   back to the listing they belong to
-* Headings of the long tables stay in place as the rows scroll past
+* A section shows placeholder rows the shape of the results it is waiting for,
+  says so plainly when a query finds nothing, and when a query fails says what
+  went wrong and offers to ask again
+* Long tables are shown 50 rows at a time, with the position announced
+* The sidebar is built from one list rather than repeated in the markup of
+  every page, where the copies had begun to drift apart
 
 Fixes
 
 * All fifteen sidebar entries now fit on a laptop screen; the last few sat
   below the fold behind a scrollbar that was almost invisible
-* templates/translated.html loaded neither script defining toggleTheme or
-  toggleMobileMenu, so its theme switch and menu button did nothing, and it
-  was missing the Dashboard entry the other pages have
+* A query that failed left its spinner turning for good: nothing caught the
+  rejection, and no request checked the response status
+* A query that returned nothing left an empty box indistinguishable from one
+  still loading
+* On the property page the details were filled in off a single unguarded
+  chain, so a property with no label in the language being asked about — the
+  ordinary case on a page about translating them — left the description,
+  aliases, datatype and statement counts all silently blank
+* Ten pages were missing the Dashboard entry, and templates/translated.html
+  loaded neither script defining toggleTheme or toggleMobileMenu, so its theme
+  switch and menu button did nothing
 * Downloading the batch as a file reported nothing at all; it now confirms
+* The chips on the languages, properties and property pages disappeared: the
+  boxes holding them had their overflow changed to clip, which trims the same
+  corners but establishes no block formatting context, so the floated chips
+  escaped their container and were clipped away
 * Six SPARQL templates were overwritten in place, destroying their own
   placeholders on first use
 * On the language page for a chosen property, the description and alias

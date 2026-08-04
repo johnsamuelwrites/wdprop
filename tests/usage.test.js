@@ -1,5 +1,18 @@
 /*
  * usage.js: caching, bounded concurrency, and the two live sources.
+ *
+ * Almost all of this runs against a stubbed fetch. Three requests at the end
+ * are real, because the two live sources are the part most likely to break
+ * without any change on our side — the report page can be renamed or its
+ * layout changed, and the search API can stop answering the way it did.
+ *
+ * Three is the smallest number that still checks anything: one for the report
+ * page, and two counts, because a single number tells you nothing about
+ * whether the figures are real magnitudes.
+ *
+ * Wikidata rate-limits, and a suite run repeatedly will be refused. That is
+ * not a defect in this code, so it is reported as skipped rather than failed.
+ * Set WDPROP_OFFLINE=1 to leave the live requests out altogether.
  */
 const ROOT = require("path").join(__dirname, "..");
 
@@ -26,10 +39,29 @@ global.fetch = (url) => {
 require(ROOT + "/usage.js");
 const usage = global.window.WDProp.usage;
 
-let pass = 0, fail = 0;
+let pass = 0, fail = 0, skipped = 0;
 const check = (n, a, e) => (JSON.stringify(a) === JSON.stringify(e)
     ? (pass++, console.log("  ok   " + n))
     : (fail++, console.log(`  FAIL ${n}\n        expected ${JSON.stringify(e)}\n        actual   ${JSON.stringify(a)}`)));
+
+/*
+ * Runs a section that needs the network. Being refused, or being offline, is
+ * a fact about the run rather than about the code, so it is not a failure.
+ */
+async function live(name, body) {
+    console.log("\n-- Live: " + name + " --");
+    if (process.env.WDPROP_OFFLINE === "1") {
+        skipped++;
+        console.log("  skip  WDPROP_OFFLINE is set");
+        return;
+    }
+    try {
+        await body();
+    } catch (e) {
+        skipped++;
+        console.log("  skip  " + name + " could not be reached: " + e.message);
+    }
+}
 
 (async () => {
     console.log("\n-- Formatting --");
@@ -79,23 +111,57 @@ const check = (n, a, e) => (JSON.stringify(a) === JSON.stringify(e)
     await usage.counts(Array.from({ length: 30 }, (_, i) => "P" + (5000 + i)));
     check("never more than six requests at once", peak <= 6, true);
 
-    console.log("\n-- Live: the community report --");
+    /*
+     * Wikidata refuses a run that asks too often, and answers with prose
+     * rather than JSON. Parsing that as JSON used to fail with "Unexpected
+     * token 'Y'", which says nothing about being refused.
+     */
+    console.log("\n-- Refused by the API --");
+    global.fetch = () => Promise.resolve({
+        ok: false, status: 429,
+        json: () => Promise.reject(new SyntaxError("Unexpected token 'Y'")),
+    });
+    store = {};
+    let refusal = null;
+    await usage.topProperties().catch(e => { refusal = e.message; });
+    check("the reason is the status, not the parse", refusal, "Wikidata answered 429");
+
     global.fetch = realFetch;
-    store = {};
-    const ids = await usage.topProperties();
-    check("a hundred properties", ids.length, 100);
-    check("all look like property ids", ids.every(x => /^P\d+$/.test(x)), true);
-    check("no duplicates", new Set(ids).size, 100);
-    check("cached afterwards", !!JSON.parse(store["wdprop-usage-top"]).ids, true);
-    console.log("       top ten: " + ids.slice(0, 10).join(", "));
 
-    console.log("\n-- Live: counts from the search API --");
-    store = {};
-    const live = await usage.counts(["P31", "P1476", "P1963"]);
-    check("all three read", Object.keys(live).length, 3);
-    check("P31 is the largest", live.P31 > live.P1963, true);
-    Object.keys(live).forEach(k => console.log(`       ${k}: ${usage.format(live[k])}`));
+    /* One request: the report page. */
+    await live("the community report", async () => {
+        store = {};
+        const ids = await usage.topProperties();
+        check("a hundred properties", ids.length, 100);
+        check("all look like property ids", ids.every(x => /^P\d+$/.test(x)), true);
+        check("no duplicates", new Set(ids).size, 100);
+        check("cached afterwards", !!JSON.parse(store["wdprop-usage-top"]).ids, true);
+        console.log("       top ten: " + ids.slice(0, 10).join(", "));
+    });
 
-    console.log("\n" + pass + " passed, " + fail + " failed");
+    /*
+     * Two requests. P31 is on almost everything and P1963 on very little, so
+     * the gap between them is wide enough that a wrong reading shows up.
+     */
+    await live("counts from the search API", async () => {
+        store = {};
+        const counts = await usage.counts(["P31", "P1963"]);
+        /*
+         * A count that cannot be read is absent rather than an error — that
+         * is deliberate, so a property with no figure still shows. It means a
+         * refusal arrives here as a missing key, which has to be told apart
+         * from a wrong answer before anything is checked.
+         */
+        if (Object.keys(counts).length < 2) {
+            throw new Error("no count came back for every property");
+        }
+        check("both read", Object.keys(counts).length, 2);
+        check("counted in the millions", counts.P31 > 1000000, true);
+        check("and the rare one is far smaller", counts.P31 > counts.P1963 * 100, true);
+        Object.keys(counts).forEach(k => console.log(`       ${k}: ${usage.format(counts[k])}`));
+    });
+
+    console.log("\n" + pass + " passed, " + fail + " failed" +
+        (skipped ? ", " + skipped + " section" + (skipped > 1 ? "s" : "") + " skipped" : ""));
     process.exit(fail ? 1 : 0);
 })();

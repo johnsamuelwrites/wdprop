@@ -23,29 +23,38 @@ function showMediaWikiQuery(fullurl, divId) {
     }
 }
 
+/*
+ * The loading, empty and failure states are the ones wdprop.js defines, so
+ * that a MediaWiki section behaves the same as a Wikidata one. Every page
+ * that loads this file loads that one as well.
+ */
 function queryMediaWiki(queryparams, func, divId, url) {
     var div = document.getElementById(divId);
-
-    // Clear previous contents before showing the loading indicator
-    while (div.firstChild) {
-        div.removeChild(div.firstChild);
+    if (div == null) {
+        return;
     }
 
-    // Styled loading indicator (matches queryWikidata)
-    var fetchText = document.createElement("div");
-    fetchText.setAttribute("class", "wdprop-loading");
-    fetchText.innerHTML = '<span class="wdprop-loading-spinner"></span> Fetching data\u2026';
-    div.appendChild(fetchText);
+    wdpropShowLoading(div);
 
     fullUrl = endpointUrl + '?action=' + queryparams + "&format=json";
     showMediaWikiQuery(fullUrl, divId);
 
-    fetch(fullUrl, {}).then(body => body.json()).then(json => {
-        // Clear loading indicator and any other content before rendering results
-        while (div.firstChild) {
-            div.removeChild(div.firstChild);
+    fetch(fullUrl, {}).then(wdpropReadJson).then(json => {
+        wdpropClear(div);
+        /*
+         * The MediaWiki API answers a request it could not carry out with a
+         * 200 and an error in the body, so the status alone does not say
+         * whether this worked.
+         */
+        if (json && json.error) {
+            throw new Error(json.error.code || "api");
         }
-        func(divId, json, url)
+        func(divId, json, url);
+        wdpropPaginate(div);
+    }).catch(error => {
+        wdpropShowError(div, wdpropReason(error), function () {
+            queryMediaWiki(queryparams, func, divId, url);
+        });
     });
 }
 
@@ -87,46 +96,59 @@ function createDivTemplateLanguages(divId, json, url) {
     languagesDiv.appendChild(languages);
 }
 
+/*
+ * Fills in the details table on the property page.
+ *
+ * Each field is set on its own. They used to be set in a row off one
+ * unguarded chain, so a property with no label in the language being asked
+ * about — which is the ordinary case on a page about translating them —
+ * threw on the first field and left every field after it silently blank.
+ */
 function fetchWikidataPage(property, language) {
+    var FIELDS = ["wikidatalabel", "wikidatadescription", "wikidataalias",
+        "wikidatadatatype", "wikidatastatements", "wikidataconstraints"];
+
+    function setDetail(id, text) {
+        var link = document.getElementById(id);
+        if (link == null) {
+            return;
+        }
+        link.setAttribute('href', "https://www.wikidata.org/entity/" + property);
+        /* Wikidata content, so it is text and never markup. */
+        link.textContent = text;
+    }
+
+    /* A property need not have a term in every language. */
+    function term(group) {
+        return (group && group[language] && group[language]["value"]) ||
+            wdpropText("js.notInLanguage");
+    }
+
     url = "https://www.wikidata.org/w/api.php?action=parse&page=Property:" +
         property +
         "&prop=wikitext&format=json&origin=*";
-    fetch(url, {}).then(body => body.json()).then(json => {
+    fetch(url, {}).then(wdpropReadJson).then(json => {
         result = json.parse.wikitext["*"];
         parsedResult = JSON.parse(result);
+        let claims = parsedResult.claims || {};
+
         let aliases = [];
-        if (language in parsedResult.aliases) {
+        if (parsedResult.aliases && language in parsedResult.aliases) {
             for (let i = 0; i < parsedResult.aliases[language].length; i++) {
                 aliases.push(parsedResult.aliases[language][i]["value"]);
             }
         }
-        aliasesString = aliases.join(", ");
 
-        link = document.getElementById("wikidatalabel");
-        link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
-        link.innerHTML = parsedResult.labels[language]["value"];
-
-        link = document.getElementById("wikidatadescription");
-        link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
-        link.innerHTML = parsedResult.descriptions[language]["value"];
-
-        link = document.getElementById("wikidataalias");
-        link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
-        link.innerHTML = aliasesString;
-
-        link = document.getElementById("wikidatadatatype");
-        link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
-        link.innerHTML = parsedResult.datatype;
-
-        link = document.getElementById("wikidatastatements");
-        link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
-        link.innerHTML = String(Object.keys(parsedResult.claims).length);
-
-        link = document.getElementById("wikidataconstraints");
-        link.setAttribute('href', "https://www.wikidata.org/entity/" + property)
-        if ('P2302' in parsedResult.claims) {
-            link.innerHTML = String(Object.keys(parsedResult.claims['P2302']).length);
-        }
+        setDetail("wikidatalabel", term(parsedResult.labels));
+        setDetail("wikidatadescription", term(parsedResult.descriptions));
+        setDetail("wikidataalias",
+            aliases.length ? aliases.join(", ") : wdpropText("js.notInLanguage"));
+        setDetail("wikidatadatatype", parsedResult.datatype || wdpropText("js.unavailable"));
+        setDetail("wikidatastatements", String(Object.keys(claims).length));
+        setDetail("wikidataconstraints",
+            'P2302' in claims ? String(Object.keys(claims['P2302']).length) : "0");
+    }).catch(() => {
+        FIELDS.forEach(id => setDetail(id, wdpropText("js.unavailable")));
     });
 }
 
@@ -200,26 +222,39 @@ function createDivWikprojectsWithProperty(divId, json) {
 
 }
 
-function updateCreationDate(property, language) {
+/* The timestamp of the first or last revision of a property's page. */
+function showRevisionTimestamp(property, direction, divId) {
     url = "https://www.wikidata.org/w/api.php?action=query&prop=revisions&titles=Property:" +
         property +
-        "&rvlimit=1&rvprop=timestamp&rvdir=newer" +
+        "&rvlimit=1&rvprop=timestamp&rvdir=" + direction +
         "&origin=*&format=json";
-    fetch(url, {}).then(body => body.json()).then(json => {
-        let creationDate = document.getElementById("wikidatapropertycreationdate");
-        creationDate.innerHTML = json.query.pages[Object.keys(json.query.pages)[0]].revisions[0]["timestamp"];
+
+    function show(text) {
+        let field = document.getElementById(divId);
+        if (field != null) {
+            field.textContent = text;
+        }
+    }
+
+    fetch(url, {}).then(wdpropReadJson).then(json => {
+        let pages = (json.query && json.query.pages) || {};
+        let first = pages[Object.keys(pages)[0]];
+        let revisions = first && first.revisions;
+        if (!revisions || !revisions.length) {
+            throw new Error("no revisions");
+        }
+        show(revisions[0]["timestamp"]);
+    }).catch(() => {
+        show(wdpropText("js.unavailable"));
     });
 }
 
+function updateCreationDate(property, language) {
+    showRevisionTimestamp(property, "newer", "wikidatapropertycreationdate");
+}
+
 function updateModificationDate(property, language) {
-    url = "https://www.wikidata.org/w/api.php?action=query&prop=revisions&titles=Property:" +
-        property +
-        "&rvlimit=1&rvprop=timestamp&rvdir=older" +
-        "&origin=*&format=json";
-    fetch(url, {}).then(body => body.json()).then(json => {
-        let modificationDate = document.getElementById("wikidatapropertylastmodified");
-        modificationDate.innerHTML = json.query.pages[Object.keys(json.query.pages)[0]].revisions[0]["timestamp"];
-    });
+    showRevisionTimestamp(property, "older", "wikidatapropertylastmodified");
 }
 
 function createDivWikprojectProperties(divId, json) {

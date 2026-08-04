@@ -334,6 +334,16 @@ WDProp.i18n.add("en", {
     "js.totalLanguages": "Total $1 languages",
     "js.totalClasses": "Total $1 classes",
     "js.totalDatatypes": "Total $1 datatypes",
+    /* What a section says while it is loading, and when it has nothing to show */
+    "js.fetching": "Fetching data…",
+    "js.noResults": "Nothing found for this query.",
+    "js.failed": "Could not load this section — $1",
+    "js.failedStatus": "the server answered with an error ($1)",
+    "js.failedNetwork": "no answer from the server",
+    "js.retry": "Try again",
+    "js.notInLanguage": "not in this language",
+    "js.unavailable": "unavailable",
+
     "js.runQuery": "Run Query on Wikidata. ",
     "js.runApiQuery": "Run Query using Wikidata Mediawiki API. ",
     "js.property": "Property",
@@ -346,6 +356,9 @@ WDProp.i18n.add("en", {
     "js.link": "Link",
     "js.projects": "Projects",
     "js.next": "Next",
+    "js.previous": "Previous",
+    /* $3 and $4 are how far down the whole table the page reaches. */
+    "js.pageOf": "Page $1 of $2 — showing $3 of $4 rows",
     "js.url": "URL: ",
     "js.translationStatistics": "Translation statistics",
     "page.technologyText": "Built with vanilla web technologies — no frameworks or bundlers required. Download the HTML files and run locally on any modern browser.",

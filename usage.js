@@ -153,6 +153,16 @@ window.WDProp = window.WDProp || {};
             "&prop=wikitext&format=json&origin=*";
 
         return fetch(url).then(function (r) {
+            /*
+             * Checked before parsing. Wikidata answers a request it is
+             * refusing with plain prose rather than JSON — "You are making
+             * too many requests to the API." — and reading that as JSON
+             * fails with a message about an unexpected token, which says
+             * nothing about what actually happened.
+             */
+            if (!r.ok) {
+                throw new Error("Wikidata answered " + r.status);
+            }
             return r.json();
         }).then(function (json) {
             if (json.error || !json.parse) {

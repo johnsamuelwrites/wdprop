@@ -407,6 +407,136 @@ body.dark-theme #theme-toggle::after {
     to { transform: rotate(360deg); }
 }
 
+/* ─── What a section shows before it has results ─── */
+
+/*
+ * Bars the shape of the rows that are coming, rather than a spinner. The
+ * section keeps roughly the height it will end up with, so the rest of the
+ * page stops jumping when the results arrive.
+ *
+ * The bars mean nothing to a screen reader, which is given the wording on the
+ * container instead; the reduced-motion rule at the end of this file already
+ * stops the sweep for anyone who has asked for that.
+ */
+.wdp-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 0;
+}
+
+.wdp-skeleton-bar {
+    height: 18px;
+    border-radius: 6px;
+    background: linear-gradient(90deg,
+            var(--border-color) 25%,
+            var(--bg-primary) 50%,
+            var(--border-color) 75%);
+    background-size: 200% 100%;
+    animation: wdprop-skeleton 1.4s ease-in-out infinite;
+}
+
+/* Uneven widths, so it reads as content rather than as a bar chart. */
+.wdp-skeleton-bar:first-child {
+    height: 22px;
+    width: 40%;
+}
+
+.wdp-skeleton-bar:nth-child(3) {
+    width: 85%;
+}
+
+.wdp-skeleton-bar:nth-child(5) {
+    width: 60%;
+}
+
+@keyframes wdprop-skeleton {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}
+
+/* A query that ran and found nothing, which is not the same as one still running. */
+.wdp-empty {
+    margin: 0;
+    padding: 24px 0;
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-style: italic;
+}
+
+/*
+ * A query that failed. Marked by its wording and its heading as well as its
+ * colour, and it offers the one thing worth doing about a Wikidata timeout,
+ * which is to ask again.
+ */
+.wdp-query-error {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin: 18px 0;
+    padding: 18px 20px;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid #d64545;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+}
+
+.wdp-query-error p {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.wdp-query-error p::before {
+    content: "! ";
+    color: #d64545;
+    font-weight: 700;
+}
+
+/* The retry button is laid out by the box, so it drops its own spacing. */
+.wdp-query-error .wdp-button {
+    margin: 0;
+}
+
+/* ─── Paging a long table ─── */
+
+/*
+ * Sits under the table it pages. A table short enough to read in one go never
+ * gets one, so its presence already says that there is more below.
+ */
+.wdp-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: -8px 0 32px;
+    padding: 14px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+}
+
+.wdp-pager .wdp-button {
+    margin: 0;
+}
+
+.wdp-pager .wdp-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+}
+
+.wdp-pager-position {
+    min-width: 16ch;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
 /* ─── Search page ─── */
 .search-hero {
     background: var(--bg-secondary);
@@ -660,12 +790,14 @@ body.dark-theme .search-field:focus {
 #translatedTemplateComment,
 #searchResults {
     /*
-     * clip, not hidden: hidden would make each of these a scroll container,
-     * and a sticky table heading inside one comes to rest against the box
-     * rather than against the page, which means it never sticks at all.
-     * clip trims the corners the same way without that side effect.
+     * Not decoration: the chips inside — a property, a language, a datatype —
+     * are floated, and this is what contains them. Without a block formatting
+     * context the container collapses to nothing and the chips escape it.
+     *
+     * overflow: clip does NOT establish that context, so it is not a drop-in
+     * replacement here however much it looks like one.
      */
-    overflow: clip;
+    overflow: hidden;
 }
 
 table {
@@ -674,7 +806,8 @@ table {
     border-spacing: 0;
     margin: 20px 0;
     border-radius: 12px;
-    overflow: clip;
+    /* Also contains floats: several of the cells carry the .property chip. */
+    overflow: hidden;
     box-shadow: 0 2px 15px var(--shadow-color);
 }
 
@@ -701,20 +834,14 @@ tr>td {
 }
 
 /*
- * These tables run to hundreds of rows, and the heading scrolls away long
- * before the rows do, which leaves the columns unlabelled. Holding it in
- * place keeps them readable; it comes to rest just under the fixed header.
- *
- * Only the heading row, not every th: the tables are generated without a
- * <thead>, so the first row of the body is matched instead, and the context
- * table is left out because its th is the row's own label, one per row.
+ * A sticky heading row belongs here — these tables run to hundreds of rows
+ * and the heading scrolls away long before they do — but it cannot be had
+ * cheaply. position: sticky settles against the nearest scroll container,
+ * and both the table and the section around it must be scroll containers to
+ * contain their floated cells and chips, so the row would stick to the box
+ * it is already inside and never move. Un-floating those first would be the
+ * way in. Paging the rows covers most of what this was for.
  */
-table:not(.wdp-context-table)>thead>tr>th,
-table:not(.wdp-context-table)>tbody>tr:first-child>th {
-    position: sticky;
-    top: var(--header-height);
-    z-index: 2;
-}
 
 tr:hover>td {
     background: var(--bg-primary);
@@ -2092,8 +2219,7 @@ body.dark-theme .viz-search-field:focus {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    /* clip rather than hidden, so the sticky heading row inside still sticks. */
-    overflow: clip;
+    overflow: hidden;
     box-shadow: 0 4px 20px var(--shadow-color);
 }
 

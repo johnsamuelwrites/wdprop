@@ -855,34 +855,262 @@ function createDivPropertyDetails(divId, json) {
     propertySet.clear();
 }
 
+/*
+ * ===========================================================================
+ * What a section shows while it has no results
+ * ===========================================================================
+ *
+ * Every section of every page is filled by one query, and until now only one
+ * of the three possible outcomes was accounted for. A query that returned
+ * nothing left an empty box with no way to tell that from a query still
+ * running, and a query that failed — Wikidata timing out, rate limiting, or
+ * simply no network — left the spinner turning for good, because nothing
+ * caught the rejection.
+ */
+
+function wdpropClear(div) {
+    while (div.firstChild) {
+        div.removeChild(div.firstChild);
+    }
+}
+
+/*
+ * The placeholder shown while a query runs. Bars the shape of the rows that
+ * are coming, rather than a spinner: the section keeps its height, so the
+ * page stops jumping when results arrive, and the reader can see what kind of
+ * thing to expect. The text is there for screen readers, which have nothing
+ * to make of the bars.
+ */
+function wdpropShowLoading(div) {
+    wdpropClear(div);
+
+    let skeleton = document.createElement("div");
+    skeleton.setAttribute("class", "wdp-skeleton");
+    skeleton.setAttribute("role", "status");
+    skeleton.setAttribute("aria-label", wdpropText("js.fetching"));
+
+    for (let i = 0; i < 5; i++) {
+        let bar = document.createElement("div");
+        bar.setAttribute("class", "wdp-skeleton-bar");
+        skeleton.appendChild(bar);
+    }
+
+    div.appendChild(skeleton);
+}
+
+function wdpropShowEmpty(div) {
+    wdpropClear(div);
+
+    let empty = document.createElement("p");
+    empty.setAttribute("class", "wdp-empty");
+    empty.appendChild(document.createTextNode(wdpropText("js.noResults")));
+    div.appendChild(empty);
+}
+
+/*
+ * A failure the reader can act on: what went wrong, and a way to ask again
+ * without losing the page they are on. Most of these are a timeout on a
+ * heavy query, where asking again is exactly the right move.
+ */
+function wdpropShowError(div, reason, again) {
+    wdpropClear(div);
+
+    let box = document.createElement("div");
+    box.setAttribute("class", "wdp-query-error");
+    box.setAttribute("role", "alert");
+
+    let text = document.createElement("p");
+    text.appendChild(document.createTextNode(wdpropText("js.failed", [reason])));
+    box.appendChild(text);
+
+    if (again) {
+        let retry = document.createElement("button");
+        retry.setAttribute("type", "button");
+        retry.setAttribute("class", "wdp-button");
+        retry.appendChild(document.createTextNode(wdpropText("js.retry")));
+        retry.addEventListener("click", again);
+        box.appendChild(retry);
+    }
+
+    div.appendChild(box);
+}
+
+/*
+ * A SPARQL answer with no rows. Checked before rendering rather than left to
+ * each of the twenty-odd render functions, none of which said anything when
+ * handed nothing.
+ */
+function wdpropHasNoRows(json) {
+    return !!(json && json.results && Array.isArray(json.results.bindings) &&
+        json.results.bindings.length === 0);
+}
+
+/*
+ * Why a request failed, in words rather than as an exception. The message is
+ * shown to the reader, so it says what happened, not where in the code.
+ */
+function wdpropReason(error) {
+    if (error && error.wdpropStatus) {
+        return wdpropText("js.failedStatus", [error.wdpropStatus]);
+    }
+    return wdpropText("js.failedNetwork");
+}
+
+/* Rejects on anything that is not a usable response, so one catch covers all. */
+function wdpropReadJson(response) {
+    if (!response.ok) {
+        let error = new Error("HTTP " + response.status);
+        error.wdpropStatus = response.status;
+        throw error;
+    }
+    return response.json();
+}
+
+/*
+ * ===========================================================================
+ * Long tables
+ * ===========================================================================
+ *
+ * A language missing translations for several thousand properties produced
+ * several thousand rows in one table: slow to lay out, and impossible to
+ * work through or to say anything about where you had got to.
+ *
+ * The rows are all present — they have been fetched, and searching the page
+ * still needs them — so this shows them a page at a time rather than asking
+ * for them a page at a time. That keeps a bookmarked address meaning what it
+ * did before, which server-side paging would not.
+ */
+
+var wdpropRowsPerPage = 50;
+
+/* The rows of a table, whether or not the markup wrapped them in a tbody. */
+function wdpropTableRows(table) {
+    let rows = [];
+    for (let i = 0; i < table.children.length; i++) {
+        let child = table.children[i];
+        if (child.tagName === "TR") {
+            rows.push(child);
+        } else if (child.tagName === "TBODY" || child.tagName === "THEAD") {
+            for (let j = 0; j < child.children.length; j++) {
+                rows.push(child.children[j]);
+            }
+        }
+    }
+    return rows;
+}
+
+/* A heading row is one whose cells are th; the rest carry the data. */
+function wdpropIsHeaderRow(row) {
+    return !!(row.children.length && row.children[0].tagName === "TH");
+}
+
+function wdpropPaginateTable(table) {
+    let body = wdpropTableRows(table).filter(function (row) {
+        return !wdpropIsHeaderRow(row);
+    });
+
+    if (body.length <= wdpropRowsPerPage || table.parentNode == null) {
+        return;
+    }
+
+    let pages = Math.ceil(body.length / wdpropRowsPerPage);
+    let page = 0;
+
+    let bar = document.createElement("div");
+    bar.setAttribute("class", "wdp-pager");
+
+    function control(key, step) {
+        let button = document.createElement("button");
+        button.setAttribute("type", "button");
+        button.setAttribute("class", "wdp-button");
+        button.appendChild(document.createTextNode(wdpropText(key)));
+        button.addEventListener("click", function () {
+            page = Math.min(Math.max(page + step, 0), pages - 1);
+            show();
+        });
+        return button;
+    }
+
+    let previous = control("js.previous", -1);
+    let next = control("js.next", 1);
+
+    /*
+     * Which page you are on is announced, because paging changes the rows
+     * well above the buttons, where a screen reader would not follow.
+     */
+    let position = document.createElement("span");
+    position.setAttribute("class", "wdp-pager-position");
+    position.setAttribute("role", "status");
+    position.setAttribute("aria-live", "polite");
+
+    function show() {
+        let from = page * wdpropRowsPerPage;
+        let to = from + wdpropRowsPerPage;
+
+        for (let i = 0; i < body.length; i++) {
+            body[i].style.display = (i >= from && i < to) ? "" : "none";
+        }
+
+        position.textContent = wdpropText("js.pageOf",
+            [page + 1, pages, Math.min(to, body.length), body.length]);
+        previous.disabled = (page === 0);
+        next.disabled = (page === pages - 1);
+    }
+
+    bar.appendChild(previous);
+    bar.appendChild(position);
+    bar.appendChild(next);
+    show();
+
+    table.parentNode.insertBefore(bar, table.nextSibling);
+}
+
+/*
+ * Pages every long table a section has just rendered.
+ *
+ * A section hidden by the page's own script — the classes and WikiProjects
+ * pages render into a hidden table and then virtualise it themselves — is
+ * left alone: paging what nobody sees would be work for nothing.
+ */
+function wdpropPaginate(container) {
+    if (container.style && container.style.display === "none") {
+        return;
+    }
+
+    let tables = container.querySelectorAll("table");
+    for (let i = 0; i < tables.length; i++) {
+        wdpropPaginateTable(tables[i]);
+    }
+}
+
 function queryWikidata(sparqlQuery, func, divId) {
     /*
      * Following script is a modified form of automated
      * script generated from Wikidata Query services
      */
     let div = document.getElementById(divId);
-
-    // Clear previous contents before showing the loading indicator
-    while (div.firstChild) {
-        div.removeChild(div.firstChild);
+    if (div == null) {
+        return;
     }
 
-    // Styled loading indicator
-    let fetchText = document.createElement("div");
-    fetchText.setAttribute("class", "wdprop-loading");
-    fetchText.innerHTML = '<span class="wdprop-loading-spinner"></span> Fetching data…';
-    div.appendChild(fetchText);
+    wdpropShowLoading(div);
 
     fullUrl = endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json";
     showQuery(sparqlQuery, divId);
     headers = { 'Accept': 'application/sparql-results+json' };
 
-    fetch(fullUrl, { headers }).then(body => body.json()).then(json => {
-        // Clear loading indicator and any other content before rendering results
-        while (div.firstChild) {
-            div.removeChild(div.firstChild);
+    fetch(fullUrl, { headers }).then(wdpropReadJson).then(json => {
+        wdpropClear(div);
+        if (wdpropHasNoRows(json)) {
+            wdpropShowEmpty(div);
+            return;
         }
-        func(divId, json)
+        func(divId, json);
+        wdpropPaginate(div);
+    }).catch(error => {
+        wdpropShowError(div, wdpropReason(error), function () {
+            queryWikidata(sparqlQuery, func, divId);
+        });
     });
 }
 
@@ -2670,6 +2898,30 @@ function wireKeyboardControls() {
  */
 
 /*
+ * The sidebar, in order. This is the only place it is written down: the list
+ * used to be repeated in the markup of all thirty pages, which meant adding
+ * or renaming an entry was a thirty-file edit, and the copies had already
+ * begun to drift apart.
+ */
+var wdpropSections = [
+    { file: "index.html",                key: "nav.dashboard" },
+    { file: "translate.html",            key: "nav.translate" },
+    { file: "campaign.html",             key: "nav.campaigns" },
+    { file: "contributions.html",        key: "nav.contributions" },
+    { file: "terminology.html",          key: "nav.terminology" },
+    { file: "languages.html",            key: "nav.languages" },
+    { file: "datatypes.html",            key: "nav.datatypes" },
+    { file: "properties.html",           key: "nav.properties" },
+    { file: "classes.html",              key: "nav.classes" },
+    { file: "provenance.html",           key: "nav.provenance" },
+    { file: "search.html",               key: "nav.search" },
+    { file: "compare.html",              key: "nav.compare" },
+    { file: "templates/translated.html", key: "nav.discussion" },
+    { file: "wikiprojects.html",         key: "nav.wikiprojects" },
+    { file: "wdprop.html",               key: "nav.about" }
+];
+
+/*
  * Pages that are not themselves sidebar entries.
  *
  *   under    the sidebar entry the page belongs beneath
@@ -2803,25 +3055,42 @@ var wdpropBase = (function () {
 
 window.WDPropPathPrefix = wdpropBase;
 
-/* Marks the sidebar entry for the page being shown. */
-function wdpropMarkCurrentSection() {
-    var links = document.querySelectorAll("#sidebarlinks a");
-    var section = wdpropSectionOf(wdpropPageKey(window.location.pathname));
-
-    for (var i = 0; i < links.length; i++) {
-        var href = links[i].getAttribute("href");
-        if (!href || wdpropPageKey(href) !== section) {
-            continue;
-        }
-
-        links[i].setAttribute("aria-current", "page");
-
-        var item = links[i].parentNode;
-        if (item) {
-            var classes = item.getAttribute("class");
-            item.setAttribute("class", classes ? classes + " wdp-current" : "wdp-current");
-        }
+/*
+ * Builds the sidebar and marks the entry for the page being shown.
+ *
+ * The markup keeps the landmark and its name; only the list of links is
+ * built here. The links carry data-i18n as well as their text, so that
+ * choosing another interface language retranslates them the same way it does
+ * the rest of the page — i18n.js has already been over the document by the
+ * time this runs.
+ */
+function wdpropMountSidebar() {
+    var container = document.getElementById("sidebarlinks");
+    if (!container || container.firstChild) {
+        return;
     }
+
+    var section = wdpropSectionOf(wdpropPageKey(window.location.pathname));
+    var list = document.createElement("ul");
+
+    wdpropSections.forEach(function (entry) {
+        var item = document.createElement("li");
+        var link = document.createElement("a");
+
+        link.setAttribute("href", wdpropBase + entry.file);
+        link.setAttribute("data-i18n", entry.key);
+        link.appendChild(document.createTextNode(wdpropText(entry.key)));
+
+        if (entry.file === section) {
+            link.setAttribute("aria-current", "page");
+            item.setAttribute("class", "wdp-current");
+        }
+
+        item.appendChild(link);
+        list.appendChild(item);
+    });
+
+    container.appendChild(list);
 }
 
 /*
@@ -2945,14 +3214,14 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
         loadTheme();
         wireKeyboardControls();
-        wdpropMarkCurrentSection();
+        wdpropMountSidebar();
         wdpropMountBreadcrumb();
         wdpropToastRegion();
     });
 } else {
     loadTheme();
     wireKeyboardControls();
-    wdpropMarkCurrentSection();
+    wdpropMountSidebar();
     wdpropMountBreadcrumb();
     wdpropToastRegion();
 }

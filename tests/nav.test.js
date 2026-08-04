@@ -35,17 +35,8 @@ function node(tag) {
     };
 }
 
-/* One sidebar entry, as the markup writes it: an <a> inside an <li>. */
-function navLink(href) {
-    const li = node("li"), a = node("a");
-    a.setAttribute("href", href);
-    li.appendChild(a);
-    return a;
-}
-
 const ready = [];
 const elements = {};
-let sidebar = [];
 
 /* The real English messages, so the trail can be checked as it will read. */
 const english = {};
@@ -71,7 +62,7 @@ const sandbox = {
         createElement: node,
         createTextNode: t => ({ text: String(t) }),
         querySelector: () => null,
-        querySelectorAll: sel => (sel === "#sidebarlinks a" ? sidebar : []),
+        querySelectorAll: () => [],
         addEventListener(type, fn) { if (type === "DOMContentLoaded") ready.push(fn); },
     },
     fetch: () => new Promise(() => {}),
@@ -87,16 +78,22 @@ const s = suite("navigation");
 function visit(pathname, search) {
     sandbox.window.location = { pathname, search: search || "" };
     elements.content = node("div");
+    elements.sidebarlinks = node("div");
     elements["wdp-toast-region"] = node("div");
-    sidebar = ["./index.html", "./translate.html", "./languages.html", "./properties.html",
-        "./provenance.html", "templates/translated.html"].map(navLink);
     ready.forEach(fn => fn());
+
+    const list = elements.sidebarlinks.firstChild;
+    const items = list ? list.children : [];
+    const links = items.map(li => li.firstChild);
+
     return {
         crumb: elements.content.firstChild,
-        current: sidebar.filter(a => a.getAttribute("aria-current") === "page")
+        links,
+        hrefs: links.map(a => a.getAttribute("href")),
+        current: links.filter(a => a.getAttribute("aria-current") === "page")
             .map(a => a.getAttribute("href")),
-        marked: sidebar.filter(a => a.parentNode.getAttribute("class") === "wdp-current")
-            .map(a => a.getAttribute("href")),
+        marked: items.filter(li => li.getAttribute("class") === "wdp-current")
+            .map(li => li.firstChild.getAttribute("href")),
     };
 }
 
@@ -153,8 +150,26 @@ s.check("an escaped space survives",
     nav.trail("wikiproject.html", "?project=Wikidata%3AWikiProject%20Heritage%20Collections").pop().text,
     "Heritage Collections");
 
+console.log("\n-- Building the sidebar --");
+let page = visit("/wdprop/index.html", "");
+s.check("every entry is there", page.links.length, 15);
+s.check("in the order they are declared", page.hrefs, [
+    "./index.html", "./translate.html", "./campaign.html", "./contributions.html",
+    "./terminology.html", "./languages.html", "./datatypes.html", "./properties.html",
+    "./classes.html", "./provenance.html", "./search.html", "./compare.html",
+    "./templates/translated.html", "./wikiprojects.html", "./wdprop.html"]);
+s.check("each carries its message key so a language change reaches it",
+    page.links.slice(0, 3).map(a => a.getAttribute("data-i18n")),
+    ["nav.dashboard", "nav.translate", "nav.campaigns"]);
+s.check("and is readable before any language arrives",
+    page.links[0].textContent, "📊 Dashboard");
+s.check("building it twice does not double it", (() => {
+    ready.forEach(fn => fn());
+    return elements.sidebarlinks.children.length;
+})(), 1);
+
 console.log("\n-- On the page --");
-let page = visit("/wdprop/property.html", "?property=P31");
+page = visit("/wdprop/property.html", "?property=P31");
 s.check("the breadcrumb goes in first", page.crumb && page.crumb.tag, "nav");
 s.check("it is named for a screen reader",
     page.crumb.getAttribute("aria-label") !== null, true);
@@ -175,6 +190,32 @@ s.check("the bare front page does too", visit("/", "").current, ["./index.html"]
 page = visit("/wdprop/translated.html", "");
 s.check("root translated.html does not mark property discussion", page.current, ["./languages.html"]);
 s.check("templates/translated.html marks it",
-    visit("/wdprop/templates/translated.html", "").current, ["templates/translated.html"]);
+    visit("/wdprop/templates/translated.html", "").current, ["./templates/translated.html"]);
+
+/*
+ * The list used to be repeated in the markup of every page, and the copies had
+ * started to drift. Nothing may write it out again.
+ */
+console.log("\n-- One source for the list --");
+const pages = [];
+(function walk(d) {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        if (e.name === ".git" || e.name === "node_modules") continue;
+        const full = path.join(d, e.name);
+        if (e.isDirectory()) walk(full);
+        else if (e.name.endsWith(".html")) pages.push(full);
+    }
+})(ROOT);
+s.check("no page writes out its own navigation links",
+    pages.filter(f => /data-i18n="nav\./.test(fs.readFileSync(f, "utf8")))
+        .map(f => path.relative(ROOT, f)), []);
+s.check("every page still has somewhere to put it",
+    pages.filter(f => !/id="sidebarlinks"/.test(fs.readFileSync(f, "utf8")))
+        .map(f => path.relative(ROOT, f)), []);
+/* The optional directory must end at a slash, so mwwdprop.js does not count. */
+s.check("every page loads the script that builds it",
+    pages.filter(f => !/src="(?:[^"]*\/)?wdprop\.js"/.test(fs.readFileSync(f, "utf8")))
+        .map(f => path.relative(ROOT, f)), []);
+s.note(`${pages.length} pages, ${sandbox.wdpropSections.length} entries declared once`);
 
 process.exit(s.done());
