@@ -383,6 +383,17 @@ WDProp.i18n.add("en", {
     "page.descriptionsLower": "descriptions",
     "page.aliasesLower": "aliases",
     "js.totalProperties": "Total $1 properties",
+    /* Appended to the heading above a property table: how many of those rows
+       have no label in the language the labels were asked in. */
+    "js.withoutLabel": " — $1 without a label in this language",
+    "js.fallbackLabel": "(not yet in this language)",
+    /* $1 is how far the property number map reaches, $2 the highest property
+       number there is, $3 how many of those numbers are properties today. */
+    "js.propertyNumberSpace": "P1 to P$1 of P$2 — $3 properties exist, the gaps were deleted",
+    "js.translateThese": "Translate these $1",
+    "js.translateMissing": "Translate what is missing",
+    "js.description": "Description",
+    "js.usage": "Used by",
     "js.totalLanguages": "Total $1 languages",
     "js.totalClasses": "Total $1 classes",
     "js.totalDatatypes": "Total $1 datatypes",
@@ -400,7 +411,6 @@ WDProp.i18n.add("en", {
     "js.runApiQuery": "Run Query using Wikidata Mediawiki API. ",
     "js.property": "Property",
     "js.propertyLabel": "Property label",
-    "js.classLabel": "Class label",
     "js.item": "Item",
     "js.label": "Label",
     "js.value": "Value",

@@ -16,7 +16,6 @@
     <script defer type="text/javascript" src="i18n/en.js"></script>
     <script defer type="text/javascript" src="wdprop.js"></script>
     <script defer type="text/javascript" src="offline.js"></script>
-    <script defer type="text/javascript" src="classes.js"></script>
     <script defer src="classesview.js"></script>
     <script defer src="pageinit.js"></script>
 </head>
@@ -31,32 +30,11 @@
             <p class="vst-hero-subtitle" data-i18n="page.classesIntro">Browse and search all classes that group Wikidata properties</p>
             <div class="vst-search-wrap">
                 <span class="vst-search-icon">🔍</span>
-                <input id="classes-search" type="text" class="vst-search-field" placeholder="Filter by item ID or class label…" autocomplete="off" />
+                <input id="classes-search" type="text" class="vst-search-field" placeholder="Filter by item ID…" autocomplete="off" />
             </div>
         </div>
 
-        <!-- Modern table (hidden until data arrives) -->
-        <div id="classes-modern" style="display:none;">
-            <div class="vst-table-wrapper">
-                <div class="vst-table-header">
-                    <span class="vst-table-count">Showing <span id="classes-count">…</span> classes</span>
-                </div>
-                <!-- sticky column headers -->
-                <div class="vst-col-headers">
-                    <div class="vst-col-header vst-col-id">Item</div>
-                    <div class="vst-col-header vst-col-label">Class Label</div>
-                </div>
-                <!-- virtual scroll container -->
-                <div id="classes-scroll" class="vst-scroll">
-                    <div id="classes-scroll-viewport" class="vst-scroll-viewport">
-                        <div id="classes-scroll-container" class="vst-scroll-container"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Original output (hidden; classes.js parses it then hides it) -->
-        <div id="propertyClasses" style="display:block;"></div>
+        <div id="propertyClasses"></div>
 
         <!-- Query section -->
         <div class="section search-query-section" id="classesQuerySection" style="display:none;">

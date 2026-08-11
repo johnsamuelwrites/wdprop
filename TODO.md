@@ -26,14 +26,16 @@
         * Language tree
     * Show languages on World Map
 10. Properties:
-    * Display available information like label, description or alias on hovering
+    * ~~Display available information like label, description or alias on
+      hovering~~ — shown in the row itself rather than on hover, so it is
+      there for a keyboard and a touch screen too
     * ~~Group properties by usage count~~
     * Group properties by
         * Property subclasses
         * Possible visualisation: Hierarchical visualisation, treemap or heatmap
 11. ~~Property classes~~
-    * ~~Show paginated tables~~ — the classes table is virtually scrolled and
-      searchable; every other long table is paged 50 rows at a time
+    * ~~Show paginated tables~~ — every long table, the classes among them, is
+      paged 50 rows at a time; the classes page filters by item identifier
 12. ~~Show loading symbol in addition to 'Fetching data'~~ — a section now
     shows placeholder rows the shape of what is coming, and says so when a
     query finds nothing or fails, with a way to ask again

@@ -118,7 +118,7 @@ s.check("theme.js is loaded ahead of the first paint on every page",
 /*
  * An inline script runs while the page is being parsed, so it cannot see
  * anything a deferred file defines. Three pages had one that wrapped functions
- * from wdprop.js and classes.js; they are separate files now.
+ * from wdprop.js; they are separate files now.
  */
 s.check("no page carries an inline script",
     pages.filter(p => /<script(?![^>]*\bsrc=)[^>]*>[^<]*\S/.test(fs.readFileSync(p, "utf8")))

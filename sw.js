@@ -80,7 +80,6 @@ var SHELL = [
     "contributionsview.js",
     "terminology.js",
     "dashboard.js",
-    "classes.js",
     "wikiprojects.js",
     "visualization.js",
     "compare.js",

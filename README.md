@@ -18,7 +18,7 @@
 * Navigation of properties by their datatypes and their describing properties
 * View already translated labels, descriptions and aliases in any supported language
 * Translation statistics of property discussion templates
-* Support navigation by classes
+* Support navigation by classes, listed and paged like every other property listing
 * Improve search results
 * Support search and language parameter in URLs ([classes,class,search].html)
 * Search and Navigate WikiProjects
@@ -34,6 +34,7 @@
 * The sidebar marks the section you are in, and a page reached by a shared link — a single property, class, datatype, language or WikiProject — shows a breadcrumb back to the listing it belongs to
 * The dashboard counts everything it shows, live; nothing on it is written into the page in advance, so a figure it could not obtain reads as such rather than as a plausible number
 * Every section says which of the three things happened: results, nothing found, or a query that failed — the last with the reason and a way to ask again. Long tables are shown 50 rows at a time
+* Properties are listed by name, not by number: a datatype, class or provenance listing shows each property's label and description, marks the ones your language has not reached yet, counts them in the heading, and hands that set to the workbench in one step. The names are fetched for the rows on show, so a listing of ten thousand properties costs a page of fifty
 
 ## Tests
 

@@ -32,6 +32,34 @@ Human-driven translation, alongside the existing analysis.
   says so plainly when a query finds nothing, and when a query fails says what
   went wrong and offers to ask again
 * Long tables are shown 50 rows at a time, with the position announced
+* Properties are listed as tables that name them, rather than as a wall of
+  chips carrying a bare P-number. A datatype, a class or a provenance listing
+  now shows each property's label and description, marks the ones the language
+  being read has not reached yet, counts them in the heading, and offers that
+  set to the workbench in one step. The listings were also cut at a hundred
+  rows in silence, under a heading that counted the whole result, and cut by
+  property number rather than in the order the query asked for — a datatype
+  holding ten thousand properties announced ten thousand and drew the hundred
+  oldest
+* The property classes are that same table. classes.html had a mechanism of
+  its own: the ordinary renderer drew a table into a hidden div, a second file
+  parsed that table's HTML back into objects, and re-rendered them into a
+  bespoke virtual scroller — a round trip through the DOM to arrive where the
+  data had started. It is paged like every other listing now, and classes.js
+  is gone. Its label filter becomes an identifier filter, the class names no
+  longer all being present to match against
+* The classes query dropped from 28.7 to 5.3 seconds by not asking for the
+  labels, which were 67 KB of its 433 KB but most of its time. It also could
+  not say what it had not found: 2,610 of the 3,082 classes have no Tamil
+  label, and the old table printed the item identifier in the label column
+  when one was missing, so five rows in six read as though the class were
+  named "Q21451142"
+* Those terms are fetched for the fifty rows on show, not for the whole
+  listing. Asked of the query service with their labels and descriptions, the
+  ten thousand external-identifier properties are 4.6 MB and twenty seconds,
+  of which a reader sees fifty rows; the identifiers alone are 1.25 MB in two,
+  and each page costs a further 13 KB when it is reached. Usage figures are
+  fetched the same way, and were already
 * The sidebar is built from one list rather than repeated in the markup of
   every page, where the copies had begun to drift apart
 
@@ -62,6 +90,20 @@ The application itself
 
 Fixes
 
+* Two provenance queries could not be answered at all. Both bound every
+  statement of every property — the equivalent-property one did so for no
+  reason, since wdt:P1628 already selected what it wanted, and DISTINCT threw
+  the result away — and the referenced-statement one then joined that against
+  every reference in Wikidata and filtered it with a regular expression over
+  the statement URIs. It timed out; asked as a FILTER EXISTS, which stops at
+  each property's first referenced statement, it answers in twenty seconds
+* Whether a property still needs translating cannot be read off the query
+  service's label service, which falls back to English: asked for the external
+  identifiers in Tamil it names all ten thousand of them, one of which has a
+  Tamil label, so every listing would have reported itself finished. The terms
+  come from the entity API, which returns the languages asked for and no
+  others, so the English fallback can be shown — a row should be readable
+  either way — and still be marked and counted as needing work
 * The dashboard stated things it had not checked. The service panel said
   "Online" with a green dot whether or not either service had been asked, and
   every widget carried a specimen figure written into the markup — 12,847

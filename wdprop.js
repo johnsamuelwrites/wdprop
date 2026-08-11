@@ -58,17 +58,40 @@ ORDER by ?language
  * Get all properties belonging to a particular datatype
  */
 
+/*
+ * The properties of one datatype — the identifiers, and only those.
+ *
+ * What each property is called is fetched a page at a time from the entity
+ * API, for the fifty rows on show; see the note above wdpropPropertyRecord for
+ * why, and what asking the query service for all of it costs.
+ *
+ * Usage is not asked for either. wikibase:statements sits on the property node
+ * and would cost nothing, but it counts the statements on the property's own
+ * page — its constraints, formatter URLs and equivalences — not the statements
+ * across Wikidata that use it. The two are unrelated: P31 carries 240 and is
+ * used 119 million times, while P2860, the most used property on Wikidata,
+ * carries 27. The real figure comes from usage.js, likewise a page at a time.
+ */
 propertiesWithDatatypeQuery =
     `PREFIX wikibase: <http://wikiba.se/ontology#>
 
 SELECT DISTINCT ?property
 WHERE
 {
-    ?property rdf:type wikibase:Property;
-              wikibase:propertyType {{datatype}}
+{{where}}
 }
 ORDER by ?property
 `;
+
+/*
+ * The body of the datatype query, shared with the count of how many of those
+ * properties still need a translation. Kept in one place so the two can never
+ * come to be asking about different sets — a heading counting one selection
+ * over a table showing another would be worse than no heading.
+ */
+propertiesWithDatatypeWhere =
+    `    ?property rdf:type wikibase:Property;
+              wikibase:propertyType {{datatype}}.`;
 
 allWikiProjectsQuery =
     `SELECT DISTINCT ?title WHERE {
@@ -97,12 +120,21 @@ SELECT ?property ?label {
 }
 `;
 
+/*
+ * The classes that group properties: the items, and only those.
+ *
+ * The label this used to carry cost more than everything else in the query.
+ * Asked with it, the three thousand classes take twenty-nine seconds; without
+ * it, thirteen — and the labels themselves were only 67 KB of the 433 KB that
+ * came back, so this is time, not payload. What each class is called is
+ * fetched from the entity API for the rows on show, as it is everywhere else.
+ */
 allClassesQuery =
     `PREFIX wikibase: <http://wikiba.se/ontology#>
-SELECT DISTINCT ?item ?label
+SELECT DISTINCT ?item
 {
   {
-    SELECT ?item ?label
+    SELECT ?item
     WHERE
     {
       ?item wdt:P1963 [].
@@ -110,24 +142,23 @@ SELECT DISTINCT ?item ?label
   }
   UNION
   {
-    SELECT ?item ?label
+    SELECT ?item
     WHERE
     {
       ?property a wikibase:Property;
                 (wdt:P31|wdt:P279) ?item.
     }
   }
-  OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="{{language}}").}.
 }
-ORDER by ?label
+ORDER by ?item
 `;
 
 allClassesWithPropertyQuery =
     `PREFIX wikibase: <http://wikiba.se/ontology#>
-SELECT DISTINCT ?item ?label
+SELECT DISTINCT ?item
 {
   {
-    SELECT ?item ?label
+    SELECT ?item
     WHERE
     {
       ?item wdt:P1963 wd:{{property}}.
@@ -135,15 +166,14 @@ SELECT DISTINCT ?item ?label
   }
   UNION
   {
-    SELECT ?item ?label
+    SELECT ?item
     WHERE
     {
       wd:{{property}} (wdt:P31|wdt:P279) ?item.
     }
   }
-  OPTIONAL{ ?item rdfs:label ?label FILTER (lang(?label)="{{language}}").}.
 }
-ORDER by ?label
+ORDER by ?item
 `;
 
 
@@ -276,24 +306,41 @@ function showQuery(sparqlQuery, divId) {
     }
 }
 
+/*
+ * The property number space, live properties and gaps alike.
+ *
+ * This one stays a wall of chips, because here the wall is the point: the gaps
+ * are the properties that were deleted, and seeing them among their neighbours
+ * is the whole of what the section shows. A table would say the same thing
+ * worse.
+ *
+ * What it no longer does is stop at a hundred in silence. It still stops —
+ * fourteen thousand chips is not a picture anyone can read, and it is a great
+ * many elements — but the heading now says where the map reaches rather than
+ * implying it covers everything.
+ */
 function createDivAllProperties(divId, json) {
-    const { head: { vars }, results } = json;
+    const { results } = json;
     let properties = document.getElementById(divId);
     let total = document.createElement("h3");
     properties.appendChild(total);
-    propertySet = new Set();
-    maxPropertyId = 0;
+
+    let propertySet = new Set();
+    let maxPropertyId = 0;
     for (const result of results.bindings) {
-        for (const variable of vars) {
-            propertyId = Number(result['property'].value.replace("http://www.wikidata.org/entity/P", ""));
-            propertySet.add(propertyId);
-            if (propertyId > maxPropertyId) {
-                maxPropertyId = propertyId;
-            }
+        let propertyId = Number(
+            result['property'].value.replace("http://www.wikidata.org/entity/P", ""));
+        propertySet.add(propertyId);
+        if (propertyId > maxPropertyId) {
+            maxPropertyId = propertyId;
         }
     }
-    total.innerHTML = wdpropText("js.totalProperties", [maxPropertyId]);
-    for (let count = 0, i = 1; count < maxPropertyCount && i < maxPropertyId; i++, count++) {
+
+    let shownTo = Math.min(maxPropertyCount, maxPropertyId);
+    total.innerHTML = wdpropText("js.propertyNumberSpace",
+        [shownTo, maxPropertyId, results.bindings.length]);
+
+    for (let i = 1; i <= shownTo; i++) {
         let property = document.createElement("div");
         let text = document.createTextNode("P" + String(i));
         if (propertySet.has(i)) {
@@ -308,7 +355,6 @@ function createDivAllProperties(divId, json) {
         }
         properties.appendChild(property);
     }
-    propertySet.clear();
 }
 
 /*
@@ -485,74 +531,36 @@ function visualizePath(languageData) {
     });
 }
 
+/*
+ * The properties still needing a translation, on the pages that list them by
+ * language, by class or by a single property.
+ *
+ * These queries ask only for ?property — they select on a label being absent,
+ * so there is nothing in the target language to show — and the table is
+ * correspondingly narrow. It is still the table rather than the wall of chips
+ * this used to draw: the chips stopped at a hundred without saying so, under a
+ * heading that counted the whole result.
+ */
 function createDivProperties(divId, json) {
-    const { head: { vars }, results } = json;
-    let properties = document.getElementById(divId);
-    let total = document.createElement("h3");
-    total.innerHTML = wdpropText("js.totalProperties", [results.bindings.length]);
-    properties.appendChild(total);
-
-    let count = 0;
-    for (const result of results.bindings) {
-        for (const variable of vars) {
-            let property = document.createElement("div");
-            property.setAttribute('class', "property");
-            let a = document.createElement("a");
-            a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-            let text = document.createTextNode(result[variable].value.replace("http://www.wikidata.org/entity/", ""));
-            a.appendChild(text);
-            property.appendChild(a);
-            properties.appendChild(property);
-        }
-        count++;
-        if (count > maxPropertyCount) {
-            break;
-        }
-    }
+    return createDivPropertyTable(divId, json);
 }
 
+/*
+ * The property classes.
+ *
+ * This page used to render a table into a hidden div, have classes.js parse
+ * that table's HTML back into objects, and re-render them into a bespoke
+ * virtual scroller — a round trip through the DOM to arrive where the data
+ * had started. It is the same table as every other listing now, paged the
+ * same way, with the class names fetched for the rows on show.
+ *
+ * That last part matters more here than anywhere else: of the 3,082 classes,
+ * 2,610 have no Tamil label, and the old table printed the item identifier in
+ * the label column when one was missing — so five rows in six read as though
+ * the class were named "Q21451142".
+ */
 function createDivClasses(divId, json) {
-    const { head: { vars }, results } = json;
-    let properties = document.getElementById(divId);
-    let total = document.createElement("h3");
-    total.innerHTML = wdpropText("js.totalClasses", [results.bindings.length]);
-    properties.appendChild(total);
-
-    let table = document.createElement("table");
-    table.setAttribute("class", "alternate");
-    let th = document.createElement("tr");
-    let td = document.createElement("th");
-    td.innerHTML = wdpropText("js.item");
-    th.appendChild(td);
-    td = document.createElement("th");
-    td.innerHTML = wdpropText("js.classLabel");
-    th.appendChild(td);
-    table.append(th);
-
-    for (const result of results.bindings) {
-        tr = document.createElement("tr");
-
-        td = document.createElement("td");
-        td.setAttribute('class', "property");
-        let a = document.createElement("a");
-        a.setAttribute('href', "class.html?class=" + result['item'].value.replace("http://www.wikidata.org/entity/", ""));
-        let text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
-        a.append(text);
-        td.appendChild(a);
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        text = null;
-        if (result.hasOwnProperty("label")) {
-            text = document.createTextNode(result['label'].value);
-        } else {
-            text = document.createTextNode(result['item'].value.replace("http://www.wikidata.org/entity/", ""));
-        }
-        td.appendChild(text);
-        tr.appendChild(td);
-        table.appendChild(tr);
-    }
-    properties.appendChild(table);
+    return wdpropEntityTable(divId, json, wdpropClassListing);
 }
 
 function createDivClassProperties(divId, json) {
@@ -864,37 +872,419 @@ function createDivLanguage(divId, json) {
     }
 }
 
-function createDivPropertyDetails(divId, json) {
-    const { head: { vars }, results } = json;
-    let properties = document.getElementById(divId);
-    let total = document.createElement("h3");
-    total.innerHTML = wdpropText("js.totalProperties", [results.bindings.length]);
-    properties.appendChild(total);
-    propertySet = new Set();
-    maxPropertyId = 0;
-    for (const result of results.bindings) {
-        for (const variable of vars) {
-            propertyId = Number(result['property'].value.replace("http://www.wikidata.org/entity/P", ""));
-            propertySet.add(propertyId);
-            if (propertyId > maxPropertyId) {
-                maxPropertyId = propertyId;
+/*
+ * ===========================================================================
+ * Listing properties
+ * ===========================================================================
+ *
+ * Every page that lists properties used to render the same thing: a wall of
+ * floating chips carrying a P-number and nothing else. That was wrong in three
+ * separate ways, and the same three ways on each page.
+ *
+ * It could not say what a property was. A translator looking at P4765 has no
+ * way to judge it without opening it, and the SPARQL behind the page did not
+ * even ask for the label, so the chip could not have shown one.
+ *
+ * It cut the list at maxPropertyCount and said nothing. The heading counted
+ * every row the query returned, then a hundred were drawn — so a datatype with
+ * two hundred properties announced two hundred and showed half.
+ *
+ * It cut the wrong hundred. The loop walked the P-number space from P1 and
+ * took the first hundred it recognised, discarding the order the query had
+ * asked for. That is the hundred oldest properties: neither the most used nor
+ * the least translated, and no use to anyone.
+ *
+ * What follows is one table renderer for all of those pages. It shows every
+ * row — queryWikidata hands the result to wdpropPaginate, which pages anything
+ * long — and it adapts to the query it is given, so a caller that asks only
+ * for ?property still gets a usable table, and one that also asks for labels,
+ * descriptions or statement counts gets those columns too.
+ */
+
+/*
+ * ---------------------------------------------------------------------------
+ * Filling a row from the entity API
+ * ---------------------------------------------------------------------------
+ *
+ * The listing queries ask Wikidata for identifiers and nothing else, and the
+ * terms that make a row readable are fetched afterwards, fifty at a time, for
+ * the rows actually on show. The reason is what the alternative costs: asked
+ * for the external identifiers with their labels and descriptions, the query
+ * service answers with four and a half megabytes after twenty seconds, and a
+ * reader sees fifty rows of it. The identifiers alone are 1.25 MB in four
+ * seconds, and each page of fifty is a further 13 KB in half a second.
+ *
+ * Fetching them from the entity API rather than the query service also settles
+ * a question the label service cannot answer. That service falls back to
+ * English, so it cannot say whether a label exists in the language being
+ * worked in — asked for the external identifiers in Tamil it names all ten
+ * thousand of them, one of which has a Tamil label. wbgetentities returns
+ * exactly the languages asked for, so a missing one is missing.
+ */
+
+/* The entity API takes fifty identifiers per request from an anonymous
+ * caller, which is also how many rows a page of a table holds. */
+var wdpropTermsPerRequest = 50;
+
+function wdpropPropertyRecord(binding, variable) {
+    return {
+        id: binding[variable || 'property'].value
+            .replace("http://www.wikidata.org/entity/", "")
+    };
+}
+
+/*
+ * The terms of up to fifty properties, in the language being worked in and in
+ * English. Resolves to the API's entity map; a request that fails resolves to
+ * nothing rather than rejecting, so one bad page cannot break the table.
+ */
+function wdpropFetchTerms(ids, language) {
+    let languages = (language === "en") ? "en" : language + "|en";
+    let url = "https://www.wikidata.org/w/api.php?action=wbgetentities" +
+        "&ids=" + encodeURIComponent(ids.join("|")) +
+        "&props=" + encodeURIComponent("labels|descriptions") +
+        "&languages=" + encodeURIComponent(languages) +
+        "&format=json&origin=*";
+
+    return fetch(url).then(function (response) {
+        if (!response.ok) {
+            throw new Error(String(response.status));
+        }
+        return response.json();
+    }).then(function (json) {
+        return json.entities || {};
+    }).catch(function () {
+        return {};
+    });
+}
+
+/*
+ * Puts one property's terms into its row, and says which of three states it
+ * is in: named in the language being worked in, named only in English, or not
+ * named at all.
+ */
+function wdpropShowTerms(row, entity, language) {
+    let labels = (entity && entity.labels) || {};
+    let descriptions = (entity && entity.descriptions) || {};
+
+    let target = labels[language];
+    let fallback = labels["en"];
+
+    let cell = row.wdpropLabelCell;
+    wdpropClear(cell);
+    cell.setAttribute("class", target || fallback ? "propertylabel" : "missingvalue");
+
+    if (target) {
+        cell.appendChild(document.createTextNode(target.value));
+    } else if (fallback) {
+        cell.appendChild(document.createTextNode(fallback.value));
+        /*
+         * The label is readable, but it is the English one and the row is not
+         * done. Said in words rather than left to the row's tint, which a
+         * monochrome screen and a screen reader both lose.
+         */
+        let note = document.createElement("span");
+        note.setAttribute("class", "missingvalue fallbacklabel");
+        note.appendChild(document.createTextNode(" " + wdpropText("js.fallbackLabel")));
+        cell.appendChild(note);
+    } else {
+        cell.appendChild(document.createTextNode(wdpropText("js.notInLanguage")));
+    }
+
+    if (!target) {
+        row.setAttribute("class", "untranslatedrow");
+    }
+
+    let described = descriptions[language] || descriptions["en"];
+    wdpropClear(row.wdpropDescriptionCell);
+    if (described) {
+        row.wdpropDescriptionCell.appendChild(
+            document.createTextNode(described.value));
+    }
+}
+
+/*
+ * Fills the label and description of the rows currently on show.
+ *
+ * Rows already filled are skipped, so paging back and forth costs nothing
+ * beyond the first visit to each page.
+ */
+function wdpropFillTerms(rows) {
+    let pending = rows.filter(function (row) {
+        return row.wdpropLabelCell && !row.wdpropTermsFilled;
+    });
+    if (pending.length === 0) {
+        return;
+    }
+
+    let language = wdpropLabelLanguage();
+
+    for (let from = 0; from < pending.length; from += wdpropTermsPerRequest) {
+        let batch = pending.slice(from, from + wdpropTermsPerRequest);
+        let ids = batch.map(function (row) { return row.wdpropEntityId; });
+
+        batch.forEach(function (row) { row.wdpropTermsFilled = true; });
+
+        wdpropFetchTerms(ids, language).then(function (entities) {
+            for (const row of batch) {
+                wdpropShowTerms(row, entities[row.wdpropEntityId], language);
+            }
+        });
+    }
+}
+
+/*
+ * Fills the usage column of the rows currently on show.
+ *
+ * How often a property is used cannot come out of the same query as the
+ * labels — see the note on wdpropPropertyRecord — so it is fetched
+ * afterwards, from usage.js, which reads it from the search API and caches it
+ * for a day.
+ *
+ * Only the rows on show are asked for. A datatype can hold several thousand
+ * properties, and counting all of them would mean thousands of requests to
+ * fill fifty cells. Rows already filled are skipped, so paging back and forth
+ * costs nothing.
+ */
+function wdpropFillUsage(rows) {
+    if (!(window.WDProp && window.WDProp.usage)) {
+        return;
+    }
+
+    let pending = rows.filter(function (row) {
+        return row.wdpropUsageCell && !row.wdpropUsageCell.wdpropFilled;
+    });
+    if (pending.length === 0) {
+        return;
+    }
+
+    let ids = pending.map(function (row) { return row.wdpropEntityId; });
+
+    window.WDProp.usage.counts(ids).then(function (counts) {
+        for (const row of pending) {
+            let cell = row.wdpropUsageCell;
+            let count = counts[row.wdpropEntityId];
+            cell.wdpropFilled = true;
+            wdpropClear(cell);
+            if (typeof count === "number") {
+                cell.setAttribute("title", count.toLocaleString());
+                cell.appendChild(document.createTextNode(
+                    window.WDProp.usage.format(count)));
+            } else {
+                /*
+                 * A count that could not be read is left blank rather than
+                 * shown as zero, which would read as "never used".
+                 */
+                cell.setAttribute("class", "propertyusage missingvalue");
+                cell.appendChild(document.createTextNode(
+                    wdpropText("js.unavailable")));
             }
         }
+    });
+}
+
+/*
+ * The language to ask the label service for.
+ *
+ * A page reached with ?language= is being read about that language, so its
+ * labels should be in it; otherwise the reader's own interface language is
+ * the best guess. English is appended by the caller as the fallback.
+ */
+function wdpropLabelLanguage() {
+    let fromUrl = getValueFromURL("language=([^&#=]*)", "");
+    if (fromUrl !== "") {
+        return fromUrl;
     }
-    for (let count = 0, i = 1; count < maxPropertyCount && i <= maxPropertyId; i++) {
-        let property = document.createElement("div");
-        let text = document.createTextNode("P" + String(i));
-        if (propertySet.has(i)) {
-            property.setAttribute('class', "property");
-            let a = document.createElement("a");
-            a.setAttribute('href', "property.html?property=P" + String(i));
-            a.appendChild(text);
-            property.appendChild(a);
-            properties.appendChild(property);
-            count++;
+    return (window.WDProp && window.WDProp.i18n)
+        ? window.WDProp.i18n.current() : "en";
+}
+
+function wdpropHeaderCell(row, key) {
+    let cell = document.createElement("th");
+    cell.innerHTML = wdpropText(key);
+    row.appendChild(cell);
+    return cell;
+}
+
+/*
+ * Lists properties as a table, with whichever of label, description and usage
+ * the query supplied. Returns the records it drew, so a caller can offer an
+ * action over them — the datatype page uses this to link the properties still
+ * needing a translation into the workbench.
+ */
+/*
+ * How a listing of one kind of entity differs from another: what the query
+ * called it, where a row links, and what its identifier column is headed.
+ * Everything else — the lazy terms, the paging, the marking of what the
+ * language has not reached — is the same for all of them.
+ */
+var wdpropPropertyListing = {
+    variable: "property",
+    href: "property.html?property=",
+    idHeader: "js.property",
+    total: "js.totalProperties",
+    usage: true
+};
+
+var wdpropClassListing = {
+    variable: "item",
+    href: "class.html?class=",
+    idHeader: "js.item",
+    total: "js.totalClasses",
+    /* How often a class is used is not a question usage.js can answer: it
+     * counts statements using a property, which a class is not. */
+    usage: false
+};
+
+function wdpropEntityTable(divId, json, listing) {
+    const { results } = json;
+    let container = document.getElementById(divId);
+
+    let records = results.bindings.map(function (binding) {
+        return wdpropPropertyRecord(binding, listing.variable);
+    });
+
+    /*
+     * The heading counts the rows straight away. How many of them the language
+     * being worked in has not reached is a question about the whole set, not
+     * about the page on show, so it cannot come from the rows — it is asked
+     * separately by wdpropCountUntranslated and appended when it arrives.
+     */
+    let total = document.createElement("h3");
+    total.innerHTML = wdpropText(listing.total, [records.length]);
+    container.appendChild(total);
+    container.wdpropTotalHeading = total;
+
+    let table = document.createElement("table");
+    table.setAttribute("class", "alternate propertytable");
+
+    let head = document.createElement("tr");
+    wdpropHeaderCell(head, listing.idHeader);
+    wdpropHeaderCell(head, "js.label");
+    wdpropHeaderCell(head, "js.description");
+
+    /* Usage comes from usage.js, which not every page loads. */
+    let hasUsage = listing.usage && !!(window.WDProp && window.WDProp.usage);
+    if (hasUsage) {
+        wdpropHeaderCell(head, "js.usage");
+    }
+    table.appendChild(head);
+
+    for (const record of records) {
+        let row = document.createElement("tr");
+        row.wdpropEntityId = record.id;
+
+        let cell = document.createElement("td");
+        cell.setAttribute("class", "property");
+        let link = document.createElement("a");
+        link.setAttribute("href", listing.href + record.id);
+        link.appendChild(document.createTextNode(record.id));
+        cell.appendChild(link);
+        row.appendChild(cell);
+
+        /*
+         * The cells below are placeholders. They are held on the row so that
+         * the fill functions, which are handed rows by the pager and know
+         * nothing of this loop, can find them.
+         */
+        cell = document.createElement("td");
+        cell.appendChild(document.createTextNode("\u2026"));
+        row.wdpropLabelCell = cell;
+        row.appendChild(cell);
+
+        cell = document.createElement("td");
+        cell.setAttribute("class", "propertydescription");
+        row.wdpropDescriptionCell = cell;
+        row.appendChild(cell);
+
+        if (hasUsage) {
+            cell = document.createElement("td");
+            cell.setAttribute("class", "propertyusage");
+            cell.appendChild(document.createTextNode("\u2026"));
+            row.wdpropUsageCell = cell;
+            row.appendChild(cell);
         }
+
+        table.appendChild(row);
     }
-    propertySet.clear();
+
+    /*
+     * Called by wdpropPaginateTable with the rows of each page as it is
+     * reached, and once for the first page. A table too short to page is
+     * filled the same way, since the pager never runs for it.
+     */
+    table.wdpropOnPage = wdpropFillRows;
+
+    container.appendChild(table);
+    return records;
+}
+
+function createDivPropertyTable(divId, json) {
+    return wdpropEntityTable(divId, json, wdpropPropertyListing);
+}
+
+/* Everything a page of rows needs fetching for it, once it is on show. */
+function wdpropFillRows(rows) {
+    wdpropFillTerms(rows);
+    wdpropFillUsage(rows);
+}
+
+/*
+ * How many of a listing's properties the language being worked in has not
+ * reached, added to the heading when it is known.
+ *
+ * This is the one thing that cannot be answered a page at a time: it is a
+ * count over the whole set, and it is what makes the page actionable — it
+ * says how much work is left, and the workbench link offers exactly that set.
+ * Asked on its own it is a few hundred bytes, and it runs beside the listing
+ * rather than after it.
+ *
+ * A count that cannot be obtained simply never appears. The heading is still
+ * correct without it, and a figure that was not fetched is never shown.
+ */
+function wdpropCountUntranslated(divId, whereClause) {
+    let language = wdpropLabelLanguage();
+    let sparqlQuery = fillQuery(
+        `PREFIX wikibase: <http://wikiba.se/ontology#>
+
+SELECT (COUNT(DISTINCT ?property) AS ?untranslated)
+WHERE
+{
+{{where}}
+    FILTER NOT EXISTS { ?property rdfs:label ?t FILTER (lang(?t) = "{{language}}") }
+}
+`, { where: whereClause, language: language });
+
+    fetch(endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json",
+        { headers: { 'Accept': 'application/sparql-results+json' } })
+        .then(wdpropReadJson).then(function (json) {
+            let rows = json.results.bindings;
+            let count = rows.length ? Number(rows[0]['untranslated'].value) : 0;
+            if (!count) {
+                return;
+            }
+
+            let container = document.getElementById(divId);
+            if (!container) {
+                return;
+            }
+
+            if (container.wdpropTotalHeading) {
+                let note = document.createElement("span");
+                note.setAttribute("class", "propertytablenote");
+                note.innerHTML = wdpropText("js.withoutLabel", [count]);
+                container.wdpropTotalHeading.appendChild(note);
+            }
+
+            /* The offer was made without a figure; now it has one. */
+            if (container.wdpropWorkbenchLink) {
+                wdpropClear(container.wdpropWorkbenchLink);
+                container.wdpropWorkbenchLink.appendChild(
+                    document.createTextNode(wdpropText("js.translateThese", [count])));
+            }
+        }).catch(function () {
+            /* Nothing to say: the heading stands without it. */
+        });
 }
 
 /*
@@ -1046,12 +1436,59 @@ function wdpropIsHeaderRow(row) {
     return !!(row.children.length && row.children[0].tagName === "TH");
 }
 
-function wdpropPaginateTable(table) {
-    let body = wdpropTableRows(table).filter(function (row) {
+/*
+ * Tells a table which of its rows are now on show, if it asked to be told.
+ *
+ * A table can carry work that is worth doing only for the rows being looked
+ * at — the property tables fetch a usage count per row, which would be
+ * thousands of requests if done for a whole datatype at once.
+ */
+function wdpropRowsShown(table, rows) {
+    if (typeof table.wdpropOnPage === "function") {
+        table.wdpropOnPage(rows);
+    }
+}
+
+/*
+ * Pages a table, or re-pages it over a chosen subset of its rows.
+ *
+ * Filtering goes through the subset form. The rows that match become the whole
+ * of what there is to move through, so the number of pages, the position that
+ * is read out, and which rows the fill functions are told about all have to be
+ * worked out again — a filter that only hid rows would leave a control paging
+ * through gaps and announcing a total that no longer existed.
+ */
+function wdpropPaginateTable(table, subset) {
+    let all = wdpropTableRows(table).filter(function (row) {
         return !wdpropIsHeaderRow(row);
     });
+    let body = subset || all;
+
+    /* Anything outside the subset is hidden, and paging never reaches it. */
+    if (subset) {
+        for (const row of all) {
+            row.style.display = "none";
+        }
+    }
+
+    /*
+     * A control left over from an earlier pass would page rows that are no
+     * longer part of the set.
+     */
+    if (table.wdpropPagerElement) {
+        let stale = table.wdpropPagerElement;
+        table.wdpropPagerElement = null;
+        if (stale.parentNode) {
+            stale.parentNode.removeChild(stale);
+        }
+    }
 
     if (body.length <= wdpropRowsPerPage || table.parentNode == null) {
+        /* Short enough to show whole: every row is on show, and stays so. */
+        for (const row of body) {
+            row.style.display = "";
+        }
+        wdpropRowsShown(table, body);
         return;
     }
 
@@ -1074,18 +1511,34 @@ function wdpropPaginateTable(table) {
 
         pager.update(page, pages, wdpropText("js.pageOf",
             [page + 1, pages, Math.min(to, body.length), body.length]));
+
+        wdpropRowsShown(table, body.slice(from, to));
     }
 
     show(0);
     table.parentNode.insertBefore(pager.element, table.nextSibling);
+    table.wdpropPagerElement = pager.element;
+}
+
+/*
+ * Narrows a table to the rows a test accepts, and pages what is left.
+ *
+ * The test is given the row, which carries the identifier it was built from,
+ * so a caller can match on that without reading it back out of the cell.
+ */
+function wdpropFilterTable(table, matches) {
+    let body = wdpropTableRows(table).filter(function (row) {
+        return !wdpropIsHeaderRow(row);
+    });
+    wdpropPaginateTable(table, body.filter(matches));
 }
 
 /*
  * Pages every long table a section has just rendered.
  *
- * A section hidden by the page's own script — the classes and WikiProjects
- * pages render into a hidden table and then virtualise it themselves — is
- * left alone: paging what nobody sees would be work for nothing.
+ * A section hidden by the page's own script — the WikiProjects page renders
+ * into a hidden table and then virtualises it itself — is left alone: paging
+ * what nobody sees would be work for nothing.
  */
 function wdpropPaginate(container) {
     if (container.style && container.style.display === "none") {
@@ -1145,18 +1598,13 @@ function getProperty(item, language) {
 }
 
 function getClasses() {
-    let language = getValueFromURL("language=([^&#=]*)", "en")
-
     let property = getValueFromURL("property=([^&#=]*)", "");
 
     if (property == "" || property == undefined) {
-        queryWikidata(fillQuery(allClassesQuery, { language: language }),
-            createDivClasses, "propertyClasses");
+        queryWikidata(allClassesQuery, createDivClasses, "propertyClasses");
     } else {
-        queryWikidata(fillQuery(allClassesWithPropertyQuery, {
-            language: language,
-            property: property
-        }), createDivClasses, "propertyClasses");
+        queryWikidata(fillQuery(allClassesWithPropertyQuery, { property: property }),
+            createDivClasses, "propertyClasses");
     }
 }
 
@@ -1597,6 +2045,13 @@ function getDatatypes() {
     queryWikidata(sparqlQuery, createDivDataTypes, "propertyDatatypes");
 }
 
+/*
+ * Every property there is — close to fourteen thousand of them, which is why
+ * this listing in particular is fetched the way it is. Asked of the query
+ * service with its labels and descriptions, the whole set is six megabytes and
+ * forty seconds, of which a reader sees fifty rows; the identifiers alone are
+ * a fifth of that, and each page of fifty costs 13 KB when it is reached.
+ */
 function getProperties() {
     const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
 
@@ -1607,36 +2062,58 @@ function getProperties() {
     }
     ORDER by ?property
     `;
-    queryWikidata(sparqlQuery, createDivPropertyDetails, "existingProperties");
+    queryWikidata(sparqlQuery, createDivPropertyTable, "existingProperties");
     queryWikidata(sparqlQuery, createDivAllProperties, "allProperties");
 }
 
 
+/*
+ * Properties whose own statements carry a reference.
+ *
+ * The condition is a FILTER EXISTS rather than a join. Joined, the pattern
+ * matches every referenced statement in Wikidata — hundreds of millions of
+ * them — before DISTINCT reduces the result to a few thousand properties, and
+ * the query service gives up long before that. EXISTS stops at the first
+ * referenced statement each property has, which is all the question needs.
+ * The joined form timed out; this one answers.
+ *
+ * The REGEX the joined form used to keep ?statement to statement nodes is
+ * gone with it: prov:wasDerivedFrom only ever leaves a statement, so it was
+ * both expensive and redundant.
+ */
 function getPropertyWithReference() {
     const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
-   SELECT DISTINCT ?property 
+   SELECT DISTINCT ?property
     {
-      ?property a wikibase:Property;
-         ?prop ?statement.
-      ?statement prov:wasDerivedFrom ?reference.
-      FILTER(REGEX(STR(?statement), "http://www.wikidata.org/entity/statement/") && bound(?reference))
+      ?property a wikibase:Property.
+      FILTER EXISTS {
+        ?property ?prop ?statement.
+        ?statement prov:wasDerivedFrom ?reference.
+      }
     }
     ORDER by ?property
     `;
-    queryWikidata(sparqlQuery, createDivPropertyDetails, "propertywithreference");
+    queryWikidata(sparqlQuery, createDivPropertyTable, "propertywithreference");
 }
 
+/*
+ * Properties declaring an equivalent property on an external vocabulary.
+ *
+ * The ?prop ?statement clause this query used to carry bound every statement
+ * of every matching property and was then discarded by DISTINCT — it
+ * constrained nothing, since wdt:P1628 already selects the properties wanted,
+ * and it was enough to make the query time out once labels were asked for.
+ */
 function getPropertyWithEquivPropertySet() {
     const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
-   SELECT DISTINCT ?property 
+   SELECT DISTINCT ?property
     {
       ?property a wikibase:Property;
-         ?prop ?statement;
          wdt:P1628 ?equivproperty.
     }
     ORDER by ?property
     `;
-    queryWikidata(sparqlQuery, createDivPropertyDetails, "propertywithequivpropertyset");
+    queryWikidata(sparqlQuery, createDivPropertyTable, "propertywithequivpropertyset");
 }
 
 function getOverallProvenance() {
@@ -1805,16 +2282,70 @@ function getPropertyDetails() {
 
 }
 
+/*
+ * Lists the properties of one datatype, and offers the ones still unnamed in
+ * the reader's language to the workbench.
+ *
+ * The workbench already accepts a datatype as its scope, so the offer is a
+ * link rather than any new machinery: it carries the same datatype and the
+ * language the labels were asked in, and lands on the same set of properties
+ * with somewhere to type the translations.
+ */
+/*
+ * The way out of the listing: the properties this datatype still needs
+ * translated, handed to the workbench.
+ *
+ * The workbench already takes a datatype as its scope, so this is a link
+ * rather than any new machinery — the same datatype, the language the terms
+ * were asked in.
+ *
+ * It carries no number to begin with, and does not wait for one. Counting the
+ * untranslated properties of a large datatype is a slow query on a cold cache
+ * — seventy seconds for the external identifiers, against two for the listing
+ * itself — and the way out of the page should not disappear because a figure
+ * beside it was slow to arrive. wdpropCountUntranslated relabels the button if
+ * the count lands.
+ */
+function wdpropOfferToWorkbench(divId) {
+    let container = document.getElementById(divId);
+    if (!container) {
+        return;
+    }
+
+    let datatype = getValueFromURL("datatype=([^&#=]*)", "wikibase:WikibaseItem");
+    let language = wdpropLabelLanguage();
+
+    let action = document.createElement("p");
+    action.setAttribute("class", "propertytableaction");
+
+    let link = document.createElement("a");
+    link.setAttribute("class", "wdp-button");
+    link.setAttribute("href", "translate.html?datatype=" +
+        encodeURIComponent(datatype) + "&target=" + encodeURIComponent(language));
+    link.appendChild(document.createTextNode(wdpropText("js.translateMissing")));
+
+    action.appendChild(link);
+    container.appendChild(action);
+    container.wdpropWorkbenchLink = link;
+}
+
 function getPropertiesWithDatatype() {
     let datatype = getValueFromURL("datatype=([^&#=]*)", "wikibase:WikibaseItem");
 
     let datatypeCode = document.getElementById("datatypeCode");
     datatypeCode.innerHTML = wdpropText("page.propsWithDatatype") + datatype;
 
-    let sparqlQuery = propertiesWithDatatypeQuery;
-    sparqlQuery = propertiesWithDatatypeQuery.replace(
-        "{{datatype}}", datatype);
-    queryWikidata(sparqlQuery, createDivPropertyDetails, "propertiesWithDatatype");
+    let where = fillQuery(propertiesWithDatatypeWhere, { datatype: datatype });
+
+    queryWikidata(fillQuery(propertiesWithDatatypeQuery, { where: where }),
+        function (divId, json) {
+            let records = createDivPropertyTable(divId, json);
+            wdpropOfferToWorkbench(divId);
+            return records;
+        }, "propertiesWithDatatype");
+
+    /* Asked beside the listing rather than after it, and awaited by neither. */
+    wdpropCountUntranslated("propertiesWithDatatype", where);
 }
 
 function createDivPropertyDescriptors(divId, json) {

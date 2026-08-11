@@ -4353,3 +4353,85 @@ summary:focus-visible,
         max-width: none;
     }
 }
+
+/*
+ * ===========================================================================
+ * Property tables
+ * ===========================================================================
+ *
+ * The listings that used to be a wall of chips carrying a P-number. The chip
+ * survives as the identifier cell — .property still styles it — and the rest
+ * of the row says what the property is, so the table reads as a list of
+ * properties rather than a list of numbers.
+ */
+
+.propertytable {
+    width: 100%;
+    table-layout: auto;
+}
+
+.propertytable td {
+    vertical-align: top;
+}
+
+/* The identifier column holds a chip and should not stretch for it. */
+.propertytable td.property {
+    float: none;
+    width: 1%;
+    white-space: nowrap;
+}
+
+.propertydescription {
+    color: var(--text-secondary);
+    max-width: 44em;
+}
+
+.propertyusage {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/*
+ * A property with no label in the language asked for. The row is tinted and
+ * the cell says so in words: the tint alone would be the only carrier of the
+ * distinction, which is exactly what a reader who cannot separate the two
+ * colours would lose.
+ */
+/*
+ * Specific enough to beat .alternate tr:nth-child(2n), which would otherwise
+ * repaint every second untranslated row back to the ordinary background.
+ */
+.propertytable tr.untranslatedrow,
+.alternate tr.untranslatedrow:nth-child(2n) {
+    background-color: color-mix(in srgb, var(--accent-color) 7%, transparent);
+}
+
+.missingvalue {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Marks a label shown from the English fallback rather than the language
+   being worked in, so the row is not mistaken for a finished one. */
+.fallbacklabel {
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+/* How many rows of the heading's count still need a translation. */
+.propertytablenote {
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.propertytableaction {
+    margin-top: 16px;
+}
+
+@media screen and (max-width: 768px) {
+    /* The description is the first thing to go when there is no room. */
+    .propertytable .propertydescription {
+        display: none;
+    }
+}

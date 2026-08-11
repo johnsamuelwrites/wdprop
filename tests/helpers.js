@@ -25,6 +25,12 @@ function element(tag) {
     return {
         tag, children: [], attrs: {}, dataset: {}, listeners: {}, style: styleObject(),
         innerHTML: "", value: "", disabled: false, text: "",
+        /*
+         * The DOM's own spelling, upper-cased as a browser reports it. The
+         * paging code tells a heading row from a data row this way, and with
+         * only `tag` here it saw neither and left long tables unpaged.
+         */
+        get tagName() { return String(this.tag).toUpperCase(); },
         setAttribute(k, v) {
             this.attrs[k] = String(v);
             if (k.indexOf("data-i18n") === 0) {
@@ -37,7 +43,11 @@ function element(tag) {
         getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
         appendChild(c) { this.children.push(c); c.parent = this; return c; },
         removeChild(c) { this.children = this.children.filter(x => x !== c); },
-        insertBefore(c) { this.children.unshift(c); return c; },
+        /* Sets parentNode, as the DOM does: the pager control is inserted this
+           way and has to be findable again to be removed when a filter
+           re-pages. appendChild deliberately does not, so that tables built by
+           the other suites stay outside the paging code's reach. */
+        insertBefore(c) { this.children.unshift(c); c.parentNode = this; return c; },
         addEventListener(k, fn) { (this.listeners[k] = this.listeners[k] || []).push(fn); },
         focus() { global.document.__active = this; },
         querySelector() { return null; },

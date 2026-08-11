@@ -35,7 +35,7 @@ for (const lang of ["fr", "es"]) {
 const MODULES = ["translate.js", "batch.js", "campaign.js", "contributionsview.js", "compose.js",
     "cart.js", "terminology.js", "usage.js", "i18n.js", "wdprop.js", "mwwdprop.js", "dashboard.js",
     "shell.js", "stale.js", "staleview.js", "offline.js", "offlineview.js", "contributions.js",
-    "classes.js", "wikiprojects.js", "compare.js", "visualization.js", "validate.js", "qs.js",
+    "wikiprojects.js", "compare.js", "visualization.js", "validate.js", "qs.js",
     "searchview.js", "classesview.js", "wikiprojectsview.js"];
 const usedInJs = new Set();
 for (const f of MODULES) {

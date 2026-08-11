@@ -70,7 +70,12 @@ s.check("no values is a no-op", sandbox.fillQuery(tpl, {}), tpl);
  * second call with different values shows that the first call's are stuck.
  */
 const varying = [
-    ["getClasses", "getClasses()", "?language=fr", "?language=ta", '"fr"', '"ta"'],
+    /*
+     * The all-classes query is not here because it no longer takes a value:
+     * it asks for the item identifiers alone and the class names are fetched
+     * per page, so there is no language to substitute and nothing to stick.
+     * The variant that selects by property still carries one.
+     */
     ["getClasses with property", "getClasses()", "?language=en&property=P31", "?language=en&property=P17", "P31", "P17"],
     ["class worklist", 'getPropertiesForClassRequiringTranslationQuery("Q18616576")', "?language=ta", "?language=fr", '"ta"', '"fr"'],
     ["property worklist", 'getSpecifiedPropertiesRequiringTranslation("wd:P31")', "?language=ta", "?language=fr", '"ta"', '"fr"'],
