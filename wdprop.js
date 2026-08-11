@@ -785,16 +785,6 @@ function createDivSearchProperties(divId, json) {
     properties.appendChild(table);
 }
 
-function getColor(colors, index, total) {
-    let colorCount = colors.length;
-    let groupSize = total / colorCount;
-
-    for (i = 0; i * groupSize < total; i++) {
-        if (index >= i * groupSize && index <= (i + 1) * groupSize) {
-            return colors[i];
-        }
-    }
-}
 
 function createDivTranslatedValues(divId, json) {
     const { head: { vars }, results } = json;
@@ -835,42 +825,95 @@ function createDivTranslatedValues(divId, json) {
     properties.appendChild(table);
 }
 
+/*
+ * How many properties carry a term in each language.
+ *
+ * Four pages draw this — the translation statistics, the comparison, a class
+ * and a WikiProject — and all four drew a wall of coloured chips reading
+ * "fr (12043)". There are 491 languages in the unfiltered case, so the wall
+ * ran to 491 chips with no paging, and the colour was a five-step gradient by
+ * rank, which put the same shade on the second language and the fiftieth.
+ *
+ * It is a table now, sorted by count, paged like every other long listing, and
+ * with a bar showing each language's share of the largest — which is the
+ * comparison the colour gradient was reaching for and could not make.
+ */
 function createDivTranslatedLabelsCount(divId, json) {
-    const { head: { vars }, results } = json;
-    let languages = document.getElementById(divId);
-    let colors = ["#002171", "#004ba0",
-        "#0069c0", "#2286c3", "#bbdefb"
-    ];
-    let backgroundColors = ["#ffffff", "#ffffff",
-        "#000000", "#000000", "#000000"
-    ];
+    const { results } = json;
+    let container = document.getElementById(divId);
+
     let propertyClass = getValueFromURL("class=([^&#=]*)", "");
 
-    let count = 0;
-    for (const result of results.bindings) {
-        let language = document.createElement("div");
-        language.setAttribute('class', "language");
+    let rows = results.bindings.map(function (binding) {
+        return {
+            code: binding['languageCode'].value,
+            total: Number(binding['total'].value)
+        };
+    });
 
-        language.style['background-color'] = getColor(colors, count, results.bindings.length);
+    /*
+     * Sorted here rather than by ORDER BY. The query service was ordering a
+     * few hundred rows at the end of an aggregation over a million terms; the
+     * browser orders the same few hundred for nothing.
+     */
+    rows.sort(function (a, b) { return b.total - a.total; });
 
-        let a = document.createElement("a");
+    let largest = rows.length ? rows[0].total : 0;
+
+    let heading = document.createElement("h3");
+    heading.innerHTML = wdpropText("js.totalLanguages", [rows.length]);
+    container.appendChild(heading);
+
+    let table = document.createElement("table");
+    table.setAttribute("class", "alternate propertytable");
+
+    let head = document.createElement("tr");
+    wdpropHeaderCell(head, "js.language");
+    wdpropHeaderCell(head, "js.propertiesTranslated");
+    wdpropHeaderCell(head, "js.share");
+    table.appendChild(head);
+
+    for (const row of rows) {
+        let tr = document.createElement("tr");
+
+        let cell = document.createElement("td");
+        cell.setAttribute("class", "property");
+        let link = document.createElement("a");
+
+        /*
+         * The link keeps whatever narrowed this page, so that following a
+         * language from a class or a WikiProject stays within it.
+         */
+        let where = "./language.html?language=" + encodeURIComponent(row.code);
         if (wikiprojectProperties != null) {
-            a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
-                "&property=" + wikiprojectProperties);
+            where += "&property=" + wikiprojectProperties;
         } else if (propertyClass != "") {
-            a.setAttribute('href', "./language.html?language=" + result['languageCode'].value +
-                "&class=" + propertyClass);
-        } else {
-            a.setAttribute('href', "./language.html?language=" + result['languageCode'].value);
+            where += "&class=" + propertyClass;
         }
-        a.style['color'] = getColor(backgroundColors, count, results.bindings.length);
-        let text = document.createTextNode(result['languageCode'].value + " (" + result['total'].value + ")");
-        a.appendChild(text);
-        language.appendChild(a);
-        languages.appendChild(language);
+        link.setAttribute("href", where);
+        link.appendChild(document.createTextNode(row.code));
+        cell.appendChild(link);
+        tr.appendChild(cell);
 
-        count++;
+        cell = document.createElement("td");
+        cell.setAttribute("class", "propertyusage");
+        cell.appendChild(document.createTextNode(row.total.toLocaleString()));
+        tr.appendChild(cell);
+
+        /*
+         * Against the largest language rather than against the number of
+         * properties, which this query does not know: the question the row
+         * answers is how this language compares with the best-served one.
+         */
+        cell = document.createElement("td");
+        cell.setAttribute("class", "coveragecell");
+        wdpropShowCoverage(cell, row.total, largest);
+        tr.appendChild(cell);
+
+        table.appendChild(tr);
     }
+
+    container.appendChild(table);
 }
 
 function createDivLanguage(divId, json) {
@@ -967,15 +1010,16 @@ function wdpropFetchTerms(ids, language) {
         "&languages=" + encodeURIComponent(languages) +
         "&format=json&origin=*";
 
-    return fetch(url).then(function (response) {
-        if (!response.ok) {
-            throw new Error(String(response.status));
+    /*
+     * Not caught here. A request that failed and an entity with no terms are
+     * different answers, and swallowing the first made every row of a failed
+     * page read as untranslated. wdpropFillLater says "unavailable" instead.
+     */
+    return fetch(url).then(wdpropReadJson).then(function (json) {
+        if (json && json.error) {
+            throw new Error(json.error.code || "api");
         }
-        return response.json();
-    }).then(function (json) {
         return json.entities || {};
-    }).catch(function () {
-        return {};
     });
 }
 
@@ -1031,27 +1075,41 @@ function wdpropShowTerms(row, entity, language) {
  * beyond the first visit to each page.
  */
 function wdpropFillTerms(rows) {
-    let pending = rows.filter(function (row) {
-        return row.wdpropLabelCell && !row.wdpropTermsFilled;
-    });
-    if (pending.length === 0) {
-        return;
-    }
-
     let language = wdpropLabelLanguage();
 
-    for (let from = 0; from < pending.length; from += wdpropTermsPerRequest) {
-        let batch = pending.slice(from, from + wdpropTermsPerRequest);
-        let ids = batch.map(function (row) { return row.wdpropEntityId; });
+    return wdpropFillLater(rows, {
+        wants: function (row) {
+            return row.wdpropLabelCell && !row.wdpropTermsFilled;
+        },
+        mark: function (row) { row.wdpropTermsFilled = true; },
+        key: function (row) { return row.wdpropEntityId; },
+        batch: wdpropTermsPerRequest,
+        fetch: function (ids) { return wdpropFetchTerms(ids, language); },
+        show: function (row, entity) {
+            wdpropShowTerms(row, entity, language);
+        },
+        /*
+         * Not the same as a property with no label. Saying "not in this
+         * language" because the request failed would report a translation as
+         * missing on no evidence, and on this page that is the whole point of
+         * the row.
+         */
+        fail: function (row) {
+            row.wdpropTermsFilled = false;
+            wdpropUnavailable(row.wdpropLabelCell);
+            wdpropClear(row.wdpropDescriptionCell);
+        }
+    });
+}
 
-        batch.forEach(function (row) { row.wdpropTermsFilled = true; });
-
-        wdpropFetchTerms(ids, language).then(function (entities) {
-            for (const row of batch) {
-                wdpropShowTerms(row, entities[row.wdpropEntityId], language);
-            }
-        });
+/* A cell whose value could not be fetched, which is not a value of none. */
+function wdpropUnavailable(cell) {
+    if (!cell) {
+        return;
     }
+    wdpropClear(cell);
+    cell.setAttribute("class", "missingvalue");
+    cell.appendChild(document.createTextNode(wdpropText("js.unavailable")));
 }
 
 /*
@@ -1064,42 +1122,40 @@ function wdpropFillTerms(rows) {
  *
  * Only the rows on show are asked for. A datatype can hold several thousand
  * properties, and counting all of them would mean thousands of requests to
- * fill fifty cells. Rows already filled are skipped, so paging back and forth
- * costs nothing.
+ * fill fifty cells.
  */
 function wdpropFillUsage(rows) {
     if (!(window.WDProp && window.WDProp.usage)) {
-        return;
+        return Promise.resolve();
     }
 
-    let pending = rows.filter(function (row) {
-        return row.wdpropUsageCell && !row.wdpropUsageCell.wdpropFilled;
-    });
-    if (pending.length === 0) {
-        return;
-    }
-
-    let ids = pending.map(function (row) { return row.wdpropEntityId; });
-
-    window.WDProp.usage.counts(ids).then(function (counts) {
-        for (const row of pending) {
+    return wdpropFillLater(rows, {
+        wants: function (row) {
+            return row.wdpropUsageCell && !row.wdpropUsageCell.wdpropFilled;
+        },
+        mark: function (row) { row.wdpropUsageCell.wdpropFilled = true; },
+        key: function (row) { return row.wdpropEntityId; },
+        fetch: function (ids) { return window.WDProp.usage.counts(ids); },
+        show: function (row, count) {
             let cell = row.wdpropUsageCell;
-            let count = counts[row.wdpropEntityId];
-            cell.wdpropFilled = true;
             wdpropClear(cell);
             if (typeof count === "number") {
+                cell.setAttribute("class", "propertyusage");
                 cell.setAttribute("title", count.toLocaleString());
                 cell.appendChild(document.createTextNode(
                     window.WDProp.usage.format(count)));
             } else {
                 /*
-                 * A count that could not be read is left blank rather than
-                 * shown as zero, which would read as "never used".
+                 * A count that could not be read is never shown as zero,
+                 * which would read as "never used".
                  */
+                wdpropUnavailable(cell);
                 cell.setAttribute("class", "propertyusage missingvalue");
-                cell.appendChild(document.createTextNode(
-                    wdpropText("js.unavailable")));
             }
+        },
+        fail: function (row) {
+            wdpropUnavailable(row.wdpropUsageCell);
+            row.wdpropUsageCell.setAttribute("class", "propertyusage missingvalue");
         }
     });
 }
@@ -1276,10 +1332,7 @@ WHERE
 }
 `, { where: whereClause, language: language });
 
-    fetch(endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json",
-        { headers: { 'Accept': 'application/sparql-results+json' } })
-        .then(wdpropReadJson).then(function (json) {
-            let rows = json.results.bindings;
+    wdpropAskRows(sparqlQuery).then(function (rows) {
             let count = rows.length ? Number(rows[0]['untranslated'].value) : 0;
             if (!count) {
                 return;
@@ -1320,6 +1373,91 @@ WHERE
  * simply no network — left the spinner turning for good, because nothing
  * caught the rejection.
  */
+
+/*
+ * ---------------------------------------------------------------------------
+ * Asking the query service
+ * ---------------------------------------------------------------------------
+ *
+ * One request, one answer. Five places had grown their own copy of these six
+ * lines — the URL, the Accept header, the status check and the parse — and
+ * they had begun to differ in which of those they remembered to do.
+ *
+ * queryWikidata is the version that also owns a section of the page: it shows
+ * the loading, empty and failure states around this. Everything that fills
+ * part of a page already drawn uses these directly.
+ */
+function wdpropAsk(sparqlQuery) {
+    return fetch(endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json",
+        { headers: { 'Accept': 'application/sparql-results+json' } })
+        .then(wdpropReadJson);
+}
+
+function wdpropAskRows(sparqlQuery) {
+    return wdpropAsk(sparqlQuery).then(function (json) {
+        return json.results.bindings;
+    });
+}
+
+/* The values of one variable, in the order the query returned them. */
+function wdpropColumn(bindings, variable) {
+    return bindings.map(function (binding) {
+        return binding[variable].value;
+    });
+}
+
+function wdpropAskForColumn(sparqlQuery, variable) {
+    return wdpropAskRows(sparqlQuery).then(function (bindings) {
+        return wdpropColumn(bindings, variable);
+    });
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Filling rows that are already on screen
+ * ---------------------------------------------------------------------------
+ *
+ * The shape every listing in WDProp now shares: draw what is cheap, then fetch
+ * the rest for the rows a reader can actually see. It was written out twice,
+ * once for the terms and once for the usage counts, and the two copies had
+ * already diverged on what happens when the request fails.
+ *
+ * A spec says which rows still want filling, what to ask about, how to ask,
+ * and how to show an answer — and, separately, how to show that there was no
+ * answer. That last one is the part worth having in one place: a request that
+ * failed and a property that genuinely has no label are different things, and
+ * the terms copy had been showing both as "not in this language".
+ */
+function wdpropFillLater(rows, spec) {
+    let pending = rows.filter(spec.wants);
+    if (pending.length === 0) {
+        return Promise.resolve();
+    }
+
+    /*
+     * Marked before the request rather than after it, so that paging away and
+     * back while one is in flight does not ask for the same rows again.
+     */
+    pending.forEach(spec.mark);
+
+    let size = spec.batch || pending.length;
+    let batches = [];
+    for (let from = 0; from < pending.length; from += size) {
+        batches.push(pending.slice(from, from + size));
+    }
+
+    return Promise.all(batches.map(function (batch) {
+        return spec.fetch(batch.map(spec.key)).then(function (answer) {
+            for (const row of batch) {
+                spec.show(row, answer[spec.key(row)]);
+            }
+        }).catch(function () {
+            for (const row of batch) {
+                spec.fail(row);
+            }
+        });
+    }));
+}
 
 function wdpropClear(div) {
     while (div.firstChild) {
@@ -1583,12 +1721,9 @@ function queryWikidata(sparqlQuery, func, divId) {
     }
 
     wdpropShowLoading(div);
-
-    fullUrl = endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json";
     showQuery(sparqlQuery, divId);
-    headers = { 'Accept': 'application/sparql-results+json' };
 
-    fetch(fullUrl, { headers }).then(wdpropReadJson).then(json => {
+    wdpropAsk(sparqlQuery).then(json => {
         wdpropClear(div);
         if (wdpropHasNoRows(json)) {
             wdpropShowEmpty(div);
@@ -1755,23 +1890,8 @@ function getPropertyDescriptionsNeedingTranslation() {
 }
 
 function getCountOfTranslatedLabels() {
-    const sparqlQuery = `
-     SELECT ?languageCode (SUM(?count) as ?total)
-     WHERE
-     {
-       SELECT ?property ?languageCode (count(?label) as ?count)
-       WHERE
-       {
-         ?property a wikibase:Property;
-                rdfs:label ?label.
-         BIND(lang(?label) as ?languageCode)            
-       }
-       GROUP BY ?property ?languageCode
-     }
-     GROUP BY ?languageCode
-     ORDER BY DESC(?total)    `;
-
-    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedLabelsCount");
+    queryWikidata(fillQuery(languagesWithTermQuery, { translationType: "rdfs:label" }),
+        createDivTranslatedLabelsCount, "translatedLabelsCount");
 }
 
 function getComparisonResultsOnLoad() {
@@ -1920,43 +2040,13 @@ function getTranslatedAliases() {
 
 
 function getCountOfTranslatedDescriptions() {
-    const sparqlQuery = `
-    SELECT ?languageCode (SUM(?count) as ?total)
-    WHERE
-    {
-      SELECT ?property ?languageCode (count(?description) as ?count)
-      WHERE
-      {
-        ?property a wikibase:Property;
-                schema:description ?description.
-        BIND(lang(?description) as ?languageCode)            
-      }
-      GROUP BY ?property ?languageCode
-    }
-    GROUP BY ?languageCode
-    ORDER BY DESC(?total) `;
-
-    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedDescriptionsCount");
+    queryWikidata(fillQuery(languagesWithTermQuery, { translationType: "schema:description" }),
+        createDivTranslatedLabelsCount, "translatedDescriptionsCount");
 }
 
 function getCountOfTranslatedAliases() {
-    const sparqlQuery = `
-   SELECT ?languageCode (SUM(?count) as ?total)
-   WHERE
-   {
-     SELECT ?property ?languageCode (count(?altLabel) as ?count)
-     WHERE
-     {
-       ?property a wikibase:Property;
-                skos:altLabel ?altLabel.
-       BIND(lang(?altLabel) as ?languageCode)            
-     }
-     GROUP BY ?property ?languageCode
-   }
-   GROUP BY ?languageCode
-   ORDER BY DESC(?total) `;
-
-    queryWikidata(sparqlQuery, createDivTranslatedLabelsCount, "translatedAliasesCount");
+    queryWikidata(fillQuery(languagesWithTermQuery, { translationType: "skos:altLabel" }),
+        createDivTranslatedLabelsCount, "translatedAliasesCount");
 }
 
 function getTranslationStatisticsForClass(className) {
@@ -1982,49 +2072,143 @@ function getTranslationStatisticsForWikiProject(wdproperties) {
         createDivTranslatedLabelsCount, "translatedAliasesCount");
 }
 
-function getLanguagesWithUntranslatedLabels() {
-    const sparqlQuery = `
-    SELECT DISTINCT ?language
-    WHERE
-    {
-      ?wikipedia wdt:P31 wd:Q10876391;
-                 wdt:P407 [wdt:P424 ?language]
-      MINUS {[a wikibase:Property] rdfs:label ?label. BIND(lang(?label) as ?language)}
-    }
-    ORDER by ?language
-   `;
+/*
+ * ---------------------------------------------------------------------------
+ * Languages no property has been translated into at all
+ * ---------------------------------------------------------------------------
+ *
+ * Asked as one query — every Wikipedia language MINUS every language a
+ * property carries a term in — this does not finish. The MINUS is evaluated
+ * against roughly a million terms, and the query service gave up on it with a
+ * 504 after seventy-five seconds, so all three sections of this page had been
+ * showing a failure rather than an answer.
+ *
+ * The same result comes from two questions that each do finish, subtracted in
+ * the browser: which languages Wikipedia is written in, and which languages
+ * properties are named in. Neither is close to the limit — six seconds and
+ * about five — and the second is the query translated.html already asks, so
+ * the two pages want the same answer rather than two different expensive ones.
+ *
+ * The grouped form matters. Asking for the languages directly, with a DISTINCT
+ * over lang(?term), does not finish either; grouping per property first and
+ * summing gives the optimiser a plan it can carry out.
+ */
 
-    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedLabelsInLanguages");
+wikipediaLanguagesQuery =
+    `SELECT DISTINCT ?language
+WHERE
+{
+  ?wikipedia wdt:P31 wd:Q10876391;
+             wdt:P407 [wdt:P424 ?language].
+}
+`;
+
+/*
+ * How many properties carry a given term in each language.
+ *
+ * Shared by translated.html, which shows the counts, and untranslated.html,
+ * which subtracts the languages from the ones Wikipedia has. They were two
+ * separate queries asking the same question, one of which additionally sorted
+ * — the sorting is done in the browser now, on an answer of a few hundred
+ * rows, rather than by the query service over a million terms.
+ *
+ * The grouping is load-bearing: counting per property first and summing is
+ * what lets this finish at all. Asked flat, with a DISTINCT over lang(?term),
+ * it does not return.
+ */
+languagesWithTermQuery =
+    `SELECT ?languageCode (SUM(?count) AS ?total)
+WHERE
+{
+  SELECT ?property ?languageCode (COUNT(?term) AS ?count)
+  WHERE
+  {
+    ?property a wikibase:Property;
+              {{translationType}} ?term.
+    BIND(lang(?term) AS ?languageCode)
+  }
+  GROUP BY ?property ?languageCode
+}
+GROUP BY ?languageCode
+`;
+
+/*
+ * The Wikipedia languages, asked for once however many sections want them.
+ * All three on this page do, and the answer cannot differ between them.
+ */
+var wikipediaLanguages = null;
+
+function getWikipediaLanguages() {
+    if (wikipediaLanguages == null) {
+        wikipediaLanguages = wdpropAskForColumn(wikipediaLanguagesQuery, "language");
+    }
+    return wikipediaLanguages;
+}
+
+function getLanguagesWithoutTerm(translationType, divId) {
+    let div = document.getElementById(divId);
+    if (div == null) {
+        return;
+    }
+
+    let termQuery = fillQuery(languagesWithTermQuery,
+        { translationType: translationType });
+
+    wdpropShowLoading(div);
+    showQuery(termQuery, divId);
+
+    Promise.all([
+        getWikipediaLanguages(),
+        wdpropAskForColumn(termQuery, "languageCode")
+    ]).then(function (answers) {
+        let translated = {};
+        for (const code of answers[1]) {
+            translated[code] = true;
+        }
+        let missing = answers[0].filter(function (code) {
+            return !translated[code];
+        }).sort();
+
+        wdpropClear(div);
+        if (!missing.length) {
+            wdpropShowEmpty(div);
+            return;
+        }
+
+        /*
+         * Shaped as a query answer because createDivLanguage reads one, and
+         * every other language listing in WDProp is drawn by it.
+         */
+        createDivLanguage(divId, {
+            head: { vars: ["language"] },
+            results: {
+                bindings: missing.map(function (code) {
+                    return { language: { value: code } };
+                })
+            }
+        });
+    }).catch(function (error) {
+        /*
+         * A failure here must not leave the shared promise holding a rejection
+         * for the two sections that have not asked yet.
+         */
+        wikipediaLanguages = null;
+        wdpropShowError(div, wdpropReason(error), function () {
+            getLanguagesWithoutTerm(translationType, divId);
+        });
+    });
+}
+
+function getLanguagesWithUntranslatedLabels() {
+    getLanguagesWithoutTerm("rdfs:label", "untranslatedLabelsInLanguages");
 }
 
 function getLanguagesWithUntranslatedDescriptions() {
-    const sparqlQuery = `
-    SELECT DISTINCT ?language
-    WHERE
-    {
-      ?wikipedia wdt:P31 wd:Q10876391;
-                 wdt:P407 [wdt:P424 ?language]
-      MINUS {[a wikibase:Property] schema:description ?description. BIND(lang(?description) as ?language)}
-    }
-    ORDER by ?language
-   `;
-
-    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedDescriptionsInLanguages");
+    getLanguagesWithoutTerm("schema:description", "untranslatedDescriptionsInLanguages");
 }
 
 function getLanguagesWithUntranslatedAliases() {
-    const sparqlQuery = `
-    SELECT DISTINCT ?language
-    WHERE
-    {
-      ?wikipedia wdt:P31 wd:Q10876391;
-                 wdt:P407 [wdt:P424 ?language]
-      MINUS {[a wikibase:Property] skos:altLabel ?alias. BIND(lang(?alias) as ?language)}
-    }
-    ORDER by ?language
-   `;
-
-    queryWikidata(sparqlQuery, createDivLanguage, "untranslatedAliasesInLanguages");
+    getLanguagesWithoutTerm("skos:altLabel", "untranslatedAliasesInLanguages");
 }
 
 function getMissingTranslationStatistics() {
@@ -2117,11 +2301,10 @@ function createDivDataTypes(divId, json) {
  */
 function wdpropFillDatatypeCounts(rows) {
     function ask(sparqlQuery, variable, fill) {
-        return fetch(endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json",
-            { headers: { 'Accept': 'application/sparql-results+json' } })
-            .then(wdpropReadJson).then(function (json) {
+        return wdpropAskRows(sparqlQuery)
+            .then(function (bindings) {
                 let byDatatype = {};
-                for (const binding of json.results.bindings) {
+                for (const binding of bindings) {
                     let name = binding['datatype'].value.replace(
                         "http://wikiba.se/ontology#", "");
                     byDatatype[name] = Number(binding[variable].value);
@@ -2323,14 +2506,11 @@ function wdpropBatched(batches, run, atOnce) {
 }
 
 function wdpropAskForProperties(sparqlQuery) {
-    return fetch(endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json",
-        { headers: { 'Accept': 'application/sparql-results+json' } })
-        .then(wdpropReadJson).then(function (json) {
-            return json.results.bindings.map(function (binding) {
-                return binding['property'].value.replace(
-                    "http://www.wikidata.org/entity/", "");
-            });
+    return wdpropAskForColumn(sparqlQuery, "property").then(function (uris) {
+        return uris.map(function (uri) {
+            return uri.replace("http://www.wikidata.org/entity/", "");
         });
+    });
 }
 
 function getPropertyWithReference() {

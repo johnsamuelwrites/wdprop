@@ -115,6 +115,15 @@ The application itself
   name an action, the scripts register what the name does, and the name is
   looked up rather than evaluated. What each page starts when it opens is one
   table in pageinit.js instead of thirty-two body onload attributes
+* Five places had grown their own copy of the six lines that ask the query
+  service — the URL, the Accept header, the status check and the parse — and
+  had begun to differ in which of those they remembered. There is one now, and
+  queryWikidata is the version that also owns the loading, empty and failure
+  states around it. Two implicit globals went with the copies
+* Drawing what is cheap and then filling in the rest for the rows on show was
+  written out twice, once for the terms and once for the usage counts, and the
+  two had diverged on what happens when the request fails. One function takes
+  both, and the failure is decided in one place
 * The scripts are deferred, so a page is no longer laid out around four
   blocking downloads. theme.js is deliberately not, being the one that has to
   run before the first paint
@@ -128,6 +137,34 @@ The application itself
 
 Fixes
 
+* The translation statistics were 491 language chips with no paging, coloured
+  by a five-step gradient over their rank — which put the same shade on the
+  second language and the fiftieth. They are a table now, sorted by count,
+  paged like every other long listing, with a bar giving each language's share
+  of the best-served one: English and Dutch have labels on all 13,807
+  properties, French on 10,892. The comparison, class and WikiProject pages
+  draw the same table, so all four improve together
+* translated.html and untranslated.html had a query each asking the same
+  question — how many properties carry a term in each language — one of which
+  additionally sorted. They share one query now, and the sorting is done in
+  the browser on a few hundred rows rather than by the query service at the
+  end of an aggregation over a million terms
+* A failed terms request reported every property on the page as untranslated.
+  The fetch caught its own errors and returned no entities, which is what a
+  property with no label in any language also looks like, so a page that could
+  not reach the entity API said "not in this language" against every row —
+  claiming a translation was missing on no evidence, on the page whose purpose
+  is to say which ones are. It says "unavailable" now, and asks again
+* All three sections of untranslated.html had stopped working. Each asked for
+  every Wikipedia language MINUS every language a property carries a term in,
+  and none of them finished: the MINUS is evaluated against roughly a million
+  terms, and the query service answered 504 after seventy-five seconds, so the
+  page showed a failure rather than an answer. The same result comes from two
+  questions that each finish, subtracted in the browser — which languages
+  Wikipedia is written in, and which languages properties are named in — at six
+  seconds and four. The second is the query translated.html already asks, and
+  the first is asked once for the whole page rather than once per section.
+  31 of the 351 Wikipedia languages have no property label at all
 * "Properties with references" timed out, and paging it would not have helped:
   the query service tests all fourteen thousand properties and orders what it
   finds before it can return any slice, so a LIMIT saves a third of the work at

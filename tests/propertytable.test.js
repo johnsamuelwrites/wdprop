@@ -67,9 +67,15 @@ let targets = {};
 let requests = [];
 let answer = () => ({});
 
+/* A test returns FAILS to make a request fail as the server would. */
+const FAILS = { __fails: true };
+
 function fetchStub(url) {
     requests.push(url);
     const body = answer(url);
+    if (body === FAILS) {
+        return Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({}) });
+    }
     return Promise.resolve({
         ok: true,
         status: 200,
@@ -291,6 +297,7 @@ function settled() {
       .then(() => filterSuite())
       .then(() => batchSuite())
       .then(() => datatypeSuite())
+      .then(() => failureSuite())
       .then(() => process.exit(t.done()));
 }
 
@@ -631,5 +638,48 @@ function datatypeSuite() {
             rows.map(r => r.getAttribute("class")), [null, null, null]);
         t.check("and it reads as barely started rather than as untouched",
             cellText(rows[1], 3), "0%");
+    });
+}
+
+/* ------------------------------- a request that failed is not an answer */
+
+function failureSuite() {
+    /*
+     * The distinction the two fill functions had drifted apart on. A property
+     * with no label and a request that did not arrive are different things,
+     * and the terms path had been showing both as "not in this language" —
+     * reporting a translation as missing on no evidence, on a page whose whole
+     * purpose is to say which are missing.
+     */
+    requests = [];
+    answer = () => FAILS;
+
+    const { container } = render(["P31", "P17"]);
+    const table = tableIn(container);
+    const body = bodyRows(table);
+    sandbox.wdpropRowsShown(table, body);
+
+    return settled().then(() => settled()).then(() => {
+        t.check("a failed terms request says so",
+            cellText(body[0], 1), "unavailable");
+        t.check("rather than claiming the label is missing",
+            cellText(body[0], 1) === "not in this language", false);
+        t.check("and leaves no half-written description",
+            cellText(body[0], 2), "");
+
+        /*
+         * Marking happens before the request so that paging away and back
+         * mid-flight does not ask twice; a request that failed has to undo it,
+         * or the row could never be filled.
+         */
+        requests = [];
+        answer = () => entities([entity("P31", { ta: "நிலை" })]);
+        sandbox.wdpropRowsShown(table, body);
+        return settled().then(() => settled()).then(() => {
+            t.check("a row whose request failed is asked for again",
+                requests.length, 1);
+            t.check("and fills when the answer arrives",
+                cellText(body[0], 1), "நிலை");
+        });
     });
 }

@@ -370,6 +370,8 @@ WDProp.i18n.add("es", {
     "js.description": "Descripción",
     "js.usage": "Usada por",
     "js.totalLanguages": "Total: $1 idiomas",
+    "js.propertiesTranslated": "Propiedades traducidas",
+    "js.share": "Proporción de la mayor",
     "js.totalClasses": "Total: $1 clases",
     "js.totalDatatypes": "Total: $1 tipos de datos",
     "js.datatype": "Tipo de datos",

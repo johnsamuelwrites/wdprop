@@ -122,7 +122,12 @@ s.check("getValueFromURL reads a parameter", sandbox.getValueFromURL("language=(
 s.check("getValueFromURL falls back", sandbox.getValueFromURL("class=([^&#=]*)", "Q9143"), "Q9143");
 setSearch("?search=%C3%A9diteur");
 s.check("getValueFromURL decodes", sandbox.getValueFromURL("search=([^&#=]*)", ""), "éditeur");
-const colors = ["a", "b", "c", "d", "e"];
-s.check("getColor spans the range", [sandbox.getColor(colors, 0, 10), sandbox.getColor(colors, 9, 10)], ["a", "e"]);
+/*
+ * getColor is gone with the only thing that used it: the five-step gradient
+ * over the language chips, which put the same shade on the second language and
+ * the fiftieth. Those are a sorted table with a bar now.
+ */
+s.check("getColor is gone with the gradient it coloured",
+    typeof sandbox.getColor, "undefined");
 
 process.exit(s.done());
