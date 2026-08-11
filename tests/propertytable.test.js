@@ -289,6 +289,8 @@ function settled() {
     }).then(() => countSuite())
       .then(() => classesSuite())
       .then(() => filterSuite())
+      .then(() => batchSuite())
+      .then(() => datatypeSuite())
       .then(() => process.exit(t.done()));
 }
 
@@ -494,5 +496,140 @@ function classesSuite() {
             cellText(body[0], 1), "Wikidata property (not yet in this language)");
         t.check("and one named in neither language does not show its own Q-number",
             cellText(body[1], 1), "not in this language");
+    });
+}
+
+/* ------------------------------- splitting the question, not the answer */
+
+function batchSuite() {
+    /*
+     * "Properties with references" timed out asked as one query, and paging
+     * the result would not have helped: the engine tests all fourteen thousand
+     * properties and orders what it finds before it can hand back any slice,
+     * so a LIMIT saved a third of the work — measured, nine seconds against
+     * fifteen — and an OFFSET would pay that again for every page.
+     *
+     * Splitting the input does help. Each batch is small enough that it cannot
+     * approach the sixty seconds the query service allows, and a batch that
+     * fails costs its own five hundred properties rather than the page.
+     */
+    let ran = [];
+    const run = batch => {
+        ran.push(batch);
+        return batch[0] === "bad"
+            ? Promise.reject(new Error("timeout"))
+            : Promise.resolve(batch.map(x => x + "!"));
+    };
+
+    return sandbox.wdpropBatched([["a"], ["bad"], ["c"], ["d"]], run, 2)
+        .then(collected => {
+            t.check("every batch is attempted", ran.length, 4);
+            t.check("what succeeded is collected",
+                collected.sort(), ["a!", "c!", "d!"]);
+            t.check("and a batch that failed costs only itself",
+                collected.indexOf("bad!"), -1);
+
+            /* Concurrency is a ceiling on requests in flight, not a batch size. */
+            let live = 0, peak = 0;
+            const slow = () => {
+                live++; peak = Math.max(peak, live);
+                return new Promise(r => setImmediate(r)).then(() => { live--; return []; });
+            };
+            const many = [];
+            for (let i = 0; i < 20; i++) many.push([String(i)]);
+            return sandbox.wdpropBatched(many, slow, 6).then(() => {
+                t.check("no more than the allowed number run at once", peak <= 6, true);
+            });
+        });
+}
+
+/* ------------------------------------------ the datatypes page, in two phases */
+
+function datatypeSuite() {
+    /*
+     * The links are the point of each row and cost a quarter of a second; the
+     * figures beside them say which link is worth following and cost ten. Asked
+     * as one query — which is how this page briefly worked — a page that used
+     * to appear at once showed nothing for ten seconds.
+     *
+     * So the list goes up on its own, and the counts arrive into rows that are
+     * already there. The two counts are separate queries so the cheap one does
+     * not wait behind the expensive one.
+     */
+    const ONT = "http://wikiba.se/ontology#";
+    requests = [];
+
+    /*
+     * Held open until phase one has been inspected, so that a phase one which
+     * waited on these would be visibly empty rather than accidentally passing.
+     * Each request still resolves with the body meant for it.
+     */
+    const bodyFor = url =>
+        (decodeURIComponent(url).indexOf("FILTER NOT EXISTS") !== -1
+            ? { results: { bindings: [
+                  { datatype: { value: ONT + "CommonsMedia" }, missing: { value: "70" } },
+                  { datatype: { value: ONT + "ExternalId" }, missing: { value: "10462" } }] } }
+            : { results: { bindings: [
+                  { datatype: { value: ONT + "CommonsMedia" }, properties: { value: "93" } },
+                  { datatype: { value: ONT + "ExternalId" }, properties: { value: "10497" } },
+                  { datatype: { value: ONT + "Url" }, properties: { value: "124" } }] } });
+
+    let release;
+    const gate = new Promise(r => { release = r; });
+    answer = url => gate.then(() => bodyFor(url));
+
+    targets.propertyDatatypes = element("div");
+    sandbox.createDivDataTypes("propertyDatatypes", {
+        head: { vars: ["datatype"] },
+        results: {
+            bindings: ["CommonsMedia", "ExternalId", "Url"].map(
+                n => ({ datatype: { value: ONT + n } })),
+        },
+    });
+
+    const container = targets.propertyDatatypes;
+    const rows = bodyRows(tableIn(container));
+
+    t.check("the links are on screen before any count is asked for",
+        rows.map(r => r.children[0].children[0].getAttribute("href")),
+        ["datatype.html?datatype=wikibase:CommonsMedia",
+         "datatype.html?datatype=wikibase:ExternalId",
+         "datatype.html?datatype=wikibase:Url"]);
+    t.check("with the figures still to come", cellText(rows[0], 1), "…");
+    t.check("the two counts are asked for as separate queries", requests.length, 2);
+
+    const asked = requests.map(u => decodeURIComponent(u));
+    t.check("one counts the properties, and carries no language",
+        asked.filter(q => q.indexOf("FILTER NOT EXISTS") === -1).length, 1);
+    t.check("the other counts what the language has not reached",
+        asked.filter(q => q.indexOf('lang(?l) = "ta"') !== -1).length, 1);
+
+    /* Now let both answer. */
+    release();
+
+    return settled().then(() => settled()).then(() => settled()).then(() => {
+        t.check("the counts land in the rows already drawn",
+            [cellText(rows[0], 1), cellText(rows[0], 2)], ["93", "70"]);
+        t.check("and the coverage is worked out from both",
+            cellText(rows[0], 3), "25%");
+
+        /*
+         * A datatype absent from the missing answer has nothing missing —
+         * that is a count of zero, not an unknown.
+         */
+        t.check("a datatype with nothing missing reads as none, not unknown",
+            cellText(rows[2], 2), "0");
+        t.check("and as fully translated", cellText(rows[2], 3), "100%");
+
+        /*
+         * No row is tinted: the bar says how far each has got, and any
+         * threshold for a tint would be a cliff. ExternalId is 0.3% done and
+         * ten thousand properties from finished, which a line drawn at zero
+         * would not tell apart from finished.
+         */
+        t.check("no row is tinted; the bar carries it",
+            rows.map(r => r.getAttribute("class")), [null, null, null]);
+        t.check("and it reads as barely started rather than as untouched",
+            cellText(rows[1], 3), "0%");
     });
 }

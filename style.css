@@ -4203,3 +4203,69 @@ summary:focus-visible,
         display: none;
     }
 }
+
+/*
+ * How far through a set a translation has got. Used on the datatypes page,
+ * one bar to a row, so eighteen of them can be compared down a column.
+ *
+ * The bar never carries the meaning alone: the figure beside it says the same
+ * thing in words, and the bar itself is labelled for a screen reader.
+ */
+.coveragecell {
+    white-space: nowrap;
+    min-width: 140px;
+}
+
+.coveragebar {
+    display: inline-block;
+    width: 90px;
+    height: 8px;
+    vertical-align: middle;
+    border-radius: 4px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.coveragefill {
+    height: 100%;
+    background: var(--accent-color);
+}
+
+.coveragefigure {
+    display: inline-block;
+    margin-left: 10px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+/*
+ * Text for a screen reader and not for the eye.
+ *
+ * The template matrix marks a translation with a tick and a gap with a dash,
+ * which are shapes rather than words: a reader that announces the cell would
+ * otherwise hear "check mark" and have to guess what was checked. Clipped
+ * rather than hidden, because display:none and visibility:hidden take an
+ * element out of the accessibility tree along with the layout.
+ */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+.templatecell {
+    text-align: center;
+    font-size: 16px;
+}
+
+.templatecell > a {
+    text-decoration: none;
+}

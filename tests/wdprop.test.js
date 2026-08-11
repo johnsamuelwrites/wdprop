@@ -112,6 +112,7 @@ for (const [name, js] of [["class page", 'getPropertiesForClassRequiringTranslat
 // The name collision between the two scripts.
 const mw = fs.readFileSync(path.join(ROOT, "mwwdprop.js"), "utf8");
 s.check("mwwdprop.js no longer defines createDivLanguage", mw.includes("function createDivLanguage("), false);
+/* Still distinctly named, though it now reads languages rather than rendering. */
 s.check("it defines a distinctly named one", mw.includes("function createDivTemplateLanguages("), true);
 s.check("and calls that one", mw.includes(", createDivLanguage,"), false);
 

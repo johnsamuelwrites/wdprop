@@ -72,6 +72,26 @@ Human-driven translation, alongside the existing analysis.
   returned, so the properties are simply the ordinary table now, named in the
   reader's language. Its "Total N properties" heading was built, filled in, and
   never appended to anything, so the page had never once shown the figure
+* The datatypes page was eighteen links and nothing else. The links are still
+  the point of each row and still the first thing in it, but beside them now
+  are how many properties the datatype holds and how many the reader's
+  language has not reached — the two figures that say which link is worth
+  following. ExternalId holds 10,497 properties of which 10,462 have no Tamil
+  label; CommonsMedia 93 of which 70
+* Those figures cost far more than the links do, so they are fetched after
+  them rather than with them. The bare list answers in a quarter of a second,
+  adding the property counts takes it to one, and adding the per-language
+  check takes it to ten: asked as one query, a page that had appeared at once
+  showed nothing at all for ten seconds. The links now go up immediately and
+  the counts arrive into the rows already on screen — and as two queries
+  rather than one, so the sizes are not held up behind the slow figure
+* The property-discussion templates were four separate walls of language codes,
+  one per template, each under a count. That says how many languages have a
+  template but never which, and never the question worth asking — which
+  languages have some of the four and not the rest. It is one row per language
+  now, one column per template, the languages missing most first: 65 languages
+  appear across the four, 38 have all of them, and 27 fall back to English
+  partway through a property discussion
 * Those terms are fetched for the fifty rows on show, not for the whole
   listing. Asked of the query service with their labels and descriptions, the
   ten thousand external-identifier properties are 4.6 MB and twenty seconds,
@@ -108,6 +128,16 @@ The application itself
 
 Fixes
 
+* "Properties with references" timed out, and paging it would not have helped:
+  the query service tests all fourteen thousand properties and orders what it
+  finds before it can return any slice, so a LIMIT saves a third of the work at
+  best — measured, nine seconds against fifteen — and an OFFSET pays that again
+  for every page. The question is split instead of the answer: the properties
+  are listed first, and the reference test is asked of five hundred at a time,
+  six batches at once. Each answers in about four seconds, comfortably inside
+  the sixty allowed, where the single query sat close enough to the edge to
+  fall over it under load. The whole set now comes back in ten seconds, and a
+  batch that fails costs its own five hundred rather than the page
 * The WikiProjects listing counted the index page as a project. It kept every
   title beginning "Wikidata:WikiProject", which "Wikidata:WikiProjects" does —
   so the list carried that page and its seventy translations among the real

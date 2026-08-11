@@ -140,41 +140,167 @@ function fetchWikiProjects() {
 }
 
 /*
- * Lists the languages a property-discussion template has been translated
- * into. Deliberately named apart from the same-named helper in wdprop.js,
- * which renders language chips: property.html loads both files, and
- * whichever was defined last used to win.
+ * ===========================================================================
+ * The property-discussion templates
+ * ===========================================================================
+ *
+ * Support, Oppose, Neutral and Comment are the four templates a property
+ * proposal is voted with, and each carries its own set of translations. The
+ * page used to show them as four separate walls of language codes with a count
+ * over each, which said how many languages had a template but never which
+ * languages, nor — the question actually worth asking — which languages have
+ * some of the four and not the rest.
+ *
+ * That is where the work is: 65 languages appear across the four, 38 have all
+ * of them, and 27 are missing at least one, so a property discussion in those
+ * 27 falls back to English partway through. Four lists cannot show that; one
+ * row per language can.
+ *
+ * Deliberately named apart from the same-named helper in wdprop.js, which
+ * renders language chips: property.html loads both files, and whichever was
+ * defined last used to win.
  */
-function createDivTemplateLanguages(divId, json, url) {
-    xml = json.parse["parsetree"]["*"];
-    var languagesDiv = document.getElementById(divId);
-    var count = 0;
-    var regexp = /<name>(.+?)<\/name>/g;
-    var languages = document.createElement("div");
-    while (true) {
-        match = regexp.exec(xml);
-        if (match == null) {
-            break;
-        }
-        var languageText = match[1].replace(/\s/g, "")
-        if (languageText == "lang" || languageText == "#default" ||
-            languageText == "templatedata") {
+
+var DISCUSSION_TEMPLATES = ["Support", "Oppose", "Neutral", "Comment"];
+
+/*
+ * The languages one template has been translated into, read out of its wiki
+ * parse tree. The translations live in a switch on {{{lang}}}, so each case
+ * name is a language code — apart from the three that are not.
+ */
+function createDivTemplateLanguages(json) {
+    var tree = json && json.parse && json.parse.parsetree &&
+        json.parse.parsetree["*"];
+    if (!tree) {
+        return [];
+    }
+
+    var found = [];
+    var pattern = /<name>(.+?)<\/name>/g;
+    var match;
+    while ((match = pattern.exec(tree)) !== null) {
+        var name = match[1].replace(/\s/g, "");
+        if (name === "lang" || name === "#default" || name === "templatedata") {
             continue;
         }
-        count++;
-        var language = document.createElement("div");
-        language.setAttribute('class', "language");
-        var a = document.createElement("a");
-        a.setAttribute('href', url);
-        var text = document.createTextNode(languageText);
-        a.appendChild(text);
-        language.appendChild(a);
-        languages.appendChild(language);
+        if (found.indexOf(name) === -1) {
+            found.push(name);
+        }
     }
-    var total = document.createElement("h4");
-    total.innerHTML = wdpropText("js.templateTranslated", [count]);
-    languagesDiv.appendChild(total);
-    languagesDiv.appendChild(languages);
+    return found;
+}
+
+function templateParseUrl(template) {
+    return endpointUrl + "?action=parse&page=" +
+        encodeURIComponent("Template:" + template) +
+        "&prop=parsetree&origin=*&format=json";
+}
+
+/*
+ * One row per language, one column per template, so a gap is visible along the
+ * row rather than having to be worked out by comparing four lists.
+ *
+ * The languages missing something come first: a page about what still needs
+ * translating should open on what still needs translating.
+ */
+function createDivTemplateMatrix(divId, byTemplate) {
+    var container = document.getElementById(divId);
+
+    var languages = [];
+    DISCUSSION_TEMPLATES.forEach(function (template) {
+        (byTemplate[template] || []).forEach(function (code) {
+            if (languages.indexOf(code) === -1) {
+                languages.push(code);
+            }
+        });
+    });
+
+    function has(template, code) {
+        return (byTemplate[template] || []).indexOf(code) !== -1;
+    }
+
+    function missingCount(code) {
+        return DISCUSSION_TEMPLATES.filter(function (template) {
+            return !has(template, code);
+        }).length;
+    }
+
+    languages.sort(function (a, b) {
+        var difference = missingCount(b) - missingCount(a);
+        return difference !== 0 ? difference : a.localeCompare(b);
+    });
+
+    var incomplete = languages.filter(function (code) {
+        return missingCount(code) > 0;
+    }).length;
+
+    var total = document.createElement("h3");
+    total.innerHTML = wdpropText("js.templateLanguages",
+        [languages.length, languages.length - incomplete]);
+    container.appendChild(total);
+
+    var table = document.createElement("table");
+    table.setAttribute("class", "alternate propertytable");
+
+    var head = document.createElement("tr");
+    var cell = document.createElement("th");
+    cell.innerHTML = wdpropText("js.language");
+    head.appendChild(cell);
+    DISCUSSION_TEMPLATES.forEach(function (template) {
+        cell = document.createElement("th");
+        cell.innerHTML = template;
+        head.appendChild(cell);
+    });
+    table.appendChild(head);
+
+    languages.forEach(function (code) {
+        var row = document.createElement("tr");
+        if (missingCount(code) > 0) {
+            row.setAttribute("class", "untranslatedrow");
+        }
+
+        cell = document.createElement("td");
+        cell.setAttribute("class", "property");
+        cell.appendChild(document.createTextNode(code));
+        row.appendChild(cell);
+
+        DISCUSSION_TEMPLATES.forEach(function (template) {
+            cell = document.createElement("td");
+            cell.setAttribute("class", "templatecell");
+            var present = has(template, code);
+
+            /*
+             * The mark is a link when the template exists, so the row is a way
+             * into the translation and not only a report on it. Both states are
+             * named for a screen reader, which cannot see a tick.
+             */
+            if (present) {
+                var link = document.createElement("a");
+                link.setAttribute("href",
+                    "https://www.wikidata.org/wiki/Template:" + template);
+                link.setAttribute("title", wdpropText("js.templateHas", [template, code]));
+                link.appendChild(document.createTextNode("\u2713"));
+                cell.appendChild(link);
+            } else {
+                cell.setAttribute("class", "templatecell missingvalue");
+                cell.appendChild(document.createTextNode("\u2014"));
+            }
+
+            var reading = document.createElement("span");
+            reading.setAttribute("class", "visually-hidden");
+            reading.appendChild(document.createTextNode(
+                wdpropText(present ? "js.templateHas" : "js.templateMissing",
+                    [template, code])));
+            cell.appendChild(reading);
+
+            row.appendChild(cell);
+        });
+
+        table.appendChild(row);
+    });
+
+    container.appendChild(table);
+    wdpropPaginate(container);
 }
 
 /*
@@ -234,25 +360,35 @@ function fetchWikidataPage(property, language) {
 }
 
 function getTemplateTranslationStatistics() {
-    var queryparams = "parse&page=Template:Support&prop=parsetree&origin=*";
-    queryMediaWiki(queryparams, createDivTemplateLanguages,
-        "translatedTemplateSupport",
-        "https://www.wikidata.org/wiki/Template:Support");
+    var divId = "templateTranslations";
+    var div = document.getElementById(divId);
+    if (div == null) {
+        return;
+    }
 
-    var queryparams = "parse&page=Template:Oppose&prop=parsetree&origin=*";
-    queryMediaWiki(queryparams, createDivTemplateLanguages,
-        "translatedTemplateOppose",
-        "https://www.wikidata.org/wiki/Template:Oppose");
+    wdpropShowLoading(div);
+    showMediaWikiQuery(templateParseUrl(DISCUSSION_TEMPLATES[0]), divId);
 
-    var queryparams = "parse&page=Template:Neutral&prop=parsetree&origin=*";
-    queryMediaWiki(queryparams, createDivTemplateLanguages,
-        "translatedTemplateNeutral",
-        "https://www.wikidata.org/wiki/Template:Neutral");
+    /* Four independent pages: asked for together rather than one after another. */
+    Promise.all(DISCUSSION_TEMPLATES.map(function (template) {
+        return fetch(templateParseUrl(template)).then(wdpropReadJson)
+            .then(createDivTemplateLanguages)
+            .catch(function () { return []; });
+    })).then(function (parts) {
+        var byTemplate = {};
+        DISCUSSION_TEMPLATES.forEach(function (template, i) {
+            byTemplate[template] = parts[i];
+        });
 
-    var queryparams = "parse&page=Template:Comment&prop=parsetree&origin=*";
-    queryMediaWiki(queryparams, createDivTemplateLanguages,
-        "translatedTemplateComment",
-        "https://www.wikidata.org/wiki/Template:Comment");
+        wdpropClear(div);
+        if (!parts.some(function (part) { return part.length; })) {
+            wdpropShowEmpty(div);
+            return;
+        }
+        createDivTemplateMatrix(divId, byTemplate);
+    }).catch(function (error) {
+        wdpropShowError(div, wdpropReason(error), getTemplateTranslationStatistics);
+    });
 }
 
 function createDivWikprojectsWithProperty(divId, json) {

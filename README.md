@@ -15,9 +15,9 @@
 * Missing translation statistics: property labels, descriptions and aliases needing translation
 * Search properties by their labels (multilingual)
 * Compare translation statistics among different languages
-* Navigation of properties by their datatypes and their describing properties
+* Navigation of properties by their datatypes, each shown with how many properties it holds and how many still need translating in your language, the links appearing at once and the figures following
 * View already translated labels, descriptions and aliases in any supported language
-* Translation statistics of property discussion templates
+* Translation statistics of property discussion templates, as one row per language across the four templates, so a language missing one of them is visible at a glance
 * Support navigation by classes, listed and paged like every other property listing
 * Improve search results
 * Support search and language parameter in URLs ([classes,class,search].html)

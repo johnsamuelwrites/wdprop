@@ -31,6 +31,22 @@ var wikiprojectProperties = null;
 /*
  * Get all supported datatypes
  */
+/*
+ * The datatypes, in two phases.
+ *
+ * The page shows eighteen links, and the figures beside them say which link is
+ * worth following — but the figures cost far more than the links. Measured:
+ * the bare list answers in a quarter of a second, adding the property counts
+ * takes it to one, and adding the per-language check takes it to ten. Asked as
+ * one query, that made a page that used to appear at once take ten seconds to
+ * show anything at all.
+ *
+ * So the list is fetched on its own and the links go up immediately, and the
+ * counts follow into the rows that are already there. The two counts are
+ * separate queries rather than one, because the cheap one should not wait
+ * behind the expensive one: the sizes arrive after about a second, and how
+ * much of each is still untranslated after about nine.
+ */
 allDatatypesQuery =
     `PREFIX wikibase: <http://wikiba.se/ontology#>
 
@@ -39,6 +55,37 @@ WHERE
 {
    [] wikibase:propertyType ?datatype.
 }
+`;
+
+/* How many properties each datatype holds. About a second. */
+datatypeCountsQuery =
+    `PREFIX wikibase: <http://wikiba.se/ontology#>
+
+SELECT ?datatype (COUNT(DISTINCT ?property) AS ?properties)
+WHERE
+{
+   ?property rdf:type wikibase:Property;
+             wikibase:propertyType ?datatype.
+}
+GROUP BY ?datatype
+`;
+
+/*
+ * How many of each the language being read has not reached. About nine
+ * seconds — the FILTER NOT EXISTS is tested against every property there is,
+ * and is the whole of why this is not asked alongside the rest.
+ */
+datatypeMissingQuery =
+    `PREFIX wikibase: <http://wikiba.se/ontology#>
+
+SELECT ?datatype (COUNT(DISTINCT ?property) AS ?missing)
+WHERE
+{
+   ?property rdf:type wikibase:Property;
+             wikibase:propertyType ?datatype.
+   FILTER NOT EXISTS { ?property rdfs:label ?l FILTER (lang(?l) = "{{language}}") }
+}
+GROUP BY ?datatype
 `;
 
 /*
@@ -1992,31 +2039,193 @@ function getTranslationStatistics() {
     getCountOfTranslatedAliases();
 }
 
+/*
+ * Phase one: the links, and a place for the figures to arrive.
+ *
+ * The link is the point of the row and is the whole of what this phase knows,
+ * so it goes up on its own rather than waiting behind counts that take forty
+ * times as long to fetch. The numeric cells are placeholders until
+ * wdpropFillDatatypeCounts reaches them.
+ */
 function createDivDataTypes(divId, json) {
-    const { head: { vars }, results } = json;
-    let datatypes = document.getElementById(divId);
+    const { results } = json;
+    let container = document.getElementById(divId);
+
     let total = document.createElement("h3");
     total.innerHTML = wdpropText("js.totalDatatypes", [results.bindings.length]);
-    datatypes.appendChild(total);
+    container.appendChild(total);
+
+    let table = document.createElement("table");
+    table.setAttribute("class", "alternate propertytable");
+
+    let head = document.createElement("tr");
+    wdpropHeaderCell(head, "js.datatype");
+    wdpropHeaderCell(head, "js.properties");
+    wdpropHeaderCell(head, "js.stillNeeded");
+    wdpropHeaderCell(head, "js.translated");
+    table.appendChild(head);
+
+    let rows = {};
+
     for (const result of results.bindings) {
-        for (const variable of vars) {
-            let datatype = document.createElement("div");
-            datatype.setAttribute('class', "datatype");
-            let a = document.createElement("a");
-            let datatypeValue = result[variable].value.replace("http://wikiba.se/ontology#", "");
-            let text = document.createTextNode(datatypeValue);
-            a.setAttribute('href', "datatype.html?datatype=wikibase:" + datatypeValue);
-            a.appendChild(text);
-            datatype.appendChild(a);
-            datatypes.appendChild(datatype);
-        }
+        let name = result['datatype'].value.replace("http://wikiba.se/ontology#", "");
+
+        let row = document.createElement("tr");
+        row.wdpropDatatype = name;
+
+        let cell = document.createElement("td");
+        cell.setAttribute("class", "property");
+        let link = document.createElement("a");
+        link.setAttribute("href", "datatype.html?datatype=wikibase:" + name);
+        link.appendChild(document.createTextNode(name));
+        cell.appendChild(link);
+        row.appendChild(cell);
+
+        cell = document.createElement("td");
+        cell.setAttribute("class", "propertyusage");
+        cell.appendChild(document.createTextNode("\u2026"));
+        row.wdpropCountCell = cell;
+        row.appendChild(cell);
+
+        cell = document.createElement("td");
+        cell.setAttribute("class", "propertyusage");
+        cell.appendChild(document.createTextNode("\u2026"));
+        row.wdpropMissingCell = cell;
+        row.appendChild(cell);
+
+        cell = document.createElement("td");
+        cell.setAttribute("class", "coveragecell");
+        row.wdpropCoverageCell = cell;
+        row.appendChild(cell);
+
+        rows[name] = row;
+        table.appendChild(row);
     }
+
+    container.appendChild(table);
+    wdpropFillDatatypeCounts(rows);
 }
 
+/*
+ * Phase two: the figures, into the rows already on screen.
+ *
+ * Two queries rather than one, asked together, so that the cheap answer is not
+ * held up by the expensive one — the sizes appear after about a second and the
+ * translation figures after about nine. Either may fail without the other or
+ * the page going with it; a cell that was never filled says so rather than
+ * showing a nought, which would read as a real count of none.
+ */
+function wdpropFillDatatypeCounts(rows) {
+    function ask(sparqlQuery, variable, fill) {
+        return fetch(endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json",
+            { headers: { 'Accept': 'application/sparql-results+json' } })
+            .then(wdpropReadJson).then(function (json) {
+                let byDatatype = {};
+                for (const binding of json.results.bindings) {
+                    let name = binding['datatype'].value.replace(
+                        "http://wikiba.se/ontology#", "");
+                    byDatatype[name] = Number(binding[variable].value);
+                }
+                for (const name of Object.keys(rows)) {
+                    fill(rows[name], byDatatype[name]);
+                }
+                return byDatatype;
+            }).catch(function () {
+                for (const name of Object.keys(rows)) {
+                    fill(rows[name], undefined);
+                }
+                return null;
+            });
+    }
+
+    function show(cell, value) {
+        wdpropClear(cell);
+        if (typeof value === "number") {
+            cell.setAttribute("class", "propertyusage");
+            cell.appendChild(document.createTextNode(value.toLocaleString()));
+        } else {
+            cell.setAttribute("class", "propertyusage missingvalue");
+            cell.appendChild(document.createTextNode(wdpropText("js.unavailable")));
+        }
+    }
+
+    let counts = ask(datatypeCountsQuery, "properties", function (row, value) {
+        row.wdpropProperties = value;
+        show(row.wdpropCountCell, value);
+    });
+
+    let missing = ask(fillQuery(datatypeMissingQuery,
+        { language: wdpropLabelLanguage() }), "missing", function (row, value) {
+        /*
+         * A datatype every property of which has a label is not in the answer
+         * at all, and nothing missing is a count of zero, not an unknown.
+         */
+        row.wdpropMissing = (value === undefined) ? 0 : value;
+        show(row.wdpropMissingCell, row.wdpropMissing);
+    });
+
+    /* Coverage needs both, so it waits for both. */
+    return Promise.all([counts, missing]).then(function (answers) {
+        if (!answers[0] || !answers[1]) {
+            return;
+        }
+        for (const name of Object.keys(rows)) {
+            let row = rows[name];
+            if (typeof row.wdpropProperties !== "number") {
+                continue;
+            }
+            /*
+             * No row is tinted here, unlike the property listings. There the
+             * mark says a row needs work and the alternative is nothing at
+             * all; here every row is partly done and the bar already says how
+             * far. A tint would need a threshold, and any threshold is a cliff
+             * — ExternalId is 0.3% translated and ten thousand properties from
+             * finished, which no line drawn at zero would distinguish from
+             * done.
+             */
+            wdpropShowCoverage(row.wdpropCoverageCell,
+                row.wdpropProperties - row.wdpropMissing, row.wdpropProperties);
+        }
+    });
+}
+
+/*
+ * How far through a set the translation has got, as a bar and as a figure.
+ *
+ * The figure is there because the bar is a length and a colour, and neither
+ * survives being read aloud or seen without colour; the bar is there because
+ * eighteen figures in a column are hard to compare and eighteen bars are not.
+ */
+function wdpropShowCoverage(cell, done, total) {
+    wdpropClear(cell);
+
+    let percent = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    let bar = document.createElement("div");
+    bar.setAttribute("class", "coveragebar");
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", wdpropText("js.coverageOf", [done, total]));
+
+    let filled = document.createElement("div");
+    filled.setAttribute("class", "coveragefill");
+    filled.style.width = percent + "%";
+    bar.appendChild(filled);
+
+    let figure = document.createElement("span");
+    figure.setAttribute("class", "coveragefigure");
+    figure.appendChild(document.createTextNode(percent + "%"));
+
+    cell.appendChild(bar);
+    cell.appendChild(figure);
+    return cell;
+}
+
+/*
+ * The list carries no language, so nothing is substituted into it: the counts
+ * that depend on one are phase two, and fetch it themselves.
+ */
 function getDatatypes() {
-    language = getValueFromURL("lang=([^&#=]*)", "en");
-    const sparqlQuery = allDatatypesQuery;
-    queryWikidata(sparqlQuery, createDivDataTypes, "propertyDatatypes");
+    queryWikidata(allDatatypesQuery, createDivDataTypes, "propertyDatatypes");
 }
 
 /*
@@ -2055,19 +2264,133 @@ function getProperties() {
  * gone with it: prov:wasDerivedFrom only ever leaves a statement, so it was
  * both expensive and redundant.
  */
-function getPropertyWithReference() {
-    const sparqlQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
-   SELECT DISTINCT ?property
-    {
-      ?property a wikibase:Property.
-      FILTER EXISTS {
-        ?property ?prop ?statement.
-        ?statement prov:wasDerivedFrom ?reference.
-      }
+/*
+ * ---------------------------------------------------------------------------
+ * Properties whose own statements carry a reference
+ * ---------------------------------------------------------------------------
+ *
+ * Asked as one query this times out, and paging the result would not help.
+ * The engine has to test all fourteen thousand properties and order what it
+ * finds before it can hand back any slice, so a LIMIT saves a third of the
+ * work at best — measured, nine seconds against fifteen — and an OFFSET pays
+ * that cost again for every page. Sixteen pages of fifty would cost far more
+ * than the single query it was meant to rescue.
+ *
+ * What does help is splitting the question rather than the answer. The
+ * properties are listed first, which is cheap, and the reference test is then
+ * asked of five hundred of them at a time, several batches at once. Each batch
+ * answers in about four and a half seconds — comfortably inside the sixty the
+ * query service allows, where the single query sat close enough to the edge to
+ * fall over it under load — and the whole set comes back in ten.
+ *
+ * Five hundred is set by the URL, not by the query: the identifiers are
+ * written into it, and a thousand of them makes a request long enough for the
+ * cache in front of the endpoint to reject it outright.
+ */
+
+var referenceBatchSize = 500;
+var referenceBatchesAtOnce = 6;
+
+/*
+ * Runs the batches a few at a time and collects what they return. A batch that
+ * fails contributes nothing rather than failing the listing: five hundred
+ * properties missing from a set of eight thousand is a far smaller loss than
+ * the page.
+ */
+function wdpropBatched(batches, run, atOnce) {
+    let next = 0;
+    let collected = [];
+
+    function step() {
+        if (next >= batches.length) {
+            return Promise.resolve();
+        }
+        let batch = batches[next++];
+        return run(batch).then(function (part) {
+            collected = collected.concat(part);
+        }).catch(function () {
+            /* Left out, and the rest carries on. */
+        }).then(step);
     }
-    ORDER by ?property
-    `;
-    queryWikidata(sparqlQuery, createDivPropertyTable, "propertywithreference");
+
+    let runners = [];
+    for (let i = 0; i < Math.min(atOnce, batches.length); i++) {
+        runners.push(step());
+    }
+    return Promise.all(runners).then(function () {
+        return collected;
+    });
+}
+
+function wdpropAskForProperties(sparqlQuery) {
+    return fetch(endpointurl + '?query=' + encodeURIComponent(sparqlQuery) + "&format=json",
+        { headers: { 'Accept': 'application/sparql-results+json' } })
+        .then(wdpropReadJson).then(function (json) {
+            return json.results.bindings.map(function (binding) {
+                return binding['property'].value.replace(
+                    "http://www.wikidata.org/entity/", "");
+            });
+        });
+}
+
+function getPropertyWithReference() {
+    let divId = "propertywithreference";
+    let div = document.getElementById(divId);
+    if (div == null) {
+        return;
+    }
+
+    let listQuery = `PREFIX wikibase: <http://wikiba.se/ontology#>
+SELECT ?property WHERE { ?property a wikibase:Property. }`;
+
+    /* The query shown is one batch of the test, which is the interesting part. */
+    showQuery(`PREFIX wikibase: <http://wikiba.se/ontology#>
+SELECT ?property WHERE {
+  VALUES ?property { wd:P31 wd:P17 }
+  FILTER EXISTS { ?property ?p ?statement. ?statement prov:wasDerivedFrom ?reference. }
+}`, divId);
+
+    wdpropShowLoading(div);
+
+    wdpropAskForProperties(listQuery).then(function (ids) {
+        let batches = [];
+        for (let i = 0; i < ids.length; i += referenceBatchSize) {
+            batches.push(ids.slice(i, i + referenceBatchSize));
+        }
+
+        return wdpropBatched(batches, function (batch) {
+            let values = batch.map(function (id) { return "wd:" + id; }).join(" ");
+            return wdpropAskForProperties(
+                `PREFIX wikibase: <http://wikiba.se/ontology#>
+SELECT ?property WHERE {
+  VALUES ?property { ${values} }
+  FILTER EXISTS { ?property ?p ?statement. ?statement prov:wasDerivedFrom ?reference. }
+}`);
+        }, referenceBatchesAtOnce);
+    }).then(function (withReferences) {
+        wdpropClear(div);
+        if (!withReferences.length) {
+            wdpropShowEmpty(div);
+            return;
+        }
+
+        /* The batches come back in whatever order they finish. */
+        withReferences.sort(function (a, b) {
+            return Number(a.slice(1)) - Number(b.slice(1));
+        });
+
+        createDivPropertyTable(divId, {
+            head: { vars: ["property"] },
+            results: {
+                bindings: withReferences.map(function (id) {
+                    return { property: { value: "http://www.wikidata.org/entity/" + id } };
+                })
+            }
+        });
+        wdpropPaginate(div);
+    }).catch(function (error) {
+        wdpropShowError(div, wdpropReason(error), getPropertyWithReference);
+    });
 }
 
 /*

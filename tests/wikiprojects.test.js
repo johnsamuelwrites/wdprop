@@ -141,6 +141,7 @@ function offsetOf(url) {
         return failureSuite();
     }).then(() => renderSuite())
       .then(() => projectSuite())
+      .then(() => templateSuite())
       .then(() => process.exit(t.done()));
 }
 
@@ -257,4 +258,70 @@ function projectSuite() {
         t.check("they are named from the entity API instead",
             requests.filter(u => u.indexOf("wbgetentities") !== -1).length, 1);
     });
+}
+
+/* ------------------------------------- the property-discussion templates */
+
+function templateSuite() {
+    /*
+     * The page showed four separate walls of language codes, one per template,
+     * each under a count. That says how many languages have a template but
+     * never which, and above all never which languages have some of the four
+     * and not the rest — which is the whole of what a translator would come
+     * here for. Live, 65 languages appear across the four and 27 are missing
+     * at least one.
+     */
+    const tree = names =>
+        ({ parse: { parsetree: { "*": names.map(n => `<name>${n}</name>`).join("") } } });
+
+    t.check("the switch's own cases are not languages",
+        sandbox.createDivTemplateLanguages(tree(["lang", "#default", "templatedata", "fr"])),
+        ["fr"]);
+    t.check("nor is a repeat a second language",
+        sandbox.createDivTemplateLanguages(tree(["fr", "de", "fr"])), ["fr", "de"]);
+    t.check("a page that could not be parsed yields nothing, and does not throw",
+        sandbox.createDivTemplateLanguages({}), []);
+
+    targets.templateTranslations = element("div");
+    sandbox.createDivTemplateMatrix("templateTranslations", {
+        Support: ["fr", "de", "ta"],
+        Oppose: ["fr", "de"],
+        Neutral: ["fr"],
+        Comment: ["fr", "ta"],
+    });
+
+    const container = targets.templateTranslations;
+    const table = tableIn(container);
+    const rows = bodyRows(table);
+
+    t.check("the heading says how many are complete",
+        textOf(container.children.find(c => c.tag === "h3")),
+        "3 languages, 1 with all four templates");
+
+    t.check("a column for each template",
+        table.children.find(c => c.tag === "tr").children.map(c => c.innerHTML),
+        ["Language", "Support", "Oppose", "Neutral", "Comment"]);
+
+    /*
+     * de is missing two, ta two, fr none. The ones with most missing come
+     * first: a page about what still needs translating opens on that.
+     */
+    t.check("the languages missing most come first",
+        rows.map(r => textOf(r.children[0])), ["de", "ta", "fr"]);
+
+    t.check("a complete language is not marked",
+        rows[2].getAttribute("class"), null);
+    t.check("an incomplete one is", rows[0].getAttribute("class"), "untranslatedrow");
+
+    t.check("a template that exists is a tick, and a link to it",
+        rows[2].children[1].children[0].getAttribute("href"),
+        "https://www.wikidata.org/wiki/Template:Support");
+    t.check("one that does not is a dash",
+        rows[0].children[3].children[0].text, "—");
+
+    t.check("and both states are spelled out for a screen reader",
+        [textOf(rows[0].children[1]), textOf(rows[0].children[3])],
+        ["✓Support is translated into de", "—Neutral is not translated into de"]);
+
+    return Promise.resolve();
 }
