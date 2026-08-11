@@ -72,12 +72,56 @@ s.check("nothing on a page sits outside the main region, where the sidebar cover
     outside, []);
 s.note(`${pages.length} pages checked`);
 
-/* The three boxes the whole layout is measured against. */
-for (const [name, needle] of [["a header", 'id="header"'], ["a sidebar", 'id="sidebar"'],
-    ["a main region", 'id="content"'], ["a footer", 'id="footer"']]) {
+/*
+ * The boxes the whole layout is measured against.
+ *
+ * The header and the sidebar are no longer written into the pages: they come
+ * from <wdprop-shell>, so what each page has to carry is the element and the
+ * script that defines it. The boxes themselves are checked once, against
+ * shell.js, rather than forty-one times against forty-one copies — which is
+ * the point of having one.
+ */
+for (const [name, needle] of [["a main region", 'id="content"'], ["a footer", 'id="footer"']]) {
     s.check(`every page has ${name}`,
         pages.filter(p => !fs.readFileSync(p, "utf8").includes(needle))
             .map(p => path.relative(ROOT, p)), []);
 }
+
+s.check("every page carries the shell element",
+    pages.filter(p => !/<wdprop-shell>\s*<\/wdprop-shell>/.test(fs.readFileSync(p, "utf8")))
+        .map(p => path.relative(ROOT, p)), []);
+
+s.check("and loads the script that defines it",
+    pages.filter(p => !/src="(?:[^"]*\/)?shell\.js"/.test(fs.readFileSync(p, "utf8")))
+        .map(p => path.relative(ROOT, p)), []);
+
+s.check("no page still writes the chrome out itself",
+    pages.filter(p => /id="(?:header|sidebar|theme-toggle|mobile-menu-toggle)"/
+        .test(fs.readFileSync(p, "utf8"))).map(p => path.relative(ROOT, p)), []);
+
+{
+    const shell = fs.readFileSync(path.join(ROOT, "shell.js"), "utf8");
+    for (const box of ["header", "sidebar", "sidebarlinks", "theme-toggle", "mobile-menu-toggle"]) {
+        s.check(`the shell builds #${box}`, shell.includes(`id: "${box}"`), true);
+    }
+}
+
+/*
+ * theme.js is the one script that must not be deferred: it writes the saved
+ * theme onto the root element, and deferring it moves that after the first
+ * paint, which is a flash of the wrong colours on every page.
+ */
+s.check("theme.js is loaded ahead of the first paint on every page",
+    pages.filter(p => !/<script src="(?:[^"]*\/)?theme\.js"><\/script>/
+        .test(fs.readFileSync(p, "utf8"))).map(p => path.relative(ROOT, p)), []);
+
+/*
+ * An inline script runs while the page is being parsed, so it cannot see
+ * anything a deferred file defines. Three pages had one that wrapped functions
+ * from wdprop.js and classes.js; they are separate files now.
+ */
+s.check("no page carries an inline script",
+    pages.filter(p => /<script(?![^>]*\bsrc=)[^>]*>[^<]*\S/.test(fs.readFileSync(p, "utf8")))
+        .map(p => path.relative(ROOT, p)), []);
 
 process.exit(s.done());

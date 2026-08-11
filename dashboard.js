@@ -615,10 +615,17 @@ function start() {
 }
 
 // Initialize everything when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        start();
-    });
-} else {
-    start();
-}
+WDProp.ready(start);
+
+/*
+ * The four cards at the top of the dashboard are whole clickable panels rather
+ * than links, so they need a handler. The destination is a page of WDProp
+ * named in the markup, resolved against where WDProp is rather than where the
+ * current page is.
+ */
+WDProp.actions.add({
+    goTo: function (event, element, page) {
+        var base = (WDProp.shell && WDProp.shell.base) || './';
+        window.location.href = base + page;
+    }
+});

@@ -82,6 +82,7 @@ const sandbox = {
             (params || []).forEach((v, i) => { s = s.split("$" + (i + 1)).join(String(v)); });
             return s;
         } } },
+        addEventListener() {},
     },
     localStorage: { getItem: () => null, setItem() {} },
     navigator: { language: "en" },
@@ -98,6 +99,12 @@ const sandbox = {
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
+/*
+ * pager.js first, as the pages load it: it puts the previous/next control on
+ * WDProp, and wdprop.js reaches for it the moment a table is long enough.
+ */
+vm.runInContext(fs.readFileSync(path.join(ROOT, "ready.js"), "utf8"), sandbox, { filename: "ready.js" });
+vm.runInContext(fs.readFileSync(path.join(ROOT, "pager.js"), "utf8"), sandbox, { filename: "pager.js" });
 vm.runInContext(fs.readFileSync(path.join(ROOT, "wdprop.js"), "utf8"), sandbox, { filename: "wdprop.js" });
 
 const s = suite("query states");

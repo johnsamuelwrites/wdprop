@@ -35,7 +35,6 @@ function node(tag) {
     };
 }
 
-const ready = [];
 const elements = {};
 
 /* The real English messages, so the trail can be checked as it will read. */
@@ -50,6 +49,7 @@ const sandbox = {
         location: { pathname: "/", search: "" },
         matchMedia: () => ({ matches: false }),
         WDProp: { i18n: { t: key => (key in english ? english[key] : key) } },
+        addEventListener() {},
     },
     localStorage: { getItem: () => null, setItem() {} },
     navigator: { language: "en" },
@@ -63,12 +63,13 @@ const sandbox = {
         createTextNode: t => ({ text: String(t) }),
         querySelector: () => null,
         querySelectorAll: () => [],
-        addEventListener(type, fn) { if (type === "DOMContentLoaded") ready.push(fn); },
+        addEventListener() {},
     },
     fetch: () => new Promise(() => {}),
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
+vm.runInContext(fs.readFileSync(path.join(ROOT, "ready.js"), "utf8"), sandbox, { filename: "ready.js" });
 vm.runInContext(fs.readFileSync(path.join(ROOT, "wdprop.js"), "utf8"), sandbox, { filename: "wdprop.js" });
 
 const nav = sandbox.window.WDProp.nav;
@@ -80,7 +81,13 @@ function visit(pathname, search) {
     elements.content = node("div");
     elements.sidebarlinks = node("div");
     elements["wdp-toast-region"] = node("div");
-    ready.forEach(fn => fn());
+    /*
+     * The mount is called directly rather than through the ready handler that
+     * calls it on a real page: that handler runs once and only once, which is
+     * right there and no use here, where each case needs it run again at a new
+     * address.
+     */
+    sandbox.wdpropMountPage();
 
     const list = elements.sidebarlinks.firstChild;
     const items = list ? list.children : [];
@@ -105,6 +112,15 @@ s.check("a query string is not part of it", nav.pageKey("/property.html?property
 s.check("a fragment is not part of it", nav.pageKey("/properties.html#top"), "properties.html");
 s.check("the bare front page", nav.pageKey("/"), "index.html");
 s.check("an empty path", nav.pageKey(""), "index.html");
+/*
+ * A directory is served its index. Read as a file, the directory's own name
+ * became the key, so WDProp installed anywhere but the root of a host had no
+ * marked sidebar entry on its front page.
+ */
+s.check("WDProp installed in a directory, opened at its root",
+    nav.pageKey("/wdprop/"), "index.html");
+s.check("however deep it is installed",
+    nav.pageKey("/tools/wdprop/"), "index.html");
 
 console.log("\n-- The two translated.html pages stay apart --");
 s.check("the one under templates keeps its directory",
@@ -152,19 +168,20 @@ s.check("an escaped space survives",
 
 console.log("\n-- Building the sidebar --");
 let page = visit("/wdprop/index.html", "");
-s.check("every entry is there", page.links.length, 15);
+s.check("every entry is there", page.links.length, 17);
 s.check("in the order they are declared", page.hrefs, [
-    "./index.html", "./translate.html", "./campaign.html", "./contributions.html",
-    "./terminology.html", "./languages.html", "./datatypes.html", "./properties.html",
-    "./classes.html", "./provenance.html", "./search.html", "./compare.html",
-    "./templates/translated.html", "./wikiprojects.html", "./wdprop.html"]);
+    "./index.html", "./translate.html", "./campaign.html", "./stale.html",
+    "./contributions.html", "./terminology.html", "./languages.html", "./datatypes.html",
+    "./properties.html", "./classes.html", "./provenance.html", "./search.html",
+    "./compare.html", "./templates/translated.html", "./wikiprojects.html",
+    "./offline.html", "./wdprop.html"]);
 s.check("each carries its message key so a language change reaches it",
     page.links.slice(0, 3).map(a => a.getAttribute("data-i18n")),
     ["nav.dashboard", "nav.translate", "nav.campaigns"]);
 s.check("and is readable before any language arrives",
     page.links[0].textContent, "📊 Dashboard");
 s.check("building it twice does not double it", (() => {
-    ready.forEach(fn => fn());
+    sandbox.wdpropMountPage();
     return elements.sidebarlinks.children.length;
 })(), 1);
 
@@ -209,8 +226,13 @@ const pages = [];
 s.check("no page writes out its own navigation links",
     pages.filter(f => /data-i18n="nav\./.test(fs.readFileSync(f, "utf8")))
         .map(f => path.relative(ROOT, f)), []);
+/*
+ * Somewhere to put it: #sidebarlinks used to be in the markup of every page
+ * and is now built by shell.js, so the page needs the element that expands
+ * into it. markup.test.js checks the shell produces the container.
+ */
 s.check("every page still has somewhere to put it",
-    pages.filter(f => !/id="sidebarlinks"/.test(fs.readFileSync(f, "utf8")))
+    pages.filter(f => !/<wdprop-shell>/.test(fs.readFileSync(f, "utf8")))
         .map(f => path.relative(ROOT, f)), []);
 /* The optional directory must end at a slash, so mwwdprop.js does not count. */
 s.check("every page loads the script that builds it",

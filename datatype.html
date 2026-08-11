@@ -4,31 +4,23 @@
 <head>
     <meta charset="utf-8" />
     <title>WDProp: Properties needing translation: John Samuel</title>
+    <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="i18n.js"></script>
-    <script type="text/javascript" src="i18n/en.js"></script>
-    <script type="text/javascript" src="wdprop.js">
+    <script src="theme.js"></script>
+    <script defer src="ready.js"></script>
+    <script defer src="shell.js"></script>
+    <script defer src="actions.js"></script>
+    <script defer src="pager.js"></script>
+    <script defer type="text/javascript" src="i18n.js"></script>
+    <script defer type="text/javascript" src="i18n/en.js"></script>
+    <script defer type="text/javascript" src="wdprop.js">
     </script>
+    <script defer type="text/javascript" src="offline.js"></script>
+    <script defer src="pageinit.js"></script>
 </head>
 
-<body onload="getPropertiesWithDatatype()">
-    <a href="#content" class="skip-link" data-i18n="a11y.skip">Skip to main content</a>
-    <div id="mobile-menu-toggle" role="button" tabindex="0" aria-expanded="false"
-         onclick="toggleMobileMenu()" data-i18n-label="a11y.menuToggle">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
-    <div id="header" role="banner">
-        <div id="logo"><a href="./index.html">WDProp</a>
-            <span id="subtitle" data-i18n="app.subtitle">Everything about Wikidata properties</span>
-        </div>
-        <div id="theme-toggle" role="button" tabindex="0" onclick="toggleTheme()"
-             data-i18n-label="a11y.themeToggle" data-i18n-title="a11y.themeToggle"></div>
-    </div>
-    <div id="sidebar" role="navigation" data-i18n-label="a11y.nav">
-        <div id="sidebarlinks"></div>
-    </div>
+<body>
+    <wdprop-shell></wdprop-shell>
     <div id="content" role="main" tabindex="-1">
         <div class="section">
             <h2 id="datatypeCode"></h2>

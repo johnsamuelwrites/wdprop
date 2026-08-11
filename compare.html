@@ -5,31 +5,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WDProp: Compare Languages: John Samuel</title>
+    <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="i18n.js"></script>
-    <script type="text/javascript" src="i18n/en.js"></script>
-    <script type="text/javascript" src="wdprop.js"></script>
-    <script type="text/javascript" src="compare.js"></script>
+    <script src="theme.js"></script>
+    <script defer src="ready.js"></script>
+    <script defer src="shell.js"></script>
+    <script defer src="actions.js"></script>
+    <script defer src="pager.js"></script>
+    <script defer type="text/javascript" src="i18n.js"></script>
+    <script defer type="text/javascript" src="i18n/en.js"></script>
+    <script defer type="text/javascript" src="wdprop.js"></script>
+    <script defer type="text/javascript" src="offline.js"></script>
+    <script defer type="text/javascript" src="compare.js"></script>
+    <script defer src="pageinit.js"></script>
 </head>
 
-<body onload="getComparisonResultsOnLoad()">
-    <a href="#content" class="skip-link" data-i18n="a11y.skip">Skip to main content</a>
-    <div id="mobile-menu-toggle" role="button" tabindex="0" aria-expanded="false"
-         onclick="toggleMobileMenu()" data-i18n-label="a11y.menuToggle">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
-    <div id="header" role="banner">
-        <div id="logo"><a href="./index.html">WDProp</a>
-            <span id="subtitle" data-i18n="app.subtitle">Everything about Wikidata properties</span>
-        </div>
-        <div id="theme-toggle" role="button" tabindex="0" onclick="toggleTheme()"
-             data-i18n-label="a11y.themeToggle" data-i18n-title="a11y.themeToggle"></div>
-    </div>
-    <div id="sidebar" role="navigation" data-i18n-label="a11y.nav">
-        <div id="sidebarlinks"></div>
-    </div>
+<body>
+    <wdprop-shell></wdprop-shell>
     <div id="content" role="main" tabindex="-1">
 
         <!-- Compare Hero -->
@@ -37,7 +29,7 @@
             <h2 class="compare-hero-title" data-i18n="page.compareLanguages">Compare Languages</h2>
             <p class="compare-hero-subtitle" data-i18n="page.compareIntro">Compare translation coverage across Wikidata properties</p>
 
-            <form action="./compare.html" onsubmit="getComparisonResultsOnEvent(event, this)" class="compare-form">
+            <form action="./compare.html" data-action="submitComparison" class="compare-form">
                 <div class="compare-input-wrap">
                     <span class="compare-input-icon">🌍</span>
                     <input id="languages" name="languages" type="text" class="compare-field" placeholder="e.g. en, fr, de, es" autocomplete="off" value="en, fr" />
@@ -63,13 +55,13 @@
 
             <!-- Category tabs -->
             <div class="compare-tabs">
-                <button class="compare-tab active" id="ctab-labels" onclick="switchCompareTab('labels')" data-i18n="page.tabLabels">
+                <button class="compare-tab active" id="ctab-labels" data-action="switchCompareTab" data-arg="labels" data-i18n="page.tabLabels">
                     🏷️ Labels
                 </button>
-                <button class="compare-tab" id="ctab-descriptions" onclick="switchCompareTab('descriptions')" data-i18n="page.tabDescriptions">
+                <button class="compare-tab" id="ctab-descriptions" data-action="switchCompareTab" data-arg="descriptions" data-i18n="page.tabDescriptions">
                     📝 Descriptions
                 </button>
-                <button class="compare-tab" id="ctab-aliases" onclick="switchCompareTab('aliases')" data-i18n="page.tabAliases">
+                <button class="compare-tab" id="ctab-aliases" data-action="switchCompareTab" data-arg="aliases" data-i18n="page.tabAliases">
                     🔀 Aliases
                 </button>
             </div>

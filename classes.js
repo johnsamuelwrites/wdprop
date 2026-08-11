@@ -189,10 +189,6 @@
     }
 
     // Install hook as soon as DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', installHook);
-    } else {
-        installHook();
-    }
+    WDProp.ready(installHook);
 
 })();

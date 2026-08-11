@@ -26,7 +26,11 @@ requests out altogether:
 | `states.test.js` | What a section shows while its query runs, when it finds nothing, and when it fails; paging a long table |
 | `layout.test.js` | Stylesheet rules other rules depend on: the boxes that contain the floated chips |
 | `dashboard.test.js` | That the landing page shows only what it fetched, says so when it cannot, and ranks correctly |
-| `markup.test.js` | Page structure the stylesheet relies on: nothing outside the main region, where the sidebar covers it |
+| `markup.test.js` | Page structure the stylesheet relies on: nothing outside the main region, where the sidebar covers it; every page carries the shell and defers its scripts |
+| `shell.test.js` | `<wdprop-shell>`: the boxes it builds, their landmarks and names, the keyboard on both controls, and where the logo links from a subdirectory |
+| `actions.test.js` | `data-action` dispatch, that every control names an action something registers and the reverse, and what each page starts when it opens |
+| `pathviz.test.js` | The arc diagram after d3 was dropped: spacing, painting order, self-loops, and the empty case |
+| `offline.test.js` | The service worker's file list against the directory, in both directions, and that a cached page's scripts are cached with it |
 
 Suites for the batch, workbench, campaigns, contributions, terminology and
 accessibility work still need porting into this directory.

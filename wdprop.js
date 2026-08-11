@@ -311,6 +311,52 @@ function createDivAllProperties(divId, json) {
     propertySet.clear();
 }
 
+/*
+ * An SVG element with its attributes and inline styles set.
+ *
+ * SVG elements have to be created in their own namespace — createElement
+ * gives an unknown HTML element that lays out as nothing — which is the only
+ * reason this helper exists rather than the DOM being used directly.
+ *
+ * attrs and styles are kept apart because the difference is load-bearing: a
+ * presentation attribute loses to any stylesheet rule, an inline style beats
+ * one. The text fill below is var(--text-primary) and has to follow the theme,
+ * so it is a style; the stroke colours are fixed per diagram and are
+ * attributes.
+ */
+function wdpropSvg(name, attrs, styles) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", name);
+    var key;
+    for (key in attrs || {}) {
+        if (attrs[key] !== null && attrs[key] !== undefined) {
+            el.setAttribute(key, attrs[key]);
+        }
+    }
+    for (key in styles || {}) {
+        el.style.setProperty(key, styles[key]);
+    }
+    return el;
+}
+
+/*
+ * Where each language sits down the diagram.
+ *
+ * This is d3's scalePoint with its default padding and alignment, which is all
+ * the scale the arc diagram ever used: n points spread evenly across the
+ * range, the first and last sitting on its ends. Written out because pulling
+ * in half a megabyte of d3 to divide a number by another was not a good
+ * trade, and because the one case worth getting right is easy to lose — a
+ * single language, where there is no gap to divide and the point is centred
+ * rather than stacked against the top edge.
+ */
+function wdpropPointScale(count, span) {
+    var step = span / Math.max(1, count - 1);
+    var origin = (span - step * (count - 1)) / 2;
+    return function (index) {
+        return origin + step * index;
+    };
+}
+
 function visualizePath(languageData) {
     //Wikidata supported languages
     //Reference: https://www.d3-graph-gallery.com/graph/arc_basic.html
@@ -348,98 +394,94 @@ function visualizePath(languageData) {
         var height = languages.length > 50 ? languages.length * 15 : languages.length * 20;
         var width = Math.max(600, leftMargin + 350);
 
-        var svgRoot = d3.select("#" + viz.containerId)
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height + 10);
+        var svgRoot = wdpropSvg("svg", { width: width, height: height + 10 });
+        container.appendChild(svgRoot);
 
         // Define arrow marker in defs (must be child of svg, not g)
-        svgRoot.append("defs")
-            .append("marker")
-            .attr("id", "arrowhead-" + viz.key)
-            .attr("viewBox", "0 0 10 10")
-            .attr("refX", 9)
-            .attr("refY", 5)
-            .attr("markerWidth", 5)
-            .attr("markerHeight", 5)
-            .attr("orient", "auto-start-reverse")
-            .append("path")
-            .attr("d", "M 0 0 L 10 5 L 0 10 z")
-            .attr("fill", viz.color);
+        var defs = wdpropSvg("defs");
+        var marker = wdpropSvg("marker", {
+            id: "arrowhead-" + viz.key,
+            viewBox: "0 0 10 10",
+            refX: 9,
+            refY: 5,
+            markerWidth: 5,
+            markerHeight: 5,
+            orient: "auto-start-reverse"
+        });
+        marker.appendChild(wdpropSvg("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: viz.color }));
+        defs.appendChild(marker);
+        svgRoot.appendChild(defs);
 
-        var svg = svgRoot.append("g")
-            .attr("transform", "translate(10, 5)");
+        var svg = wdpropSvg("g", { transform: "translate(10, 5)" });
+        svgRoot.appendChild(svg);
 
-        var x = d3.scalePoint()
-            .range([0, height - 5])
-            .domain(languages);
+        var scale = wdpropPointScale(languages.length, height - 5);
 
-        // Draw nodes
-        svg.selectAll("nodes")
-            .data(languages)
-            .enter()
-            .append("circle")
-            .attr("cy", function (d) { return x(d); })
-            .attr("cx", leftMargin)
-            .attr("r", 4)
-            .style("fill", viz.color);
+        /* Every language's position, by name, so the arcs can look them up. */
+        var x = {};
+        languages.forEach(function (language, index) {
+            x[language] = scale(index);
+        });
 
-        // Draw language labels
-        svg.selectAll("language")
-            .data(languages)
-            .enter()
-            .append("text")
-            .attr("y", function (d) { return x(d); })
-            .attr("x", leftMargin - 10)
-            .text(function (d) { return d; })
-            .style("text-anchor", "end")
-            .style("font-size", "12px")
-            .style("fill", "var(--text-primary)");
+        /*
+         * Drawn in four passes rather than one per language, because SVG has
+         * no z-index and paints in document order: the sequence numbers have
+         * to be written after the arcs to stay readable where an arc passes
+         * through one.
+         */
 
-        // Build links from consecutive pairs
-        var links = [];
+        // Nodes
+        languages.forEach(function (language) {
+            svg.appendChild(wdpropSvg("circle",
+                { cy: x[language], cx: leftMargin, r: 4 },
+                { fill: viz.color }));
+        });
+
+        // Language labels
+        languages.forEach(function (language) {
+            var label = wdpropSvg("text",
+                { y: x[language], x: leftMargin - 10 },
+                { "text-anchor": "end", "font-size": "12px", fill: "var(--text-primary)" });
+            label.textContent = language;
+            svg.appendChild(label);
+        });
+
+        // Draw arcs with direction arrows, one per consecutive pair in the path
         for (var i = 0; i < data.length - 1; i++) {
-            links.push([data[i], data[i + 1]]);
+            var start = x[data[i]];
+            var end = x[data[i + 1]];
+            if (start === end) continue; // Skip self-loops
+
+            var arcInflectionPoint = Math.abs(start - end) > 400 ? (start - end) / 1.2 : (start - end) / 2;
+            var d = ['M', leftMargin, start,
+                'A',
+                arcInflectionPoint, ',',
+                arcInflectionPoint, 0, 0, ',',
+                start < end ? 1 : 0, leftMargin, ',', end
+            ].join(' ');
+
+            svg.appendChild(wdpropSvg("path",
+                {
+                    d: d,
+                    stroke: viz.color,
+                    "stroke-width": "1.5",
+                    "marker-end": "url(#arrowhead-" + viz.key + ")"
+                },
+                { fill: "none" }));
         }
 
-        // Draw arcs with direction arrows
-        svg.selectAll("links")
-            .data(links)
-            .enter()
-            .append("path")
-            .attr("d", function (d) {
-                var start = x(d[0]);
-                var end = x(d[1]);
-                if (start === end) return null; // Skip self-loops
-                var arcInflectionPoint = Math.abs(start - end) > 400 ? (start - end) / 1.2 : (start - end) / 2;
-                return ['M', leftMargin, start,
-                    'A',
-                    arcInflectionPoint, ',',
-                    arcInflectionPoint, 0, 0, ',',
-                    start < end ? 1 : 0, leftMargin, ',', end
-                ].join(' ');
-            })
-            .style("fill", "none")
-            .attr("stroke", viz.color)
-            .attr("stroke-width", "1.5")
-            .attr("marker-end", "url(#arrowhead-" + viz.key + ")");
-
-        // Add sequence numbers on source nodes (first occurrence index)
+        // Sequence numbers on the nodes: where each language first appears
         var firstOccurrence = {};
         data.forEach(function (d, idx) {
             if (!(d in firstOccurrence)) firstOccurrence[d] = idx + 1;
         });
-        svg.selectAll("seq")
-            .data(languages)
-            .enter()
-            .append("text")
-            .attr("y", function (d) { return x(d) - 7; })
-            .attr("x", leftMargin)
-            .text(function (d) { return firstOccurrence[d]; })
-            .style("text-anchor", "middle")
-            .style("font-size", "9px")
-            .style("fill", viz.color)
-            .style("font-weight", "bold");
+        languages.forEach(function (language) {
+            var seq = wdpropSvg("text",
+                { y: x[language] - 7, x: leftMargin },
+                { "text-anchor": "middle", "font-size": "9px", fill: viz.color, "font-weight": "bold" });
+            seq.textContent = firstOccurrence[language];
+            svg.appendChild(seq);
+        });
     });
 }
 
@@ -1014,36 +1056,15 @@ function wdpropPaginateTable(table) {
     }
 
     let pages = Math.ceil(body.length / wdpropRowsPerPage);
-    let page = 0;
 
-    let bar = document.createElement("div");
-    bar.setAttribute("class", "wdp-pager");
+    /* The control is in pager.js; what a page means is decided here. */
+    let pager = window.WDProp.pager({
+        previousText: wdpropText("js.previous"),
+        nextText: wdpropText("js.next"),
+        onChange: show
+    });
 
-    function control(key, step) {
-        let button = document.createElement("button");
-        button.setAttribute("type", "button");
-        button.setAttribute("class", "wdp-button");
-        button.appendChild(document.createTextNode(wdpropText(key)));
-        button.addEventListener("click", function () {
-            page = Math.min(Math.max(page + step, 0), pages - 1);
-            show();
-        });
-        return button;
-    }
-
-    let previous = control("js.previous", -1);
-    let next = control("js.next", 1);
-
-    /*
-     * Which page you are on is announced, because paging changes the rows
-     * well above the buttons, where a screen reader would not follow.
-     */
-    let position = document.createElement("span");
-    position.setAttribute("class", "wdp-pager-position");
-    position.setAttribute("role", "status");
-    position.setAttribute("aria-live", "polite");
-
-    function show() {
+    function show(page) {
         let from = page * wdpropRowsPerPage;
         let to = from + wdpropRowsPerPage;
 
@@ -1051,18 +1072,12 @@ function wdpropPaginateTable(table) {
             body[i].style.display = (i >= from && i < to) ? "" : "none";
         }
 
-        position.textContent = wdpropText("js.pageOf",
-            [page + 1, pages, Math.min(to, body.length), body.length]);
-        previous.disabled = (page === 0);
-        next.disabled = (page === pages - 1);
+        pager.update(page, pages, wdpropText("js.pageOf",
+            [page + 1, pages, Math.min(to, body.length), body.length]));
     }
 
-    bar.appendChild(previous);
-    bar.appendChild(position);
-    bar.appendChild(next);
-    show();
-
-    table.parentNode.insertBefore(bar, table.nextSibling);
+    show(0);
+    table.parentNode.insertBefore(pager.element, table.nextSibling);
 }
 
 /*
@@ -2702,14 +2717,18 @@ function getLinks() {
     getReferencesCount();
     getEquivalentProperties();
 }
-document.onkeydown = function (event) {
-    event = event || window.event;
-    if (event.keyCode == '13') {
-        let search = document.getElementById("headersearchtext").value;
-        window.location = "./search.html?search=" + search;
-        findProperty(event);
-    }
-}
+/*
+ * There was a document.onkeydown here that took any Enter key anywhere on any
+ * page, read the value of #headersearchtext and navigated to ./search.html.
+ *
+ * #headersearchtext existed on ten pages, all of them in subdirectories, and
+ * was styled display:none on every one — so the box it read had never been
+ * visible and was always empty. On the other thirty-one pages the element does
+ * not exist at all, so the handler threw on every Enter key; on the ten it
+ * navigated to ./search.html relative to a subdirectory, which is nowhere.
+ *
+ * Searching is done by the forms on search.html, which have always worked.
+ */
 
 /* Models*/
 class Language {
@@ -2814,73 +2833,26 @@ class WikiProjectController {
     constructor() { }
 }
 
-/* Theme Management */
+/*
+ * Theme Management
+ *
+ * The work is in theme.js, which runs before the page is painted; this is the
+ * handler the toggle in the header calls. Applying the theme here as well
+ * would be too late to matter and, when the two disagreed, wrong.
+ */
 function toggleTheme() {
-    const body = document.body;
-    const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
-
-    if (currentTheme === 'light') {
-        body.classList.add('dark-theme');
-        localStorage.setItem('wdprop-theme', 'dark');
-    } else {
-        body.classList.remove('dark-theme');
-        localStorage.setItem('wdprop-theme', 'light');
-    }
-}
-
-function loadTheme() {
-    const savedTheme = localStorage.getItem('wdprop-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-        document.body.classList.add('dark-theme');
-    }
-}
-
-function toggleMobileMenu() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('mobile-open');
-
-    const toggle = document.getElementById('mobile-menu-toggle');
-    if (toggle) {
-        toggle.setAttribute('aria-expanded', sidebar.classList.contains('mobile-open') ? 'true' : 'false');
+    if (window.WDProp && window.WDProp.theme) {
+        window.WDProp.theme.toggle();
     }
 }
 
 /*
- * The theme and menu controls are styled divs with role="button". A real
- * button responds to Enter and Space; a div does not, so the keyboard has to
- * be wired up by hand or these are unreachable without a mouse.
+ * The menu button, the theme switch, their keyboard handling and closing the
+ * menu on a click elsewhere all moved to shell.js, which is what builds those
+ * controls now. Wiring them here as well attached a second keydown listener to
+ * each, so Enter on the theme switch toggled it twice and appeared to do
+ * nothing at all.
  */
-function activateOnKey(element, action) {
-    if (!element) {
-        return;
-    }
-    element.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
-            event.preventDefault();
-            action();
-        }
-    });
-}
-
-// Close mobile menu when clicking outside
-document.addEventListener('click', function (event) {
-    const sidebar = document.getElementById('sidebar');
-    const menuToggle = document.getElementById('mobile-menu-toggle');
-
-    if (sidebar && menuToggle && sidebar.classList.contains('mobile-open')) {
-        if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
-            sidebar.classList.remove('mobile-open');
-            menuToggle.setAttribute('aria-expanded', 'false');
-        }
-    }
-});
-
-function wireKeyboardControls() {
-    activateOnKey(document.getElementById('theme-toggle'), toggleTheme);
-    activateOnKey(document.getElementById('mobile-menu-toggle'), toggleMobileMenu);
-}
 
 /*
  * ===========================================================================
@@ -2907,6 +2879,7 @@ var wdpropSections = [
     { file: "index.html",                key: "nav.dashboard" },
     { file: "translate.html",            key: "nav.translate" },
     { file: "campaign.html",             key: "nav.campaigns" },
+    { file: "stale.html",                key: "nav.stale" },
     { file: "contributions.html",        key: "nav.contributions" },
     { file: "terminology.html",          key: "nav.terminology" },
     { file: "languages.html",            key: "nav.languages" },
@@ -2918,6 +2891,7 @@ var wdpropSections = [
     { file: "compare.html",              key: "nav.compare" },
     { file: "templates/translated.html", key: "nav.discussion" },
     { file: "wikiprojects.html",         key: "nav.wikiprojects" },
+    { file: "offline.html",              key: "nav.offline" },
     { file: "wdprop.html",               key: "nav.about" }
 ];
 
@@ -2969,10 +2943,19 @@ var wdpropSectionNames = {
  * alone the two are indistinguishable.
  */
 function wdpropPageKey(path) {
-    var parts = String(path || "").split(/[?#]/)[0].split("/").filter(function (part) {
+    var raw = String(path || "").split(/[?#]/)[0];
+    var parts = raw.split("/").filter(function (part) {
         return part && part !== "." && part !== "..";
     });
-    var file = parts.pop() || "index.html";
+
+    /*
+     * A path ending in a slash names a directory, and what is served for it is
+     * that directory's index — so its last segment is the directory, not a
+     * file. Taken as a file, WDProp installed at /wdprop/ and opened at its
+     * root gave the key "wdprop", which matches no page, so the dashboard was
+     * the one page whose sidebar entry was never marked.
+     */
+    var file = /\/$/.test(raw) || raw === "" ? "index.html" : (parts.pop() || "index.html");
     return parts.pop() === "templates" ? "templates/" + file : file;
 }
 
@@ -3209,19 +3192,21 @@ window.WDProp.nav = {
     trail: wdpropBreadcrumbTrail
 };
 
-// Load theme on page load
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-        loadTheme();
-        wireKeyboardControls();
-        wdpropMountSidebar();
-        wdpropMountBreadcrumb();
-        wdpropToastRegion();
-    });
-} else {
-    loadTheme();
-    wireKeyboardControls();
+/*
+ * Mount what the page needs before anyone looks at it.
+ *
+ * These scripts are deferred, so this file runs once the document has been
+ * parsed and after shell.js has put the header and sidebar in place — the
+ * sidebar links have somewhere to go. i18n.js has been over the page by then
+ * too, which is why the entries can take their translated text directly.
+ *
+ * The readyState check remains for the case where wdprop.js is loaded some
+ * other way, from a page that does not defer it.
+ */
+function wdpropMountPage() {
     wdpropMountSidebar();
     wdpropMountBreadcrumb();
     wdpropToastRegion();
 }
+
+window.WDProp.ready(wdpropMountPage);

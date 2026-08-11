@@ -100,7 +100,9 @@ window.WDProp = window.WDProp || {};
         sortByUsage: false,
         usage: {},
         added: 0,
-        skippedThisSession: 0
+        skippedThisSession: 0,
+        /* Set when the worklist or the terms came out of the offline store. */
+        fromStore: false
     };
 
     /* ---------------------------------------------------------------- utils */
@@ -303,7 +305,61 @@ window.WDProp = window.WDProp || {};
         });
     }
 
+    /*
+     * ----------------------------------------------------------------------
+     * Reading from the offline store
+     * ----------------------------------------------------------------------
+     *
+     * The store holds terms and nothing else, so it can answer for the whole
+     * of Wikidata, for one datatype, or for a named list — the selections that
+     * are decided by a property's terms and its datatype. It cannot answer for
+     * a class, which is a statement, or for the most used, which is a report
+     * on the wiki; those still need Wikidata and say so.
+     *
+     * The store is preferred only when there is no connection. A stored copy
+     * is a day or a month old, and while Wikidata is reachable its answer is
+     * the true one.
+     */
+    function storeCanAnswer() {
+        return !!(WDProp.offline && WDProp.offline.available() &&
+            WDProp.offline.scopes.indexOf(state.scope.kind) !== -1);
+    }
+
+    function worklistFromStore() {
+        return WDProp.offline.worklist({
+            target: state.target,
+            type: state.type,
+            scope: state.scope
+        }).then(function (numbers) {
+            state.fromStore = true;
+            return numbers;
+        });
+    }
+
     function loadWorklist() {
+        if (!storeCanAnswer()) {
+            return loadWorklistLive();
+        }
+
+        if (!WDProp.offline.online()) {
+            return worklistFromStore();
+        }
+
+        /*
+         * A connection that is reported as present but reaches nothing is the
+         * ordinary case on a bad link, so the fallback hangs off the failure
+         * rather than off navigator.onLine. The live error is what is raised
+         * if the store cannot answer either: it describes what the translator
+         * was actually waiting for.
+         */
+        return loadWorklistLive().catch(function (error) {
+            return worklistFromStore().catch(function () {
+                throw error;
+            });
+        });
+    }
+
+    function loadWorklistLive() {
         /* A ranked list, so its order is kept rather than sorted by number. */
         if (state.scope.kind === "top") {
             return WDProp.usage.topProperties().then(function (ids) {
@@ -369,6 +425,23 @@ window.WDProp = window.WDProp || {};
             return a.indexOf(l) === i;
         });
 
+        function fromStore() {
+            if (!WDProp.offline || !WDProp.offline.available()) {
+                return Promise.reject(new Error(t("translate.noStore")));
+            }
+            return WDProp.offline.entities(ids, languages).then(function (entities) {
+                if (!Object.keys(entities).length) {
+                    throw new Error(t("translate.noStore"));
+                }
+                state.fromStore = true;
+                return entities;
+            });
+        }
+
+        if (WDProp.offline && !WDProp.offline.online()) {
+            return fromStore();
+        }
+
         var url = API + "?action=wbgetentities" +
             "&ids=" + encodeURIComponent(ids.join("|")) +
             "&props=" + encodeURIComponent("labels|descriptions|aliases|datatype") +
@@ -376,9 +449,19 @@ window.WDProp = window.WDProp || {};
             "&format=json&origin=*";
 
         return fetch(url).then(function (r) {
+            if (!r.ok) {
+                throw new Error(t("translate.apiAnswered", [r.status]));
+            }
             return r.json();
         }).then(function (json) {
+            if (json.error) {
+                throw new Error(json.error.code || "api");
+            }
             return json.entities || {};
+        }).catch(function (error) {
+            return fromStore().catch(function () {
+                throw error;
+            });
         });
     }
 
@@ -629,6 +712,17 @@ window.WDProp = window.WDProp || {};
                 renderAll();
             });
             box.appendChild(toggle);
+        }
+
+        /*
+         * Said whenever the store was used, not only when the browser reports
+         * itself offline: a stored copy can be weeks old, and a translator
+         * choosing what to work on should know that the list of what is
+         * missing was true as of a download rather than as of now.
+         */
+        if (state.fromStore) {
+            box.appendChild(element("p", "wdp-message wdp-warning",
+                t("translate.fromStore")));
         }
 
         if (state.glossaryStatus === "loading") {
@@ -1144,26 +1238,23 @@ window.WDProp = window.WDProp || {};
             return;
         }
 
-        var previous = element("button", "wdp-button", t("translate.previous"));
-        previous.setAttribute("type", "button");
-        previous.disabled = state.page === 0;
-        previous.addEventListener("click", function () {
-            state.page--;
-            loadPage();
+        /*
+         * The control is in pager.js, shared with the data tables. It brings
+         * with it the announcement this pager did not make: turning a page
+         * replaces every row above the buttons, and nothing said so.
+         */
+        var pager = WDProp.pager({
+            previousText: t("translate.previous"),
+            nextText: t("translate.next"),
+            onChange: function (page) {
+                state.page = page;
+                loadPage();
+            }
         });
-        box.appendChild(previous);
 
-        box.appendChild(element("span", "wdp-muted",
-            t("translate.page", [state.page + 1, pages.toLocaleString()])));
-
-        var next = element("button", "wdp-button", t("translate.next"));
-        next.setAttribute("type", "button");
-        next.disabled = state.page >= pages - 1;
-        next.addEventListener("click", function () {
-            state.page++;
-            loadPage();
-        });
-        box.appendChild(next);
+        pager.update(state.page, pages,
+            t("translate.page", [state.page + 1, pages.toLocaleString()]));
+        box.appendChild(pager.element);
     }
 
     function renderAll() {
@@ -1330,6 +1421,7 @@ window.WDProp = window.WDProp || {};
         state.context = {};
         state.page = 0;
         state.added = 0;
+        state.fromStore = false;
         syncUrl();
 
         var loading = element("div", "wdprop-loading");
@@ -1431,9 +1523,5 @@ window.WDProp = window.WDProp || {};
         }
     };
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
-    } else {
-        init();
-    }
+    WDProp.ready(init);
 })(window.WDProp);

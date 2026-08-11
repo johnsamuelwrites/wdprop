@@ -1,0 +1,37 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  # So a run can be started by hand after a change to Wikidata rather than to
+  # WDProp — the live sources break without any commit here.
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest supported release and the current one. WDProp has no
+        # dependencies and no build step, so this is the whole toolchain.
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # Three assertions in usage.test.js reach Wikidata. They are the ones
+      # most likely to break without a change on our side, so they run on
+      # master and on dispatch, where a failure is worth knowing about.
+      #
+      # On a pull request they are left out: Wikidata rate-limits, and a
+      # contributor's branch failing because someone else's run used the quota
+      # a minute earlier teaches them nothing.
+      - name: Run the test suite
+        run: node tests/run.js
+        env:
+          WDPROP_OFFLINE: ${{ github.event_name == 'pull_request' && '1' || '' }}

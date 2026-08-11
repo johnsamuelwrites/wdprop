@@ -486,9 +486,5 @@ window.WDProp = window.WDProp || {};
         }
     };
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
-    } else {
-        init();
-    }
+    WDProp.ready(init);
 })(window.WDProp);

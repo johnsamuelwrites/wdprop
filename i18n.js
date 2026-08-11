@@ -6,7 +6,8 @@
  * system as an opaque origin and refuses fetch() and module imports against
  * it, so a JSON message store would leave WDProp blank when the pages are
  * opened directly from disk. Script tags are not subject to that rule, which
- * is why wdprop.js and d3 already work that way.
+ * is why every other script in WDProp is loaded the same way — and why none
+ * of them is an ES module, which a browser fetches under those same rules.
  *
  * English is loaded by every page as a plain script tag, so it is always
  * present. Any other language is added afterwards by injecting a script; if
@@ -252,9 +253,13 @@ window.WDProp = window.WDProp || {};
         setLanguage(detect());
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
-    } else {
-        init();
-    }
+    /*
+     * Waits, rather than starting here. The scripts are deferred, so this runs
+     * before i18n/<lang>.js has registered a single message — starting now
+     * would resolve every key on the page to its own name.
+     *
+     * It also has to be first: this registers before any other module, so the
+     * page is translated before anything renders into it. See ready.js.
+     */
+    WDProp.ready(init);
 })(window.WDProp);

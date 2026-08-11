@@ -430,9 +430,5 @@ window.WDProp = window.WDProp || {};
 
     WDProp.terminology = { run: run, internals: { analyse: analyse, propertiesUsing: propertiesUsing } };
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
-    } else {
-        init();
-    }
+    WDProp.ready(init);
 })(window.WDProp);

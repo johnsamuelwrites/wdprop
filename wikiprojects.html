@@ -5,32 +5,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WDProp: WikiProjects: John Samuel</title>
+    <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="i18n.js"></script>
-    <script type="text/javascript" src="i18n/en.js"></script>
-    <script type="text/javascript" src="mwwdprop.js"></script>
-    <script type="text/javascript" src="wdprop.js"></script>
-    <script type="text/javascript" src="wikiprojects.js"></script>
+    <script src="theme.js"></script>
+    <script defer src="ready.js"></script>
+    <script defer src="shell.js"></script>
+    <script defer src="actions.js"></script>
+    <script defer src="pager.js"></script>
+    <script defer type="text/javascript" src="i18n.js"></script>
+    <script defer type="text/javascript" src="i18n/en.js"></script>
+    <script defer type="text/javascript" src="mwwdprop.js"></script>
+    <script defer type="text/javascript" src="wdprop.js"></script>
+    <script defer type="text/javascript" src="offline.js"></script>
+    <script defer type="text/javascript" src="wikiprojects.js"></script>
+    <script defer src="wikiprojectsview.js"></script>
+    <script defer src="pageinit.js"></script>
 </head>
 
-<body onload="getWikiProjects()">
-    <a href="#content" class="skip-link" data-i18n="a11y.skip">Skip to main content</a>
-    <div id="mobile-menu-toggle" role="button" tabindex="0" aria-expanded="false"
-         onclick="toggleMobileMenu()" data-i18n-label="a11y.menuToggle">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
-    <div id="header" role="banner">
-        <div id="logo"><a href="./index.html">WDProp</a>
-            <span id="subtitle" data-i18n="app.subtitle">Everything about Wikidata properties</span>
-        </div>
-        <div id="theme-toggle" role="button" tabindex="0" onclick="toggleTheme()"
-             data-i18n-label="a11y.themeToggle" data-i18n-title="a11y.themeToggle"></div>
-    </div>
-    <div id="sidebar" role="navigation" data-i18n-label="a11y.nav">
-        <div id="sidebarlinks"></div>
-    </div>
+<body>
+    <wdprop-shell></wdprop-shell>
     <div id="content" role="main" tabindex="-1">
 
         <!-- Hero -->
@@ -68,7 +61,7 @@
 
         <!-- Query section -->
         <div class="section search-query-section" id="wpQuerySection" style="display:none;">
-            <button class="search-query-toggle" onclick="toggleWPQuery()">
+            <button class="search-query-toggle" data-action="toggleWPQuery">
                 <span class="search-query-toggle-icon">⚙️</span> Show SPARQL Query
                 <span class="search-query-chevron">▼</span>
             </button>
@@ -80,33 +73,6 @@
         <p id="footertext" data-i18n-html="app.footer">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
 
-    <script>
-        function toggleWPQuery() {
-            var body    = document.getElementById('allWikiProjectsQuery');
-            var chevron = document.querySelector('#wpQuerySection .search-query-chevron');
-            var btn     = document.querySelector('#wpQuerySection .search-query-toggle');
-            var section = document.getElementById('wpQuerySection');
-            section.style.display = 'block';
-            if (body.style.display === 'none') {
-                body.style.display  = 'block';
-                chevron.textContent = '▲';
-                btn.classList.add('open');
-            } else {
-                body.style.display  = 'none';
-                chevron.textContent = '▼';
-                btn.classList.remove('open');
-            }
-        }
-
-        // Reveal query section after data loads
-        var _origGetWP = getWikiProjects;
-        getWikiProjects = function () {
-            _origGetWP();
-            setTimeout(function () {
-                document.getElementById('wpQuerySection').style.display = 'block';
-            }, 200);
-        };
-    </script>
 </body>
 
 </html>

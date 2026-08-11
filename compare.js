@@ -212,10 +212,16 @@
     }
 
     // Install hook as soon as DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', installHook);
-    } else {
-        installHook();
-    }
+    WDProp.ready(installHook);
+
+    /*
+     * The tab buttons and the comparison form name these. getComparisonResultsOnEvent
+     * is defined in wdprop.js and takes the form, which is the element carrying
+     * the action.
+     */
+    WDProp.actions.add({
+        switchCompareTab: function (event, element, tab) { window.switchCompareTab(tab); },
+        submitComparison: function (event, form) { getComparisonResultsOnEvent(event, form); }
+    });
 
 })();

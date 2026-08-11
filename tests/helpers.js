@@ -6,9 +6,24 @@
  * Node: enough DOM to build and inspect elements, and nothing more.
  */
 
+/*
+ * The style object behaves both ways round: assigned to directly, as the
+ * application does for display and visibility, and through setProperty, which
+ * is the only way to set a hyphenated SVG presentation property. Both write
+ * the same keys, so a test can read either.
+ */
+function styleObject() {
+    const style = {};
+    Object.defineProperty(style, "setProperty", {
+        enumerable: false,
+        value(name, value) { this[name] = String(value); },
+    });
+    return style;
+}
+
 function element(tag) {
     return {
-        tag, children: [], attrs: {}, dataset: {}, listeners: {}, style: {},
+        tag, children: [], attrs: {}, dataset: {}, listeners: {}, style: styleObject(),
         innerHTML: "", value: "", disabled: false, text: "",
         setAttribute(k, v) {
             this.attrs[k] = String(v);
@@ -35,7 +50,12 @@ function element(tag) {
             return out;
         },
         get firstChild() { return this.children[0] || null; },
-        get textContent() { return this.children.map(c => c.text ?? c.textContent ?? "").join(""); },
+        get textContent() {
+            if (this.text) return this.text;
+            return this.children.map(c => c.text ?? c.textContent ?? "").join("");
+        },
+        /* Setting it replaces the children, as the DOM does. */
+        set textContent(value) { this.children = []; this.text = String(value); },
     };
 }
 
@@ -66,6 +86,8 @@ function browser(options) {
         head: { appendChild() {} },
         getElementById: options.getElementById || (() => null),
         createElement: element,
+        /* SVG elements, which have to be created in their own namespace. */
+        createElementNS: (ns, tag) => { const el = element(tag); el.namespace = ns; return el; },
         createTextNode: t => { const n = element("#text"); n.text = String(t); return n; },
         querySelector: () => null,
         querySelectorAll: () => [],

@@ -1,0 +1,71 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>WDProp: Working offline: John Samuel</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script src="theme.js"></script>
+    <script defer src="ready.js"></script>
+    <script defer src="shell.js"></script>
+    <script defer src="actions.js"></script>
+    <script defer src="pager.js"></script>
+    <script defer type="text/javascript" src="i18n.js"></script>
+    <script defer type="text/javascript" src="i18n/en.js"></script>
+    <script defer type="text/javascript" src="wdprop.js"></script>
+    <script defer type="text/javascript" src="cart.js"></script>
+    <script defer type="text/javascript" src="offline.js"></script>
+    <script defer type="text/javascript" src="offlineview.js"></script>
+    <script defer src="pageinit.js"></script>
+</head>
+
+<body>
+    <wdprop-shell></wdprop-shell>
+    <div id="content" role="main" tabindex="-1">
+        <div class="section">
+            <h2 data-i18n="offline.heading">Working offline</h2>
+            <p class="wdp-muted" data-i18n="offline.intro">The languages whose properties are least translated are, with striking regularity, spoken where the connection is worst. WDProp can hold everything it needs — its own pages, and the whole property vocabulary in the languages you work in — so that translating carries on when nothing is reachable. What you write is kept in this browser and exported when you next have a connection; a batch can also travel as a file, so a room with one connected laptop can collect everybody's work.</p>
+        </div>
+
+        <div class="section">
+            <h3 data-i18n="offline.stateHeading">This browser</h3>
+            <div id="offlineState"></div>
+        </div>
+
+        <div class="section">
+            <h3 data-i18n="offline.datasetHeading">The property vocabulary</h3>
+            <p class="wdp-muted" data-i18n="offline.datasetIntro">About thirteen thousand properties, with their labels, descriptions and aliases in the languages you name. Downloading takes a few minutes and a few megabytes; after that the workbench works with nothing reachable. Name the language you are translating into and the one you read from.</p>
+            <div id="offlineDataset"></div>
+            <form id="offlineDownload" class="wb-controls">
+                <div class="wb-control">
+                    <label for="offLanguages" data-i18n="offline.languages">Languages</label>
+                    <input type="text" id="offLanguages" class="wdp-input" size="20" autocomplete="off"
+                           data-i18n-placeholder="offline.languagesPlaceholder" placeholder="ta, en" />
+                </div>
+                <div class="wb-control">
+                    <button type="submit" class="wdp-button wdp-primary" id="offStart" data-i18n="offline.download">Download</button>
+                    <button type="button" class="wdp-button" id="offStop" data-i18n="offline.stop">Stop</button>
+                    <button type="button" class="wdp-button wdp-remove" id="offClear" data-i18n="offline.delete">Delete</button>
+                </div>
+            </form>
+            <div id="offlineProgress"></div>
+        </div>
+
+        <div class="section">
+            <h3 data-i18n="offline.batchHeading">Carrying the batch</h3>
+            <p class="wdp-muted" data-i18n="offline.batchIntro">A batch saved as a file can be moved to a machine that has a connection and exported to QuickStatements from there. It keeps everything WDProp knows about each proposal, not only the edit, so nothing is lost on the way. Importing merges into the batch already here rather than replacing it, which is what makes it possible to collect several people's work on one machine.</p>
+            <div id="offlineBatch"></div>
+        </div>
+
+        <div class="section">
+            <h3 data-i18n="offline.limitsHeading">What works without a connection, and what does not</h3>
+            <div id="offlineLimits"></div>
+        </div>
+    </div>
+    <div id="footer" role="contentinfo">
+        <p id="footertext" data-i18n-html="app.footer">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
+    </div>
+</body>
+
+</html>

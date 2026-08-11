@@ -5,30 +5,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WDProp: Search Properties: John Samuel</title>
+    <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <script type="text/javascript" src="i18n.js"></script>
-    <script type="text/javascript" src="i18n/en.js"></script>
-    <script type="text/javascript" src="wdprop.js"></script>
+    <script src="theme.js"></script>
+    <script defer src="ready.js"></script>
+    <script defer src="shell.js"></script>
+    <script defer src="actions.js"></script>
+    <script defer src="pager.js"></script>
+    <script defer type="text/javascript" src="i18n.js"></script>
+    <script defer type="text/javascript" src="i18n/en.js"></script>
+    <script defer type="text/javascript" src="wdprop.js"></script>
+    <script defer type="text/javascript" src="offline.js"></script>
+    <script defer src="searchview.js"></script>
+    <script defer src="pageinit.js"></script>
 </head>
 
-<body onload="findPropertyOnLoad()">
-    <a href="#content" class="skip-link" data-i18n="a11y.skip">Skip to main content</a>
-    <div id="mobile-menu-toggle" role="button" tabindex="0" aria-expanded="false"
-         onclick="toggleMobileMenu()" data-i18n-label="a11y.menuToggle">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
-    <div id="header" role="banner">
-        <div id="logo"><a href="./index.html">WDProp</a>
-            <span id="subtitle" data-i18n="app.subtitle">Everything about Wikidata properties</span>
-        </div>
-        <div id="theme-toggle" role="button" tabindex="0" onclick="toggleTheme()"
-             data-i18n-label="a11y.themeToggle" data-i18n-title="a11y.themeToggle"></div>
-    </div>
-    <div id="sidebar" role="navigation" data-i18n-label="a11y.nav">
-        <div id="sidebarlinks"></div>
-    </div>
+<body>
+    <wdprop-shell></wdprop-shell>
     <div id="content" role="main" tabindex="-1">
 
         <!-- Search Hero -->
@@ -38,17 +31,17 @@
 
             <!-- Tabs -->
             <div class="search-tabs">
-                <button class="search-tab active" id="tab-properties" onclick="switchSearchTab('properties')" data-i18n="page.tabProperties">
+                <button class="search-tab active" id="tab-properties" data-action="switchSearchTab" data-arg="properties" data-i18n="page.tabProperties">
                     🔧 Properties
                 </button>
-                <button class="search-tab" id="tab-wikiprojects" onclick="switchSearchTab('wikiprojects')" data-i18n="page.tabWikiProjects">
+                <button class="search-tab" id="tab-wikiprojects" data-action="switchSearchTab" data-arg="wikiprojects" data-i18n="page.tabWikiProjects">
                     🚀 WikiProjects
                 </button>
             </div>
 
             <!-- Properties search panel -->
             <div class="search-panel active" id="panel-properties">
-                <form action="./search.html" onsubmit="findProperty(event, this)" class="search-form">
+                <form action="./search.html" data-action="submitPropertySearch" class="search-form">
                     <div class="search-input-wrap">
                         <span class="search-input-icon">🔍</span>
                         <input id="search" name="search" type="text" class="search-field" placeholder="e.g. software, person, location…" autocomplete="off" />
@@ -67,7 +60,7 @@
 
             <!-- WikiProjects search panel -->
             <div class="search-panel" id="panel-wikiprojects">
-                <form action="./search.html" onsubmit="findWikiProjects(event, this)" class="search-form">
+                <form action="./search.html" data-action="submitWikiProjectSearch" class="search-form">
                     <div class="search-input-wrap">
                         <span class="search-input-icon">🔍</span>
                         <input id="searchproject" name="searchproject" type="text" class="search-field" placeholder="e.g. heritage, biology, music…" autocomplete="off" />
@@ -76,10 +69,10 @@
                 </form>
                 <div class="search-examples">
                     <span class="search-examples-label">Try:</span>
-                    <a href="#" class="search-chip" onclick="fillAndSubmitProject('heritage')">heritage</a>
-                    <a href="#" class="search-chip" onclick="fillAndSubmitProject('biology')">biology</a>
-                    <a href="#" class="search-chip" onclick="fillAndSubmitProject('music')">music</a>
-                    <a href="#" class="search-chip" onclick="fillAndSubmitProject('geography')">geography</a>
+                    <a href="#" class="search-chip" data-action="fillAndSubmitProject" data-arg="heritage">heritage</a>
+                    <a href="#" class="search-chip" data-action="fillAndSubmitProject" data-arg="biology">biology</a>
+                    <a href="#" class="search-chip" data-action="fillAndSubmitProject" data-arg="music">music</a>
+                    <a href="#" class="search-chip" data-action="fillAndSubmitProject" data-arg="geography">geography</a>
                 </div>
             </div>
         </div>
@@ -91,7 +84,7 @@
 
         <!-- Query (collapsed by default) -->
         <div class="section search-query-section" id="querySection" style="display:none;">
-            <button class="search-query-toggle" onclick="toggleQuerySection()">
+            <button class="search-query-toggle" data-action="toggleQuerySection">
                 <span class="search-query-toggle-icon">⚙️</span> Show SPARQL Query
                 <span class="search-query-chevron">▼</span>
             </button>
@@ -103,69 +96,6 @@
         <p id="footertext" data-i18n-html="app.footer">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
     </div>
 
-    <script>
-        function switchSearchTab(tab) {
-            // Update tab buttons
-            document.getElementById('tab-properties').classList.toggle('active', tab === 'properties');
-            document.getElementById('tab-wikiprojects').classList.toggle('active', tab === 'wikiprojects');
-            // Update panels
-            document.getElementById('panel-properties').classList.toggle('active', tab === 'properties');
-            document.getElementById('panel-wikiprojects').classList.toggle('active', tab === 'wikiprojects');
-        }
-
-        function fillAndSubmitProject(value) {
-            event.preventDefault();
-            document.getElementById('searchproject').value = value;
-            let sparqlQuery = getSearchWikiProjectQuery("'" + value + "'");
-            queryWikidata(sparqlQuery, createDivWikiProjects, "searchResults");
-            showResultsSection();
-        }
-
-        function showResultsSection() {
-            document.getElementById('resultsSection').style.display = 'block';
-            document.getElementById('querySection').style.display = 'block';
-        }
-
-        function toggleQuerySection() {
-            let body = document.getElementById('searchResultsQuery');
-            let chevron = document.querySelector('.search-query-chevron');
-            let btn = document.querySelector('.search-query-toggle');
-            if (body.style.display === 'none') {
-                body.style.display = 'block';
-                chevron.textContent = '▲';
-                btn.classList.add('open');
-            } else {
-                body.style.display = 'none';
-                chevron.textContent = '▼';
-                btn.classList.remove('open');
-            }
-        }
-
-        // Wrap findProperty so the results section (containing the spinner)
-        // is revealed BEFORE queryWikidata fires — not only after data arrives.
-        var _origFindProperty = findProperty;
-        findProperty = function(event, form) {
-            showResultsSection();
-            _origFindProperty(event, form);
-        };
-
-        // Same for the on-load path (handles ?search= URL param)
-        var _origFindPropertyOnLoad = findPropertyOnLoad;
-        findPropertyOnLoad = function() {
-            // Only reveal if there's actually a search param pending
-            if (window.location.search.indexOf('search=') !== -1) {
-                showResultsSection();
-            }
-            _origFindPropertyOnLoad();
-        };
-
-        // Wrap findWikiProjects for the WikiProjects tab
-        var _origFindWikiProjects = findWikiProjects;
-        findWikiProjects = function(event, form) {
-            showResultsSection();
-            _origFindWikiProjects(event, form);
-        };
-    </script>
 </body>
 
 </html>

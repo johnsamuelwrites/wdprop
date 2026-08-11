@@ -26,8 +26,17 @@ for (const lang of ["fr", "es"]) {
         Object.keys(dicts.en).filter(k => ph(dicts.en[k]) !== ph(dicts[lang][k])), []);
 }
 
+/*
+ * Every script that asks for a message. Left incomplete, this cuts both ways:
+ * a key only this file calls for looks dead, and a key it calls for and nobody
+ * defines goes unnoticed. shell.js is here because the header and sidebar text
+ * moved into it out of the markup of all forty-one pages.
+ */
 const MODULES = ["translate.js", "batch.js", "campaign.js", "contributionsview.js", "compose.js",
-    "cart.js", "terminology.js", "usage.js", "i18n.js", "wdprop.js", "mwwdprop.js", "dashboard.js"];
+    "cart.js", "terminology.js", "usage.js", "i18n.js", "wdprop.js", "mwwdprop.js", "dashboard.js",
+    "shell.js", "stale.js", "staleview.js", "offline.js", "offlineview.js", "contributions.js",
+    "classes.js", "wikiprojects.js", "compare.js", "visualization.js", "validate.js", "qs.js",
+    "searchview.js", "classesview.js", "wikiprojectsview.js"];
 const usedInJs = new Set();
 for (const f of MODULES) {
     const src = fs.readFileSync(path.join(ROOT, f), "utf8");

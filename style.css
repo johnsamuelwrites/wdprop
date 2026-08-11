@@ -11,6 +11,10 @@
     --light-shadow: rgba(0, 0, 0, 0.1);
     --light-accent: #667eea;
     --light-accent-hover: #764ba2;
+    /* The accent as bare components, for the focus rings that tint it. */
+    --light-accent-rgb: 102, 126, 234;
+    --light-toggle-icon: '\2600\FE0F';
+    --light-toggle-shift: 0;
 
     /* Dark Theme Colors */
     --dark-bg-primary: #0f0f23;
@@ -24,6 +28,9 @@
     --dark-shadow: rgba(0, 0, 0, 0.3);
     --dark-accent: #00d4ff;
     --dark-accent-hover: #0099cc;
+    --dark-accent-rgb: 0, 212, 255;
+    --dark-toggle-icon: '\1F319';
+    --dark-toggle-shift: 30px;
 
     /* Default to light theme */
     --bg-primary: var(--light-bg-primary);
@@ -37,6 +44,9 @@
     --shadow-color: var(--light-shadow);
     --accent-color: var(--light-accent);
     --accent-hover: var(--light-accent-hover);
+    --accent-rgb: var(--light-accent-rgb);
+    --toggle-icon: var(--light-toggle-icon);
+    --toggle-shift: var(--light-toggle-shift);
 
     /*
      * The header is fixed at this height. The sidebar navigation starts below
@@ -46,7 +56,43 @@
     --header-height: 80px;
 }
 
-body.dark-theme {
+/*
+ * Which theme applies, in three states.
+ *
+ * A reader either has chosen a theme or has not. If they have not, the one
+ * their system asks for is used; if they have, that choice wins whichever way
+ * round it goes — including choosing light on a machine set to dark, which a
+ * media query alone cannot express.
+ *
+ * The choice is an attribute on the root element rather than a class on the
+ * body, because it is set by theme.js before the body exists. The stylesheet
+ * carries the dark palette itself, so a reader whose system is dark gets a
+ * dark page even with JavaScript turned off, and gets it on the first paint
+ * rather than after a white flash.
+ *
+ * The two dark blocks are identical and have to be: CSS has no way to give
+ * one declaration list two unrelated conditions.
+ */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg-primary: var(--dark-bg-primary);
+        --bg-secondary: var(--dark-bg-secondary);
+        --sidebar-bg: var(--dark-sidebar-bg);
+        --header-bg: var(--dark-header-bg);
+        --text-primary: var(--dark-text-primary);
+        --text-secondary: var(--dark-text-secondary);
+        --text-accent: var(--dark-text-accent);
+        --border-color: var(--dark-border);
+        --shadow-color: var(--dark-shadow);
+        --accent-color: var(--dark-accent);
+        --accent-hover: var(--dark-accent-hover);
+        --accent-rgb: var(--dark-accent-rgb);
+        --toggle-icon: var(--dark-toggle-icon);
+        --toggle-shift: var(--dark-toggle-shift);
+    }
+}
+
+:root[data-theme="dark"] {
     --bg-primary: var(--dark-bg-primary);
     --bg-secondary: var(--dark-bg-secondary);
     --sidebar-bg: var(--dark-sidebar-bg);
@@ -58,6 +104,9 @@ body.dark-theme {
     --shadow-color: var(--dark-shadow);
     --accent-color: var(--dark-accent);
     --accent-hover: var(--dark-accent-hover);
+    --accent-rgb: var(--dark-accent-rgb);
+    --toggle-icon: var(--dark-toggle-icon);
+    --toggle-shift: var(--dark-toggle-shift);
 }
 
 * {
@@ -244,18 +293,6 @@ body {
     transition: all 0.3s ease;
 }
 
-#headersearch {
-    display: none;
-}
-
-#headersearchtext {
-    display: none;
-}
-
-#headersearchbutton {
-    display: none;
-}
-
 #logo {
     display: flex;
     flex-direction: column;
@@ -310,7 +347,7 @@ body {
 }
 
 #theme-toggle::after {
-    content: '☀️';
+    content: var(--toggle-icon);
     position: absolute;
     top: 2px;
     left: 2px;
@@ -324,11 +361,7 @@ body {
     justify-content: center;
     font-size: 14px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-body.dark-theme #theme-toggle::after {
-    content: '🌙';
-    transform: translateX(30px);
+    transform: translateX(var(--toggle-shift));
 }
 
 #content {
@@ -641,12 +674,9 @@ body.dark-theme #theme-toggle::after {
 
 .search-field:focus {
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
 }
 
-body.dark-theme .search-field:focus {
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
-}
 
 .search-submit-btn {
     position: absolute;
@@ -1365,7 +1395,7 @@ img {
     border: none;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.3);
 }
 
 .action-btn:link,
@@ -1376,16 +1406,10 @@ img {
 .action-btn:hover {
     color: #ffffff !important;
     transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 8px 25px rgba(var(--accent-rgb), 0.4);
 }
 
-body.dark-theme .action-btn {
-    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
-}
 
-body.dark-theme .action-btn:hover {
-    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
-}
 
 .action-btn .icon {
     font-size: 20px;
@@ -1608,12 +1632,9 @@ body.dark-theme .action-btn:hover {
 .search-input:focus {
     outline: none;
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.1);
 }
 
-body.dark-theme .search-input:focus {
-    box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
-}
 
 .search-icon {
     position: absolute;
@@ -1915,12 +1936,9 @@ body.dark-theme .search-input:focus {
 
 .compare-field:focus {
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
 }
 
-body.dark-theme .compare-field:focus {
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
-}
 
 .compare-submit-btn {
     position: absolute;
@@ -2211,12 +2229,9 @@ body.dark-theme .compare-field:focus {
 
 .viz-search-field:focus {
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
 }
 
-body.dark-theme .viz-search-field:focus {
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
-}
 
 /* Status messages */
 .viz-status {
@@ -2913,12 +2928,9 @@ body.dark-theme .viz-search-field:focus {
 
 .vst-search-field:focus {
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
 }
 
-body.dark-theme .vst-search-field:focus {
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
-}
 
 /* Table wrapper card */
 .vst-table-wrapper {
@@ -3165,7 +3177,16 @@ body.dark-theme .vst-search-field:focus {
     --wdp-surface: #ffffff;
 }
 
-body.dark-theme {
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --wdp-danger: #fc8181;
+        --wdp-warn: #f6ad55;
+        --wdp-ok: #68d391;
+        --wdp-surface: #1a1a2e;
+    }
+}
+
+:root[data-theme="dark"] {
     --wdp-danger: #fc8181;
     --wdp-warn: #f6ad55;
     --wdp-ok: #68d391;

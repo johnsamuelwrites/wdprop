@@ -49,8 +49,19 @@ window.WDProp = window.WDProp || {};
         if (result.blocking.length) {
             return { state: "blocked", messages: result.blocking };
         }
+        /*
+         * A term already on Wikidata is a conflict, and for a revision made
+         * from the out-of-date report it is the expected one: the proposal
+         * exists in order to replace it. The confirmation is still asked for
+         * — nothing here has read the existing term — but the question is put
+         * in the words of what the translator was actually doing.
+         */
         if (result.conflict && !overrides[entry.id]) {
-            return { state: "conflict", messages: [result.conflict] };
+            return {
+                state: "conflict",
+                messages: entry.reason === "drift" ?
+                    [result.conflict, t("batch.revisingDrift")] : [result.conflict]
+            };
         }
         if (result.conflict) {
             return { state: "overridden", messages: [result.conflict + t("batch.overwriting")] };
@@ -337,9 +348,5 @@ window.WDProp = window.WDProp || {};
         revalidate();
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
-    } else {
-        init();
-    }
+    WDProp.ready(init);
 })(window.WDProp);

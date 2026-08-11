@@ -28,6 +28,13 @@ window.WDProp = window.WDProp || {};
      * `pivot` records which language the translator was reading from. It is
      * not exported to QuickStatements (QuickStatements has nowhere to put
      * it), but it cannot be reconstructed afterwards, so it is kept here.
+     *
+     * `reason` is set to "drift" for a proposal made from the out-of-date
+     * report, where replacing a term that already exists is the whole point.
+     * The batch page checks every proposal against Wikidata and treats an
+     * existing term as a conflict to be confirmed; without this it could not
+     * tell a deliberate revision from an accidental overwrite, and would ask
+     * the same question of both in the same words.
      */
 
     /*
@@ -112,6 +119,7 @@ window.WDProp = window.WDProp || {};
                 value: value,
                 pivot: entry.pivot || null,
                 pivotValue: entry.pivotValue || null,
+                reason: entry.reason || null,
                 added: Date.now()
             };
 
@@ -203,11 +211,5 @@ window.WDProp = window.WDProp || {};
 
     WDProp.cart = cart;
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", function () {
-            cart.mountBadge();
-        });
-    } else {
-        cart.mountBadge();
-    }
+    WDProp.ready(function () { cart.mountBadge(); });
 })(window.WDProp);

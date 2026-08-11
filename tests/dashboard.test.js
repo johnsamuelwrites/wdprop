@@ -90,6 +90,14 @@ function context() {
                     counts: () => Promise.resolve({ P31: 118879567 }),
                     format: n => (n >= 1000000 ? Math.round(n / 1000000) + "M" : String(n)),
                 },
+                /*
+                 * actions.js is loaded before dashboard.js on every page, so
+                 * the registry is there by the time this registers the handler
+                 * behind the four cards at the top.
+                 */
+                actions: { add() {} },
+                /* readyState is "complete" here, so ready() runs at once. */
+                ready: fn => fn(),
             },
             /* Nobody has asked for less movement, so the counter animates. */
             matchMedia: () => ({ matches: false }),

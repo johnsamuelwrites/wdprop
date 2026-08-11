@@ -220,10 +220,6 @@
         };
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', installHook);
-    } else {
-        installHook();
-    }
+    WDProp.ready(installHook);
 
 })();

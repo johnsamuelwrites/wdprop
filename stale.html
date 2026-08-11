@@ -1,0 +1,85 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>WDProp: Translations that may be out of date: John Samuel</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script src="theme.js"></script>
+    <script defer src="ready.js"></script>
+    <script defer src="shell.js"></script>
+    <script defer src="actions.js"></script>
+    <script defer src="pager.js"></script>
+    <script defer type="text/javascript" src="i18n.js"></script>
+    <script defer type="text/javascript" src="i18n/en.js"></script>
+    <script defer type="text/javascript" src="wdprop.js"></script>
+    <script defer type="text/javascript" src="cart.js"></script>
+    <script defer type="text/javascript" src="offline.js"></script>
+    <script defer type="text/javascript" src="usage.js"></script>
+    <script defer type="text/javascript" src="stale.js"></script>
+    <script defer type="text/javascript" src="staleview.js"></script>
+    <script defer src="pageinit.js"></script>
+</head>
+
+<body>
+    <wdprop-shell></wdprop-shell>
+    <div id="content" role="main" tabindex="-1">
+        <div class="section">
+            <h2 data-i18n="stale.heading">Translations that may be out of date</h2>
+            <p class="wdp-muted" data-i18n="stale.intro">A translation is made from a source term at a moment in time. When that source term is later rewritten, the translation stays exactly as it was, still counted as translated, with nothing to say it now describes something that has changed. Wikidata cannot see this, because a term carries no link to the term it was translated from. The revision history can: it records which term, in which language, was last touched when.</p>
+            <form id="staleControls" class="wb-controls">
+                <div class="wb-control">
+                    <label for="stTarget" data-i18n="stale.targetLanguage">Translation in</label>
+                    <input type="text" id="stTarget" class="wdp-input wdp-input-small" size="6" autocomplete="off" />
+                </div>
+                <div class="wb-control">
+                    <label for="stSource" data-i18n="stale.sourceLanguage">Made from</label>
+                    <input type="text" id="stSource" class="wdp-input wdp-input-small" size="6" autocomplete="off" />
+                </div>
+                <div class="wb-control">
+                    <label for="stType" data-i18n="stale.termType">Term</label>
+                    <select id="stType" class="wdp-input wdp-input-small">
+                        <option value="label" data-i18n="term.labels">Labels</option>
+                        <option value="description" data-i18n="term.descriptions">Descriptions</option>
+                        <option value="alias" data-i18n="term.aliases">Aliases</option>
+                    </select>
+                </div>
+                <div class="wb-control">
+                    <label for="stScope" data-i18n="stale.scope">Among</label>
+                    <select id="stScope" class="wdp-input">
+                        <option value="top" data-i18n="stale.scopeTop">The most used properties</option>
+                        <option value="class" data-i18n="stale.scopeClass">A property class</option>
+                        <option value="datatype" data-i18n="stale.scopeDatatype">A datatype</option>
+                        <option value="properties" data-i18n="stale.scopeList">A list of properties</option>
+                    </select>
+                </div>
+                <div class="wb-control" id="stScopeValueControl">
+                    <label for="stScopeValue" data-i18n="stale.scopeValue">Which one</label>
+                    <input type="text" id="stScopeValue" class="wdp-input" size="18" autocomplete="off" />
+                </div>
+                <div class="wb-control">
+                    <label for="stLimit" data-i18n="stale.limit">At most</label>
+                    <input type="number" id="stLimit" class="wdp-input wdp-input-small" min="10" max="300" />
+                </div>
+                <div class="wb-control">
+                    <button type="submit" class="wdp-button wdp-primary" id="stRun" data-i18n="stale.check">Check</button>
+                </div>
+            </form>
+            <p class="wdp-muted" data-i18n="stale.cost">Checking reads one revision history per property, so this asks Wikidata a few hundred times at most and keeps what it reads for a day. Start with the most used properties: those are the ones whose wording has been argued over, and so the ones most likely to have moved.</p>
+        </div>
+        <div class="section">
+            <div id="staleSummary"></div>
+            <div id="staleResults"></div>
+        </div>
+        <div class="section">
+            <h3 data-i18n="stale.howHeading">How this is worked out</h3>
+            <p class="wdp-muted" data-i18n="stale.howText">Wikibase writes a structured summary for every term it changes, naming the kind of term and the language. Reading a property's history backwards therefore gives the last date each term in each language was set. A translation dated before the last change to the term it was made from may no longer match it. Some edits change terms without saying which — a bulk import, an undo — and where one of those falls after the source change, no verdict is given rather than a guess. A finding is a lead, not an error: the source edit may have been a typo fix, which is why each one can be opened to show what actually changed.</p>
+        </div>
+    </div>
+    <div id="footer" role="contentinfo">
+        <p id="footertext" data-i18n-html="app.footer">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a href="https://mediawiki.org/">MediaWiki</a> API</p>
+    </div>
+</body>
+
+</html>

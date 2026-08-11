@@ -5,32 +5,24 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>WDProp: Everything about Wikidata Properties: John Samuel</title>
+        <link rel="manifest" href="manifest.webmanifest" />
         <link rel="stylesheet" type="text/css" href="style.css" />
-        <script type="text/javascript" src="i18n.js"></script>
-        <script type="text/javascript" src="i18n/en.js"></script>
-        <script type="text/javascript" src="wdprop.js"></script>
-        <script type="text/javascript" src="usage.js"></script>
-        <script type="text/javascript" src="dashboard.js"></script>
+        <script src="theme.js"></script>
+        <script defer src="ready.js"></script>
+        <script defer src="shell.js"></script>
+        <script defer src="actions.js"></script>
+        <script defer src="pager.js"></script>
+        <script defer type="text/javascript" src="i18n.js"></script>
+        <script defer type="text/javascript" src="i18n/en.js"></script>
+        <script defer type="text/javascript" src="wdprop.js"></script>
+        <script defer type="text/javascript" src="offline.js"></script>
+        <script defer type="text/javascript" src="usage.js"></script>
+        <script defer type="text/javascript" src="dashboard.js"></script>
+        <script defer src="pageinit.js"></script>
     </head>
 
     <body>
-    <a href="#content" class="skip-link" data-i18n="a11y.skip">Skip to main content</a>
-        <div id="mobile-menu-toggle" role="button" tabindex="0" aria-expanded="false"
-         onclick="toggleMobileMenu()" data-i18n-label="a11y.menuToggle">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-        <div id="header" role="banner">
-            <div id="logo"><a href="./index.html">WDProp</a>
-                <span id="subtitle" data-i18n="app.subtitle">Everything about Wikidata properties</span>
-            </div>
-            <div id="theme-toggle" role="button" tabindex="0" onclick="toggleTheme()"
-             data-i18n-label="a11y.themeToggle" data-i18n-title="a11y.themeToggle"></div>
-        </div>
-        <div id="sidebar" role="navigation" data-i18n-label="a11y.nav">
-            <div id="sidebarlinks"></div>
-        </div>
+        <wdprop-shell></wdprop-shell>
         <div id="content" role="main" tabindex="-1">
             <!--
                 Hero Stats. The figures are left empty here on purpose: every
@@ -39,25 +31,25 @@
                 behind it has failed.
             -->
             <div class="dashboard-hero">
-                <div class="stat-card" onclick="window.location.href='./properties.html'">
+                <div class="stat-card" data-action="goTo" data-arg="properties.html">
                     <span class="stat-icon">🔧</span>
                     <div class="stat-label" data-i18n="dash.totalProperties">Total properties</div>
                     <div class="stat-value" id="statProperties"></div>
                     <div class="stat-change" data-i18n="dash.inWikidata">in Wikidata</div>
                 </div>
-                <div class="stat-card" onclick="window.location.href='./languages.html'">
+                <div class="stat-card" data-action="goTo" data-arg="languages.html">
                     <span class="stat-icon">🌍</span>
                     <div class="stat-label" data-i18n="dash.languages">Languages</div>
                     <div class="stat-value" id="statLanguages"></div>
                     <div class="stat-change" data-i18n="dash.supported">supported</div>
                 </div>
-                <div class="stat-card" onclick="window.location.href='./datatypes.html'">
+                <div class="stat-card" data-action="goTo" data-arg="datatypes.html">
                     <span class="stat-icon">📊</span>
                     <div class="stat-label" data-i18n="dash.datatypes">Data types</div>
                     <div class="stat-value" id="statDatatypes"></div>
                     <div class="stat-change" data-i18n="dash.available">available</div>
                 </div>
-                <div class="stat-card" onclick="window.location.href='./classes.html'">
+                <div class="stat-card" data-action="goTo" data-arg="classes.html">
                     <span class="stat-icon">📦</span>
                     <div class="stat-label" data-i18n="dash.propertyClasses">Property classes</div>
                     <div class="stat-value" id="statClasses"></div>

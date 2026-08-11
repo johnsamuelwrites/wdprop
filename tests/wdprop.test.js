@@ -29,7 +29,8 @@ const node = () => ({
 
 const sandbox = {
     console,
-    window: { location: { search: "" }, matchMedia: () => ({ matches: false }), WDProp: null },
+    window: { location: { search: "" }, matchMedia: () => ({ matches: false }), WDProp: null,
+        addEventListener() {} },
     localStorage: { getItem: () => null, setItem() {} },
     navigator: { language: "en" },
     document: {
@@ -42,6 +43,7 @@ const sandbox = {
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
+vm.runInContext(fs.readFileSync(path.join(ROOT, "ready.js"), "utf8"), sandbox, { filename: "ready.js" });
 vm.runInContext(fs.readFileSync(path.join(ROOT, "wdprop.js"), "utf8"), sandbox, { filename: "wdprop.js" });
 vm.runInContext(`
     queryWikidata = function (q, f, divId) { __capture(divId, q); };

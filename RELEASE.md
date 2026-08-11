@@ -35,6 +35,31 @@ Human-driven translation, alongside the existing analysis.
 * The sidebar is built from one list rather than repeated in the markup of
   every page, where the copies had begun to drift apart
 
+The application itself
+
+* d3 is gone. It was 511 KB — more than every other script in WDProp put
+  together — loaded on one page out of forty-one, and what that page used of
+  it was a helper for setting attributes and a division. The arc diagram is
+  drawn in plain SVG, checked against d3's own arithmetic
+* The header, sidebar and skip link are one element, <wdprop-shell>, instead
+  of being written out by hand in all forty-one pages. A custom element, not a
+  template or an include, because WDProp has no build step and no server and
+  still has to open from a disk
+* Every on* attribute is gone — a hundred and thirty-three of them. Controls
+  name an action, the scripts register what the name does, and the name is
+  looked up rather than evaluated. What each page starts when it opens is one
+  table in pageinit.js instead of thirty-two body onload attributes
+* The scripts are deferred, so a page is no longer laid out around four
+  blocking downloads. theme.js is deliberately not, being the one that has to
+  run before the first paint
+* The stylesheet carries the dark palette itself, through prefers-color-scheme,
+  so a reader whose system is dark gets a dark page with no flash of white and
+  without JavaScript. Choosing a theme still overrides it, in both directions
+* Fifteen files opened with the same five lines of "run now or wait for the
+  document"; they share WDProp.ready. The previous/next control was written
+  twice; it is now in pager.js
+* The tests run on push and on every pull request
+
 Fixes
 
 * The dashboard stated things it had not checked. The service panel said
@@ -80,6 +105,21 @@ Fixes
   sections ran the label query, so all three showed the same result
 * mwwdprop.js and wdprop.js both defined createDivLanguage; on the property
   page, which one ran depended on script order
+* Pressing Enter anywhere on any page ran a handler that read the value of a
+  header search box. The box was styled display:none on the ten pages that had
+  it and absent from the other thirty-one, so on those thirty-one every Enter
+  key threw, and on the ten it navigated to ./search.html — which, from a
+  subdirectory, is a page that does not exist. Searching has always been done
+  by the forms on search.html
+* compare.js and offlineview.js were missing from the service worker's file
+  list, so compare.html and offline.html — the page about working offline —
+  were the two pages that did not work offline. sw.js said a test compared
+  that list against the directory; no such test existed, and now does
+* WDProp installed anywhere other than the root of a host and opened at its
+  own root read the directory's name as the page, matching nothing, so the
+  dashboard was the one page whose sidebar entry was never marked
+* The workbench pager changed every row above it and said nothing: it had no
+  live region, which the pager on the data tables has always had
 
 # v0.12 
 ===============================================================================
