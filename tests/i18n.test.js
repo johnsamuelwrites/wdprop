@@ -54,6 +54,18 @@ for (const f of MODULES) {
 s.check("every key used from JavaScript is defined",
     [...usedInJs].filter(k => !k.endsWith(".") && !(k in dicts.en)).sort(), []);
 
+/*
+ * Sidebar entries name their message keys as data inside wdpropSections rather
+ * than by calling t("...") directly. They still render through i18n at runtime,
+ * so they need an explicit coverage check.
+ */
+const wdpropSource = fs.readFileSync(path.join(ROOT, "wdprop.js"), "utf8");
+const sectionsSource = /var wdpropSections = \[([\s\S]*?)\];/.exec(wdpropSource)[1];
+const sectionKeys = [...sectionsSource.matchAll(/\bkey:\s*["']([a-z][A-Za-z0-9.]+)["']/g)]
+    .map(m => m[1]);
+s.check("every sidebar section key is defined",
+    sectionKeys.filter(k => !(k in dicts.en)).sort(), []);
+
 const pages = [];
 (function walk(d) {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {

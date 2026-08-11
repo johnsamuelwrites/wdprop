@@ -17,6 +17,7 @@ WDProp.i18n.add("en", {
     "nav.dashboard": "📊 Dashboard",
     "nav.translate": "✍️ Translate",
     "nav.campaigns": "🎯 Campaigns",
+    "nav.stale": "🕰️ Stale translations",
     "nav.contributions": "✅ My contributions",
     "nav.languages": "🌍 Languages",
     "nav.datatypes": "📊 Data types",
@@ -27,6 +28,7 @@ WDProp.i18n.add("en", {
     "nav.compare": "⚖️ Compare",
     "nav.discussion": "💬 Property Discussion",
     "nav.wikiprojects": "🚀 Wikiprojects",
+    "nav.offline": "📴 Offline",
     "nav.about": "ℹ️ About",
 
     /*

@@ -14,6 +14,7 @@ WDProp.i18n.add("fr", {
     "nav.dashboard": "📊 Tableau de bord",
     "nav.translate": "✍️ Traduire",
     "nav.campaigns": "🎯 Campagnes",
+    "nav.stale": "🕰️ Traductions obsolètes",
     "nav.contributions": "✅ Mes contributions",
     "nav.languages": "🌍 Langues",
     "nav.datatypes": "📊 Types de données",
@@ -24,6 +25,7 @@ WDProp.i18n.add("fr", {
     "nav.compare": "⚖️ Comparer",
     "nav.discussion": "💬 Discussion des propriétés",
     "nav.wikiprojects": "🚀 Projets",
+    "nav.offline": "📴 Hors ligne",
     "nav.about": "ℹ️ À propos",
 
     "crumb.home": "Tableau de bord",
