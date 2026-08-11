@@ -40,7 +40,9 @@
     shows placeholder rows the shape of what is coming, and says so when a
     query finds nothing or fails, with a way to ask again
 13. ~~WikiProjects~~
-    * ~~Paginated tables~~
+    * ~~Paginated tables~~ — the same paged table as every other listing, with
+      the projects fetched from the search API in parallel rather than through
+      the query service
 14. ~~Highlight~~
     * ~~Sidebar elements on click~~ — the entry for the page being shown is
       marked, and pages below one carry a breadcrumb back to it

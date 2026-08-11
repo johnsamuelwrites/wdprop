@@ -54,6 +54,24 @@ Human-driven translation, alongside the existing analysis.
   label, and the old table printed the item identifier in the label column
   when one was missing, so five rows in six read as though the class were
   named "Q21451142"
+* The WikiProjects are that table too, and wikiprojects.js is gone with
+  classes.js. The listing asked the query service, which federated the question
+  straight back to the MediaWiki search API through SERVICE wikibase:mwapi:
+  thirty-five seconds for four thousand project names. Asked of that API
+  directly, by title rather than by free text, and with its nine pages of five
+  hundred requested at once — they are reached by offset, so none waits on
+  another — the same listing is 4,339 projects in 1.6 seconds
+* Beneath it sat two paging schemes, neither of which ran. The renderer
+  appended "next" links carrying limit and offset in the URL, while
+  wikiprojects.js overrode the query to drop LIMIT and OFFSET altogether and
+  virtualised the result instead — parsing the table's HTML back into objects
+  to do it
+* wikiproject.html ran a SPARQL query for no reason but to put a label beside
+  each of a project's properties, in English, on a page about translating them
+  into other languages. The identifiers were already in the links the API had
+  returned, so the properties are simply the ordinary table now, named in the
+  reader's language. Its "Total N properties" heading was built, filled in, and
+  never appended to anything, so the page had never once shown the figure
 * Those terms are fetched for the fifty rows on show, not for the whole
   listing. Asked of the query service with their labels and descriptions, the
   ten thousand external-identifier properties are 4.6 MB and twenty seconds,
@@ -89,6 +107,12 @@ The application itself
 * The tests run on push and on every pull request
 
 Fixes
+
+* The WikiProjects listing counted the index page as a project. It kept every
+  title beginning "Wikidata:WikiProject", which "Wikidata:WikiProjects" does —
+  so the list carried that page and its seventy translations among the real
+  ones. A project's title continues with a space before its name or a slash
+  before a subpage, and that is what is now tested
 
 * Two provenance queries could not be answered at all. Both bound every
   statement of every property — the equivalent-property one did so for no

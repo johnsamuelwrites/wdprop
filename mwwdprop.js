@@ -59,6 +59,87 @@ function queryMediaWiki(queryparams, func, divId, url) {
 }
 
 /*
+ * ===========================================================================
+ * The WikiProjects listing
+ * ===========================================================================
+ *
+ * This page used to ask the query service, which federated the question
+ * straight back to the MediaWiki search API through SERVICE wikibase:mwapi.
+ * Going round by SPARQL cost thirty-five seconds for four thousand project
+ * names; asked of the search API directly the same first results arrive in a
+ * little over one.
+ *
+ * The search is by title — intitle:WikiProject within the Project namespace —
+ * rather than the free-text search the old query used and then filtered by
+ * hand, so a page that merely mentions a WikiProject is never fetched only to
+ * be discarded.
+ *
+ * Its pages are reached by offset rather than by a continuation token, which
+ * means they do not depend on one another and can be asked for at once. Nine
+ * requests in parallel bring back four and a half thousand projects in about
+ * a second and a half.
+ */
+
+var wikiProjectsPerRequest = 500;
+var wikiProjectsRequests = 9;
+
+function wikiProjectsSearchUrl(offset) {
+    return endpointUrl + "?action=query&list=search" +
+        "&srsearch=" + encodeURIComponent("intitle:WikiProject") +
+        "&srnamespace=4&srlimit=" + wikiProjectsPerRequest +
+        "&sroffset=" + offset +
+        "&srprop=&format=json&origin=*";
+}
+
+/*
+ * Every project title the search knows of, in search order and without
+ * repeats. A request that fails contributes nothing rather than failing the
+ * whole listing: one missing page of a long list is worth far less than the
+ * list.
+ */
+function fetchWikiProjects() {
+    var offsets = [];
+    for (var i = 0; i < wikiProjectsRequests; i++) {
+        offsets.push(i * wikiProjectsPerRequest);
+    }
+
+    return Promise.all(offsets.map(function (offset) {
+        return fetch(wikiProjectsSearchUrl(offset)).then(wdpropReadJson)
+            .then(function (json) {
+                if (json && json.error) {
+                    throw new Error(json.error.code || "api");
+                }
+                return (json.query && json.query.search) || [];
+            }).catch(function () {
+                return [];
+            });
+    })).then(function (parts) {
+        var seen = {};
+        var titles = [];
+        for (var i = 0; i < parts.length; i++) {
+            for (var j = 0; j < parts[i].length; j++) {
+                var title = parts[i][j].title;
+                /*
+                 * A project's title continues past the prefix, with a space
+                 * before its name or a slash before a subpage. Testing the
+                 * prefix alone would keep "Wikidata:WikiProjects", the index
+                 * page listing them, and the bare "Wikidata:WikiProject" —
+                 * neither of which is a project.
+                 */
+                if (!/^Wikidata:WikiProject[ /]/.test(title)) {
+                    continue;
+                }
+                if (!seen[title]) {
+                    seen[title] = true;
+                    titles.push(title);
+                }
+            }
+        }
+        return titles;
+    });
+}
+
+/*
  * Lists the languages a property-discussion template has been translated
  * into. Deliberately named apart from the same-named helper in wdprop.js,
  * which renders language chips: property.html loads both files, and
@@ -257,53 +338,69 @@ function updateModificationDate(property, language) {
     showRevisionTimestamp(property, "older", "wikidatapropertylastmodified");
 }
 
+/*
+ * The properties a WikiProject page links to.
+ *
+ * The identifiers are already here, in the links the API returned, so the
+ * SPARQL query this used to run purely to put a label beside each one is gone:
+ * the table names them from the entity API, for the rows on show, as every
+ * other property listing does. That also settles what the labels are in — the
+ * old query asked for English and nothing else, on a page about translating
+ * into other languages.
+ *
+ * The heading it built is now attached to something. It was created, filled in
+ * with the count, and then dropped: nothing ever appended it, so the page has
+ * never shown how many properties a project has.
+ */
 function createDivWikprojectProperties(divId, json) {
-    let properties = document.getElementById(divId);
-    let total = document.createElement("h3");
-
-    let count = 0;
-    let wdproperties = [];
+    let ids = [];
 
     for (const page of Object.keys(json.query.pages)) {
-        for (const result of json.query.pages[page].links) {
+        /*
+         * Which project this is. The page says so in its own heading rather
+         * than only in the address bar, and nothing else fills it in now that
+         * the second, unused renderer that did has gone.
+         */
+        let heading = document.getElementById("WikiProject");
+        if (heading != null) {
+            heading.textContent = json.query.pages[page].title || "";
+        }
+
+        let links = json.query.pages[page].links || [];
+        for (const result of links) {
             if (!result.title.startsWith("Property:")) {
                 continue;
             }
-            let text = result.title.replace("Property", "wd");
-            wdproperties = wdproperties + " " + text + " ";
-            count++;
-        }
-    }
-    total.innerHTML = wdpropText("js.totalProperties", [count]);
-
-    addDivPropertyLabels(divId, wdproperties);
-}
-
-function createDivPropertyList(divId, json, url) {
-    var properties = document.getElementById(divId);
-    var total = document.createElement("h3");
-    var count = 0;
-    properties.appendChild(total);
-    for (const page of Object.keys(json.query.pages)) {
-        var div = document.getElementById("WikiProject");
-        div.innerHTML = json.query.pages[page].title;
-        for (const result of json.query.pages[page].links) {
-            if (result.title.indexOf("Property:") !== -1 && result.title !== "Property:P") {
-                var property = document.createElement("div");
-                property.setAttribute('class', "property");
-                var a = document.createElement("a");
-                propertyid = result.title.replace("Property:", "");
-                a.setAttribute('href', "property.html?property=" + propertyid);
-                var text = document.createTextNode(propertyid);
-                a.appendChild(text);
-                property.appendChild(a);
-                properties.appendChild(property);
-                count++;
+            let id = result.title.replace("Property:", "");
+            /* "Property:P" appears as a bare link on some project pages. */
+            if (/^P\d+$/.test(id)) {
+                ids.push(id);
             }
         }
     }
-    total.innerHTML = wdpropText("js.totalProperties", [count]);
+
+    /*
+     * The table reads a SPARQL answer, and this is a MediaWiki one. Shaping it
+     * here rather than teaching the table a second format keeps every listing
+     * in WDProp built by the same function.
+     */
+    createDivPropertyTable(divId, {
+        head: { vars: ["property"] },
+        results: {
+            bindings: ids.map(function (id) {
+                return { property: { value: "http://www.wikidata.org/entity/" + id } };
+            })
+        }
+    });
+    wdpropPaginate(document.getElementById(divId));
+
+    let project = getValueFromURL("project=([^&#=]*)", "");
+    if (project != "" && project != undefined) {
+        getTranslationStatisticsForWikiProject(
+            ids.map(function (id) { return "wd:" + id; }).join(" "));
+    }
 }
+
 
 function showWikiProjectProperties(project, divId) {
     var queryparams = "query&prop=links&pllimit=500&origin=*&titles=" + project;

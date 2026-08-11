@@ -394,6 +394,8 @@ WDProp.i18n.add("fr", {
     "js.language": "Langue",
     "js.link": "Lien",
     "js.projects": "Projets",
+    "js.totalProjects": "Total : $1 projets",
+    "js.propertiesHere": "Propriétés dans WDProp",
     "js.next": "Suivant",
     "js.previous": "Précédent",
     "js.pageOf": "Page $1 sur $2 — $3 lignes affichées sur $4",

@@ -417,6 +417,8 @@ WDProp.i18n.add("en", {
     "js.language": "Language",
     "js.link": "Link",
     "js.projects": "Projects",
+    "js.totalProjects": "Total $1 WikiProjects",
+    "js.propertiesHere": "Properties in WDProp",
     "js.next": "Next",
     "js.previous": "Previous",
     /* $3 and $4 are how far down the whole table the page reaches. */

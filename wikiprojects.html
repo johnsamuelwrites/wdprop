@@ -17,7 +17,6 @@
     <script defer type="text/javascript" src="mwwdprop.js"></script>
     <script defer type="text/javascript" src="wdprop.js"></script>
     <script defer type="text/javascript" src="offline.js"></script>
-    <script defer type="text/javascript" src="wikiprojects.js"></script>
     <script defer src="wikiprojectsview.js"></script>
     <script defer src="pageinit.js"></script>
 </head>
@@ -36,33 +35,12 @@
             </div>
         </div>
 
-        <!-- Modern table (hidden until data arrives) -->
-        <div id="wp-modern" style="display:none;">
-            <div class="vst-table-wrapper">
-                <div class="vst-table-header">
-                    <span class="vst-table-count">Showing <span id="wp-count">…</span> projects</span>
-                </div>
-                <!-- sticky column headers -->
-                <div class="vst-col-headers">
-                    <div class="vst-col-header vst-col-name">Project</div>
-                    <div class="vst-col-header vst-col-intlink">Local Link</div>
-                </div>
-                <!-- virtual scroll container -->
-                <div id="wp-scroll" class="vst-scroll">
-                    <div id="wp-scroll-viewport" class="vst-scroll-viewport">
-                        <div id="wp-scroll-container" class="vst-scroll-container"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Original output (hidden; wikiprojects.js parses it then hides it) -->
-        <div id="allWikiProjects" style="display:block;"></div>
+        <div id="allWikiProjects"></div>
 
         <!-- Query section -->
         <div class="section search-query-section" id="wpQuerySection" style="display:none;">
             <button class="search-query-toggle" data-action="toggleWPQuery">
-                <span class="search-query-toggle-icon">⚙️</span> Show SPARQL Query
+                <span class="search-query-toggle-icon">⚙️</span> Show API Query
                 <span class="search-query-chevron">▼</span>
             </button>
             <div id="allWikiProjectsQuery" class="search-query-body" style="display:none;"></div>

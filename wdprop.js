@@ -93,32 +93,6 @@ propertiesWithDatatypeWhere =
     `    ?property rdf:type wikibase:Property;
               wikibase:propertyType {{datatype}}.`;
 
-allWikiProjectsQuery =
-    `SELECT DISTINCT ?title WHERE {
-   SERVICE wikibase:mwapi {
-        bd:serviceParam wikibase:api "Search" .
-        bd:serviceParam wikibase:endpoint "www.wikidata.org" .
-        bd:serviceParam mwapi:srsearch "Wikidata:WikiProject" .
-        ?title wikibase:apiOutput mwapi:title .
-   }
-      FILTER(contains(?title, "Wikidata:WikiProject" )).
-}
-LIMIT {{limit}}
-OFFSET {{offset}}
-`;
-
-/*
- * Get property labels
- */
-propertyLabelsQuery =
-    `
-SELECT ?property ?label {
-  VALUES ?property { {{wdproperties}} }
-  ?property rdfs:label ?label.
-
-  FILTER(lang(?label)="{{language}}")
-}
-`;
 
 /*
  * The classes that group properties: the items, and only those.
@@ -657,70 +631,70 @@ function createDivComparisonResults(divId, json) {
     properties.appendChild(table);
 }
 
-function createDivWikiProjects(divId, json) {
-    const { head: { vars }, results } = json;
-    let projects = document.getElementById(divId);
-    while (projects.hasChildNodes()) {
-        projects.removeChild(projects.lastChild);
+/*
+ * The WikiProjects, as a table like every other listing.
+ *
+ * This page carried a mechanism of its own — the renderer drew a table into a
+ * hidden div, wikiprojects.js parsed that table's HTML back into objects and
+ * re-rendered them into a bespoke virtual scroller — and beneath it a second
+ * paging scheme that was never reached: the renderer appended "next" links
+ * carrying limit and offset in the URL, while wikiprojects.js overrode the
+ * query to drop LIMIT and OFFSET altogether. Both are gone. It is the ordinary
+ * paged table now, with the filter narrowing it.
+ *
+ * The titles arrive as an array from fetchWikiProjects, because the listing no
+ * longer goes round by the query service to ask the search API a question the
+ * search API answers directly. The search page still asks in SPARQL — it
+ * searches project titles for a word, which is a different question — so a
+ * result from the query service is accepted here too and reduced to the same
+ * array of titles.
+ */
+function createDivWikiProjects(divId, titles) {
+    let container = document.getElementById(divId);
+
+    if (titles && titles.results) {
+        titles = titles.results.bindings.map(function (binding) {
+            return binding['title'].value;
+        });
     }
+
+    let total = document.createElement("h3");
+    total.innerHTML = wdpropText("js.totalProjects", [titles.length]);
+    container.appendChild(total);
 
     let table = document.createElement("table");
-    table.setAttribute("class", "alternate");
-    let th = document.createElement("tr");
-    let td = document.createElement("th");
-    td.innerHTML = wdpropText("js.projects");
-    th.appendChild(td);
-    table.appendChild(th);
+    table.setAttribute("class", "alternate propertytable");
 
-    td = document.createElement("th");
-    td.innerHTML = wdpropText("js.link");
-    th.appendChild(td);
-    table.appendChild(th);
-    let tr = "";
-    for (const result of results.bindings) {
-        tr = document.createElement("tr");
+    let head = document.createElement("tr");
+    wdpropHeaderCell(head, "js.projects");
+    wdpropHeaderCell(head, "js.link");
+    table.appendChild(head);
 
-        td = document.createElement("td");
-        let a = document.createElement("a");
-        a.setAttribute('href', "https://www.wikidata.org/wiki/" + result['title'].value);
-        let title = result['title'].value.replace("Wikidata:WikiProject", "");
-        let text = document.createTextNode(title);
-        a.appendChild(text);
-        td.appendChild(a);
-        tr.appendChild(td);
+    for (const title of titles) {
+        let row = document.createElement("tr");
+        /* Held on the row so the filter can match without reading the cell. */
+        row.wdpropProjectName = title.replace("Wikidata:WikiProject", "").trim();
 
-        td = document.createElement("td");
-        let wdproject = document.createElement("a");
-        let link = "wikiproject.html?project=" + result['title'].value;
-        wdproject.setAttribute('href', link);
-        text = document.createTextNode(link);
-        wdproject.appendChild(text);
-        td.appendChild(wdproject);
-        tr.appendChild(td);
-        table.appendChild(tr);
+        let cell = document.createElement("td");
+        let onWikidata = document.createElement("a");
+        onWikidata.setAttribute("href", "https://www.wikidata.org/wiki/" + title);
+        onWikidata.appendChild(document.createTextNode(
+            row.wdpropProjectName || title));
+        cell.appendChild(onWikidata);
+        row.appendChild(cell);
+
+        cell = document.createElement("td");
+        let here = document.createElement("a");
+        here.setAttribute("href", "wikiproject.html?project=" + encodeURIComponent(title));
+        here.appendChild(document.createTextNode(wdpropText("js.propertiesHere")));
+        cell.appendChild(here);
+        row.appendChild(cell);
+
+        table.appendChild(row);
     }
-    if (results.bindings.length == limit) {
-        offset = offset + limit;
-        let nextFirst = document.createElement("div");
-        let nextLast = document.createElement("div");
-        nextFirst.setAttribute('class', "property");
-        nextLast.setAttribute('class', "property");
-        let aF = document.createElement("a");
-        aF.setAttribute('href', "wikiprojects.html?limit=" + limit + "&offset=" + offset);
-        let aL = document.createElement("a");
-        aL.setAttribute('href', "wikiprojects.html?limit=" + limit + "&offset=" + offset);
-        let textF = document.createTextNode(wdpropText("js.next"));
-        let textL = document.createTextNode(wdpropText("js.next"));
-        aF.appendChild(textF);
-        aL.appendChild(textL);
-        nextFirst.appendChild(aF);
-        nextLast.appendChild(aL);
-        projects.appendChild(nextFirst);
-        projects.appendChild(table);
-        projects.appendChild(nextLast);
-    } else {
-        projects.appendChild(table);
-    }
+
+    container.appendChild(table);
+    return titles;
 }
 
 function createDivSearchProperties(divId, json) {
@@ -2454,38 +2428,42 @@ function getSearchWikiProjectQuery(search) {
     return sparqlQuery;
 }
 
+/*
+ * The limit and offset this used to read from the URL are gone with the paging
+ * scheme that used them, and so is the substitution that destroyed its own
+ * template: the query text was replaced in place, so a second call reused the
+ * first call's limit whatever the URL said.
+ */
 function getWikiProjects() {
-    let limitString = getValueFromURL("limit=([^&#=]*)", 100);
-    if (limitString) {
-        limit = Number(limitString);
-    }
-    let offsetString = getValueFromURL("offset=([^&#=]*)", 100);
-    if (offsetString) {
-        offset = Number(offsetString);
-    }
-
     let property = getValueFromURL("property=([^&#=]*)", "");
 
     if (property != undefined && property != "") {
-        showWikiProjectsWithProperty(property, "allWikiProjects")
-    } else {
-        allWikiProjectsQuery = allWikiProjectsQuery.replace("{{limit}}", limit);
-        allWikiProjectsQuery = allWikiProjectsQuery.replace("{{offset}}", offset);
-        const sparqlQuery = allWikiProjectsQuery;
-        queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+        showWikiProjectsWithProperty(property, "allWikiProjects");
+        return;
     }
+
+    let divId = "allWikiProjects";
+    let div = document.getElementById(divId);
+    if (div == null) {
+        return;
+    }
+
+    wdpropShowLoading(div);
+    showMediaWikiQuery(wikiProjectsSearchUrl(0), divId);
+
+    fetchWikiProjects().then(function (titles) {
+        wdpropClear(div);
+        if (!titles.length) {
+            wdpropShowEmpty(div);
+            return;
+        }
+        createDivWikiProjects(divId, titles);
+        wdpropPaginate(div);
+    }).catch(function (error) {
+        wdpropShowError(div, wdpropReason(error), getWikiProjects);
+    });
 }
 
-function addDivPropertyLabels(divId, wdproperties) {
-    propertyLabelsQuery = propertyLabelsQuery.replace("{{wdproperties}}", wdproperties);
-    propertyLabelsQuery = propertyLabelsQuery.replace("{{language}}", "en");
-    const sparqlQuery = propertyLabelsQuery;
-    queryWikidata(sparqlQuery, createDivClassProperties, divId);
-    let project = getValueFromURL("project=([^&#=]*)", "");
-    if (project != "" && project != undefined) {
-        getTranslationStatisticsForWikiProject(wdproperties);
-    }
-}
 
 function findWikiProjects(e, form) {
     e.preventDefault();
