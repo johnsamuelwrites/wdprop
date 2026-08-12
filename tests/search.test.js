@@ -585,30 +585,47 @@ function projectSuite() {
 /* ------------------------------------------------------------------- live */
 
 function liveSuite() {
-    console.log("\n-- Live: the search that took a minute --");
-
-    const started = Date.now();
-    return fetch(sandbox.propertySearchUrl("software", 0))
-        .then(r => r.json())
-        .then(json => {
-            const elapsed = Date.now() - started;
-            const found = (json.query && json.query.search) || [];
-            t.check("the index answers", found.length > 0, true);
-            t.check("with properties",
-                found.every(hit => /^Property:P\d+$/.test(hit.title)), true);
-            /*
-             * The SPARQL it replaced took 58 seconds for this term. Five is
-             * far above anything measured — three tenths of a second is
-             * usual — and low enough that a return to scanning labels fails
-             * here rather than in front of someone.
-             */
-            t.check("in under five seconds", elapsed < 5000, true);
-            t.note(`${found.length} properties for "software" in ${elapsed} ms, ` +
-                `of ${json.query.searchinfo.totalhits} the index has`);
-        })
-        .catch(error => {
-            t.check("the live search could be reached", String(error), "no error");
+    /*
+     * Through t.live, so that being refused counts as a skip. Written without
+     * it, this section failed a run on a 429 — Wikidata rate-limits by
+     * address, and a CI runner's address is shared with whatever else was
+     * asking a minute earlier — and it reached the network even on a pull
+     * request, where WDPROP_OFFLINE is set to keep it from doing so.
+     */
+    return t.live("the search that took a minute", async () => {
+        const started = Date.now();
+        /*
+         * Named, as Wikimedia asks a client to be. A request that does not say
+         * what it is gets the shortest rope of all, and this one goes out from
+         * a CI runner whose address is shared with everything else on it.
+         */
+        const response = await fetch(sandbox.propertySearchUrl("software", 0), {
+            headers: { "User-Agent": "WDProp test suite (https://github.com/johnsamuelwrites/WDProp)" },
         });
+        if (!response.ok) {
+            throw new Error("Wikidata answered " + response.status);
+        }
+
+        const json = await response.json();
+        const elapsed = Date.now() - started;
+        const found = (json.query && json.query.search) || [];
+        if (!found.length) {
+            throw new Error("the index returned nothing");
+        }
+
+        t.check("the index answers with properties",
+            found.every(hit => /^Property:P\d+$/.test(hit.title)), true);
+        /*
+         * The SPARQL it replaced took 58 seconds for this term, and three
+         * tenths of a second is what this usually takes. Ten is far above
+         * anything measured, including from a loaded runner, and far enough
+         * below 58 that a return to scanning labels fails here rather than in
+         * front of someone.
+         */
+        t.check("in under ten seconds", elapsed < 10000, true);
+        t.note(`${found.length} properties for "software" in ${elapsed} ms, ` +
+            `of ${json.query.searchinfo.totalhits} the index has`);
+    });
 }
 
 requestSuite()

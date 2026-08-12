@@ -24,13 +24,17 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      # Three assertions in usage.test.js reach Wikidata. They are the ones
-      # most likely to break without a change on our side, so they run on
-      # master and on dispatch, where a failure is worth knowing about.
+      # A few sections reach Wikidata — the usage counts, and the property
+      # search that replaced a query taking the better part of a minute. They
+      # are the ones most likely to break without a change on our side, so
+      # they run on master and on dispatch, where a failure is worth knowing
+      # about.
       #
-      # On a pull request they are left out: Wikidata rate-limits, and a
-      # contributor's branch failing because someone else's run used the quota
-      # a minute earlier teaches them nothing.
+      # On a pull request they are left out: Wikidata rate-limits by address,
+      # and a contributor's branch failing because someone else's run used the
+      # quota a minute earlier teaches them nothing. Being refused is reported
+      # as a skipped section rather than a failure in either case, so a 429 on
+      # master does not fail the run.
       - name: Run the test suite
         run: node tests/run.js
         env:

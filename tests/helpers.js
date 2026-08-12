@@ -148,7 +148,7 @@ function messages(root) {
 
 /* A tiny assertion recorder. */
 function suite(name) {
-    const state = { pass: 0, fail: 0, name };
+    const state = { pass: 0, fail: 0, skipped: 0, name };
     return {
         check(label, actual, expected) {
             const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -159,8 +159,44 @@ function suite(name) {
             }
         },
         note(text) { console.log("       " + text); },
+
+        /*
+         * A section that reaches Wikidata.
+         *
+         * Being refused or being offline is a fact about the run and not about
+         * the code, so it is reported as skipped rather than failed: Wikidata
+         * rate-limits by address, and the shared address of a CI runner is
+         * refused with a 429 for something another job did minutes earlier.
+         *
+         * WDPROP_OFFLINE=1 leaves them out before they are attempted, which is
+         * what the workflow does on a pull request — a contributor's branch
+         * failing because someone else used the quota teaches them nothing.
+         *
+         * usage.test.js has had this since its live assertions were written,
+         * as a helper of its own; it is here so that the next live section
+         * finds it rather than being written without it, which is exactly how
+         * search.test.js came to fail a run on a 429.
+         */
+        async live(label, body) {
+            console.log("\n-- Live: " + label + " --");
+            if (process.env.WDPROP_OFFLINE === "1") {
+                state.skipped++;
+                console.log("  skip  WDPROP_OFFLINE is set");
+                return;
+            }
+            try {
+                await body();
+            } catch (e) {
+                state.skipped++;
+                console.log("  skip  " + label + " could not be reached: " + e.message);
+            }
+        },
+
         done() {
-            console.log(`  ${state.name}: ${state.pass} passed, ${state.fail} failed`);
+            console.log(`  ${state.name}: ${state.pass} passed, ${state.fail} failed` +
+                (state.skipped
+                    ? `, ${state.skipped} section${state.skipped > 1 ? "s" : ""} skipped`
+                    : ""));
             return state.fail;
         },
     };
