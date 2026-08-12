@@ -58,6 +58,8 @@
         },
         "language.html": function () { getPropertiesNeedingTranslation(); },
         "languages.html": function () { getLanguages(); },
+        /* No query behind this one: it is WDProp's own list of pages. */
+        "pages.html": function () { WDProp.nav.mountIndex(); },
         "path.html": function () { getTranslationPathTableOptimized(); },
         "pathviz.html": function () { getTranslationPathVizOptimized(); },
         "properties.html": function () {

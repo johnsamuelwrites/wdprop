@@ -4090,69 +4090,218 @@ function toggleTheme() {
  */
 
 /*
- * The sidebar, in order. This is the only place it is written down: the list
- * used to be repeated in the markup of all thirty pages, which meant adding
- * or renaming an entry was a thirty-file edit, and the copies had already
- * begun to drift apart.
+ * Every page WDProp has, in one list, in sidebar order.
+ *
+ * This began as the sidebar alone, written out again in the markup of all
+ * thirty pages. Gathering it here fixed that, but it left WDProp knowing its
+ * own shape in two half-lists that answered one question each — which entry
+ * to mark, and what to put in a breadcrumb — and both are answered after the
+ * reader has already arrived. Nothing pointed *forward*, so a page that was
+ * not a sidebar entry could only be found by whoever already knew it was
+ * there. atlas.html was reachable through one unadorned line at the foot of
+ * languages.html, and might as well not have existed.
+ *
+ * So the two lists are one list, read in both directions: the sidebar and the
+ * breadcrumb as before, and now each section page listing what sits beneath
+ * it. A page added here appears in its section without that section's markup
+ * being touched, and tests/nav.test.js fails if a page on disk is missing
+ * from it — which is what stops the next atlas.html.
+ *
+ *   file     the page, keyed as wdpropPageKey answers: the file name, with
+ *            its directory only where that is needed to tell two apart
+ *   key      what the page is called
+ *   crumb    the same name without the sidebar's icon, for a breadcrumb step
+ *   blurb    one line saying what the page is for
+ *   sidebar  true for the entries the sidebar shows
+ *   under    the sidebar entry the page sits beneath
+ *   subject  the query parameter naming what the page is about, used as the
+ *            last step of the breadcrumb. A page with one says nothing on its
+ *            own — property.html without a property is an empty page — so it
+ *            is not offered as a link anywhere
  */
-var wdpropSections = [
-    { file: "index.html",                key: "nav.dashboard" },
-    { file: "translate.html",            key: "nav.translate" },
-    { file: "campaign.html",             key: "nav.campaigns" },
-    { file: "stale.html",                key: "nav.stale" },
-    { file: "contributions.html",        key: "nav.contributions" },
-    { file: "terminology.html",          key: "nav.terminology" },
-    { file: "gap.html",                  key: "nav.gap" },
-    { file: "languages.html",            key: "nav.languages" },
-    { file: "datatypes.html",            key: "nav.datatypes" },
-    { file: "properties.html",           key: "nav.properties" },
-    { file: "classes.html",              key: "nav.classes" },
-    { file: "provenance.html",           key: "nav.provenance" },
-    { file: "search.html",               key: "nav.search" },
-    { file: "compare.html",              key: "nav.compare" },
-    { file: "templates/translated.html", key: "nav.discussion" },
-    { file: "wikiprojects.html",         key: "nav.wikiprojects" },
-    { file: "offline.html",              key: "nav.offline" },
-    { file: "wdprop.html",               key: "nav.about" }
+var wdpropPages = [
+    { file: "index.html", sidebar: true,
+      key: "nav.dashboard", crumb: "crumb.home", blurb: "blurb.dashboard" },
+
+    { file: "translate.html", sidebar: true,
+      key: "nav.translate", crumb: "crumb.translate", blurb: "blurb.translate" },
+    { file: "batch.html", under: "translate.html",
+      key: "batch.heading", blurb: "blurb.batch" },
+
+    { file: "campaign.html", sidebar: true,
+      key: "nav.campaigns", blurb: "blurb.campaigns" },
+    { file: "stale.html", sidebar: true,
+      key: "nav.stale", blurb: "blurb.stale" },
+    { file: "contributions.html", sidebar: true,
+      key: "nav.contributions", blurb: "blurb.contributions" },
+    { file: "terminology.html", sidebar: true,
+      key: "nav.terminology", blurb: "blurb.terminology" },
+    { file: "gap.html", sidebar: true,
+      key: "nav.gap", blurb: "blurb.gap" },
+
+    { file: "languages.html", sidebar: true,
+      key: "nav.languages", crumb: "crumb.languages", blurb: "blurb.languages" },
+    { file: "atlas.html", under: "languages.html",
+      key: "atlas.heading", blurb: "blurb.atlas" },
+    { file: "visualization.html", under: "languages.html",
+      key: "page.languageCodes", blurb: "blurb.visualization" },
+    { file: "labels.html", under: "languages.html",
+      key: "page.labelsNeeding", blurb: "blurb.labels" },
+    { file: "descriptions.html", under: "languages.html",
+      key: "page.descriptionsNeeding", blurb: "blurb.descriptions" },
+    { file: "translated.html", under: "languages.html",
+      key: "page.translationStats", blurb: "blurb.translated" },
+    { file: "untranslated.html", under: "languages.html",
+      key: "page.missingStats", blurb: "blurb.untranslated" },
+    { file: "language.html", under: "languages.html", subject: "language" },
+
+    { file: "datatypes.html", sidebar: true,
+      key: "nav.datatypes", crumb: "crumb.datatypes", blurb: "blurb.datatypes" },
+    { file: "datatype.html", under: "datatypes.html", subject: "datatype" },
+
+    { file: "properties.html", sidebar: true,
+      key: "nav.properties", crumb: "crumb.properties", blurb: "blurb.properties" },
+    { file: "propertydesc.html", under: "properties.html",
+      key: "page.propsDescribing", blurb: "blurb.propertydesc" },
+    { file: "property.html", under: "properties.html", subject: "property" },
+
+    { file: "classes.html", sidebar: true,
+      key: "nav.classes", crumb: "crumb.classes", blurb: "blurb.classes" },
+    { file: "class.html", under: "classes.html", subject: "class" },
+
+    { file: "provenance.html", sidebar: true,
+      key: "nav.provenance", crumb: "crumb.provenance", blurb: "blurb.provenance" },
+    { file: "path.html", under: "provenance.html",
+      key: "page.pathOfTranslation", blurb: "blurb.path" },
+    { file: "pathviz.html", under: "provenance.html",
+      key: "page.pathVisualization", blurb: "blurb.pathviz" },
+    { file: "propertyprovenance.html", under: "provenance.html",
+      key: "page.statementsReferences", blurb: "blurb.propertyprovenance" },
+
+    { file: "search.html", sidebar: true,
+      key: "nav.search", blurb: "blurb.search" },
+    { file: "compare.html", sidebar: true,
+      key: "nav.compare", blurb: "blurb.compare" },
+    { file: "templates/translated.html", sidebar: true,
+      key: "nav.discussion", blurb: "blurb.discussion" },
+
+    { file: "wikiprojects.html", sidebar: true,
+      key: "nav.wikiprojects", crumb: "crumb.wikiprojects", blurb: "blurb.wikiprojects" },
+    { file: "wikiproject.html", under: "wikiprojects.html", subject: "project" },
+
+    { file: "offline.html", sidebar: true,
+      key: "nav.offline", blurb: "blurb.offline" },
+    { file: "pages.html", sidebar: true,
+      key: "nav.allPages", blurb: "blurb.allPages" },
+    { file: "wdprop.html", sidebar: true,
+      key: "nav.about", blurb: "blurb.about" }
 ];
 
-/*
- * Pages that are not themselves sidebar entries.
- *
- *   under    the sidebar entry the page belongs beneath
- *   subject  the query parameter naming what the page is about, used as the
- *            last step of the breadcrumb
- *   label    a message key for that last step, for pages about no one thing
- */
-var wdpropPagesBelow = {
-    "property.html":           { under: "properties.html",   subject: "property" },
-    "propertydesc.html":       { under: "properties.html",   label: "page.propsDescribing" },
-    "class.html":              { under: "classes.html",      subject: "class" },
-    "datatype.html":           { under: "datatypes.html",    subject: "datatype" },
-    "language.html":           { under: "languages.html",    subject: "language" },
-    "labels.html":             { under: "languages.html",    label: "page.labelsNeeding" },
-    "descriptions.html":       { under: "languages.html",    label: "page.descriptionsNeeding" },
-    "translated.html":         { under: "languages.html",    label: "page.translationStats" },
-    "untranslated.html":       { under: "languages.html",    label: "page.missingStats" },
-    "visualization.html":      { under: "languages.html",    label: "page.languageCodes" },
-    "atlas.html":              { under: "languages.html",    label: "atlas.heading" },
-    "wikiproject.html":        { under: "wikiprojects.html", subject: "project" },
-    "path.html":               { under: "provenance.html",   label: "page.pathOfTranslation" },
-    "pathviz.html":            { under: "provenance.html",   label: "page.pathVisualization" },
-    "propertyprovenance.html": { under: "provenance.html",   label: "page.statementsReferences" },
-    "batch.html":              { under: "translate.html",    label: "batch.heading" }
-};
+/* The same list by file, for the questions asked about one page at a time. */
+var wdpropPageIndex = {};
+wdpropPages.forEach(function (entry) {
+    wdpropPageIndex[entry.file] = entry;
+});
 
-/* The sidebar entries a page can sit beneath, named without their icon. */
-var wdpropSectionNames = {
-    "properties.html":   "crumb.properties",
-    "classes.html":      "crumb.classes",
-    "datatypes.html":    "crumb.datatypes",
-    "languages.html":    "crumb.languages",
-    "provenance.html":   "crumb.provenance",
-    "wikiprojects.html": "crumb.wikiprojects",
-    "translate.html":    "crumb.translate"
-};
+/*
+ * The sidebar, in the order it is declared above. Kept as a list of its own
+ * because it is what the sidebar builder walks, and because the order pages
+ * are declared in is the order the sidebar reads in — a section's own pages
+ * follow it in the list and are skipped here.
+ */
+var wdpropSections = wdpropPages.filter(function (entry) {
+    return entry.sidebar === true;
+});
+
+/*
+ * What sits beneath a sidebar entry and can be linked to. Pages with a
+ * `subject` are left out: there is no useful address to offer for them
+ * without the thing they are about.
+ */
+function wdpropChildrenOf(file) {
+    return wdpropPages.filter(function (entry) {
+        return entry.under === file && !entry.subject;
+    });
+}
+
+/*
+ * A page offered as a link: its name, and the line saying what it is for.
+ *
+ * Three places offer pages — a section listing what is beneath it, the index
+ * of everything, and a search that matched a page name — and they offer them
+ * the same way, so the card is built once here. The parts carry data-i18n as
+ * well as their text, so choosing another interface language reaches them.
+ */
+function wdpropPageLink(entry) {
+    var link = document.createElement("a");
+    link.setAttribute("href", wdpropBase + entry.file);
+    link.setAttribute("class", "wdp-subpage");
+
+    var name = document.createElement("span");
+    name.setAttribute("class", "wdp-subpage-name");
+    name.setAttribute("data-i18n", entry.key);
+    name.appendChild(document.createTextNode(wdpropText(entry.key)));
+    link.appendChild(name);
+
+    /*
+     * The name of a page is not always enough to say what it is for — "Path of
+     * Translation" is the example that needs the line under it. A page without
+     * one still gets its link.
+     */
+    if (entry.blurb) {
+        var blurb = document.createElement("span");
+        blurb.setAttribute("class", "wdp-subpage-blurb");
+        blurb.setAttribute("data-i18n", entry.blurb);
+        blurb.appendChild(document.createTextNode(wdpropText(entry.blurb)));
+        link.appendChild(blurb);
+    }
+
+    return link;
+}
+
+function wdpropPageGrid(entries) {
+    var list = document.createElement("ul");
+    list.setAttribute("class", "wdp-pagegrid");
+
+    entries.forEach(function (entry) {
+        var item = document.createElement("li");
+        item.appendChild(wdpropPageLink(entry));
+        list.appendChild(item);
+    });
+
+    return list;
+}
+
+/*
+ * The pages whose name, description or address contains what was typed.
+ *
+ * Matched against the address as well as the words, because that is what
+ * someone who has seen a page before is likely to remember of it — "atlas"
+ * finds the Language Atlas whatever the interface language happens to be, and
+ * whatever the page ends up being called.
+ *
+ * Pages with a `subject` are left out for the reason they are left out of a
+ * section listing: there is no address to offer without the thing they are
+ * about.
+ */
+function wdpropMatchPages(term) {
+    var wanted = String(term || "").trim().toLowerCase();
+    if (!wanted) {
+        return [];
+    }
+
+    return wdpropPages.filter(function (entry) {
+        if (entry.subject) {
+            return false;
+        }
+        var haystack = [
+            entry.file,
+            wdpropText(entry.key),
+            entry.blurb ? wdpropText(entry.blurb) : ""
+        ].join(" ").toLowerCase();
+        return haystack.indexOf(wanted) >= 0;
+    });
+}
 
 /*
  * Identifies a page from a path or a link, so that the address of the page
@@ -4183,8 +4332,8 @@ function wdpropPageKey(path) {
 
 /* The sidebar entry a page belongs to: itself, or the one it sits beneath. */
 function wdpropSectionOf(pageKey) {
-    var below = wdpropPagesBelow[pageKey];
-    return below ? below.under : pageKey;
+    var entry = wdpropPageIndex[pageKey];
+    return entry && entry.under ? entry.under : pageKey;
 }
 
 function wdpropValueFromSearch(search, name) {
@@ -4221,25 +4370,31 @@ function wdpropSubjectLabel(name, value) {
  * itself a sidebar entry, which needs no trail.
  */
 function wdpropBreadcrumbTrail(pageKey, search) {
-    var below = wdpropPagesBelow[pageKey];
-    if (!below) {
+    var entry = wdpropPageIndex[pageKey];
+    if (!entry || !entry.under) {
         return [];
     }
 
-    var trail = [{ file: "index.html", key: "crumb.home" }];
+    var home = wdpropPageIndex["index.html"];
+    var trail = [{ file: home.file, key: home.crumb }];
 
-    var sectionKey = wdpropSectionNames[below.under];
-    if (sectionKey) {
-        trail.push({ file: below.under, key: sectionKey });
+    /*
+     * A section is only a step in the trail if it has a name to be read as
+     * one. The sidebar wording carries an icon and is written to be read down
+     * a column, not in the middle of a sentence.
+     */
+    var section = wdpropPageIndex[entry.under];
+    if (section && section.crumb) {
+        trail.push({ file: section.file, key: section.crumb });
     }
 
-    if (below.subject) {
-        var value = wdpropValueFromSearch(search, below.subject);
+    if (entry.subject) {
+        var value = wdpropValueFromSearch(search, entry.subject);
         if (value) {
-            trail.push({ text: wdpropSubjectLabel(below.subject, value), current: true });
+            trail.push({ text: wdpropSubjectLabel(entry.subject, value), current: true });
         }
-    } else if (below.label) {
-        trail.push({ key: below.label, current: true });
+    } else if (entry.key) {
+        trail.push({ key: entry.key, current: true });
     }
 
     return trail;
@@ -4296,6 +4451,115 @@ function wdpropMountSidebar() {
     });
 
     container.appendChild(list);
+}
+
+/*
+ * Puts what sits beneath a section at the top of that section's page.
+ *
+ * This is the breadcrumb read backwards, and it is the half that was missing:
+ * a breadcrumb tells a reader who has already arrived where they are, and
+ * tells a reader who has not arrived nothing at all. The pages below a
+ * section were reachable only from a hand-written link on the section page,
+ * where there was one — six such links across the whole of WDProp, three of
+ * them a bare line of text at the foot of a page.
+ *
+ * Built from wdpropPages, so a page registered there is on its section's page
+ * without that page's markup mentioning it, and cannot be forgotten.
+ *
+ * It goes above the section's own content rather than below it. These pages
+ * open with a query that takes a while to come back, and what is worth
+ * reading while it does is where else there is to go.
+ */
+function wdpropMountSectionPages() {
+    var content = document.getElementById("content");
+    if (!content) {
+        return;
+    }
+
+    /* Looked for among the content's own children rather than by id, so that
+       the answer does not depend on the block having been put in the document
+       the mount is being run against. */
+    for (var i = 0; i < content.children.length; i++) {
+        if (content.children[i].getAttribute("id") === "wdp-subpages") {
+            return;
+        }
+    }
+
+    var pageKey = wdpropPageKey(window.location.pathname);
+    var entry = wdpropPageIndex[pageKey];
+
+    /* Only on a section's own page: below one, the breadcrumb does this. */
+    if (!entry || entry.under) {
+        return;
+    }
+
+    var children = wdpropChildrenOf(pageKey);
+    if (!children.length) {
+        return;
+    }
+
+    var nav = document.createElement("nav");
+    nav.setAttribute("id", "wdp-subpages");
+    nav.setAttribute("class", "wdp-subpages");
+    nav.setAttribute("data-i18n-label", "page.inThisSection");
+    nav.setAttribute("aria-label", wdpropText("page.inThisSection"));
+
+    var heading = document.createElement("h2");
+    heading.setAttribute("class", "wdp-subpages-heading");
+    heading.setAttribute("data-i18n", "page.inThisSection");
+    heading.appendChild(document.createTextNode(wdpropText("page.inThisSection")));
+    nav.appendChild(heading);
+
+    nav.appendChild(wdpropPageGrid(children));
+    content.insertBefore(nav, content.firstChild);
+}
+
+/*
+ * ===========================================================================
+ * Every page there is
+ * ===========================================================================
+ *
+ * pages.html, which is the one sidebar entry this cost. The sidebar was
+ * already long enough that adding sixteen more would have made it useless,
+ * and the pages that were hard to find were exactly the ones that did not
+ * warrant a permanent line in it. One line that leads to all of them does.
+ *
+ * Built from the same registry as everything else, so the index cannot fall
+ * behind what the site has: a page that exists is on it.
+ */
+function wdpropMountPageIndex() {
+    var container = document.getElementById("pageIndex");
+    if (!container || container.firstChild) {
+        return;
+    }
+
+    wdpropSections.forEach(function (section) {
+        var group = document.createElement("div");
+        group.setAttribute("class", "section wdp-index-group");
+
+        var heading = document.createElement("h2");
+        var link = document.createElement("a");
+        link.setAttribute("href", wdpropBase + section.file);
+        link.setAttribute("data-i18n", section.key);
+        link.appendChild(document.createTextNode(wdpropText(section.key)));
+        heading.appendChild(link);
+        group.appendChild(heading);
+
+        if (section.blurb) {
+            var blurb = document.createElement("p");
+            blurb.setAttribute("class", "wdp-index-blurb");
+            blurb.setAttribute("data-i18n", section.blurb);
+            blurb.appendChild(document.createTextNode(wdpropText(section.blurb)));
+            group.appendChild(blurb);
+        }
+
+        var children = wdpropChildrenOf(section.file);
+        if (children.length) {
+            group.appendChild(wdpropPageGrid(children));
+        }
+
+        container.appendChild(group);
+    });
 }
 
 /*
@@ -4411,7 +4675,12 @@ window.WDProp.toast = wdpropToast;
 window.WDProp.nav = {
     pageKey: wdpropPageKey,
     sectionOf: wdpropSectionOf,
-    trail: wdpropBreadcrumbTrail
+    trail: wdpropBreadcrumbTrail,
+    pages: wdpropPages,
+    childrenOf: wdpropChildrenOf,
+    match: wdpropMatchPages,
+    grid: wdpropPageGrid,
+    mountIndex: wdpropMountPageIndex
 };
 
 /*
@@ -4427,6 +4696,7 @@ window.WDProp.nav = {
  */
 function wdpropMountPage() {
     wdpropMountSidebar();
+    wdpropMountSectionPages();
     wdpropMountBreadcrumb();
     wdpropToastRegion();
 }

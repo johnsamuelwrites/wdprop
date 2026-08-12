@@ -56,16 +56,17 @@ s.check("every key used from JavaScript is defined",
     [...usedInJs].filter(k => !k.endsWith(".") && !(k in dicts.en)).sort(), []);
 
 /*
- * Sidebar entries name their message keys as data inside wdpropSections rather
- * than by calling t("...") directly. They still render through i18n at runtime,
- * so they need an explicit coverage check.
+ * Pages name their message keys as data inside wdpropPages rather than by
+ * calling t("...") directly — the name, the breadcrumb wording and the line
+ * describing the page. They still render through i18n at runtime, so they
+ * need an explicit coverage check.
  */
 const wdpropSource = fs.readFileSync(path.join(ROOT, "wdprop.js"), "utf8");
-const sectionsSource = /var wdpropSections = \[([\s\S]*?)\];/.exec(wdpropSource)[1];
-const sectionKeys = [...sectionsSource.matchAll(/\bkey:\s*["']([a-z][A-Za-z0-9.]+)["']/g)]
+const pagesSource = /var wdpropPages = \[([\s\S]*?)\n\];/.exec(wdpropSource)[1];
+const pageKeys = [...pagesSource.matchAll(/\b(?:key|crumb|blurb):\s*["']([a-z][A-Za-z0-9.]+)["']/g)]
     .map(m => m[1]);
-s.check("every sidebar section key is defined",
-    sectionKeys.filter(k => !(k in dicts.en)).sort(), []);
+s.check("every key named in the page registry is defined",
+    pageKeys.filter(k => !(k in dicts.en)).sort(), []);
 
 const pages = [];
 (function walk(d) {

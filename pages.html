@@ -1,0 +1,48 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WDProp: All pages: John Samuel</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script src="theme.js"></script>
+    <script defer src="ready.js"></script>
+    <script defer src="activity.js"></script>
+    <script defer src="shell.js"></script>
+    <script defer src="actions.js"></script>
+    <script defer src="pager.js"></script>
+    <script defer type="text/javascript" src="i18n.js"></script>
+    <script defer type="text/javascript" src="i18n/en.js"></script>
+    <script defer src="download.js"></script>
+    <script defer type="text/javascript" src="wdprop.js"></script>
+    <script defer type="text/javascript" src="offline.js"></script>
+    <script defer src="pageinit.js"></script>
+</head>
+
+<body>
+    <wdprop-shell></wdprop-shell>
+    <div id="content" role="main" tabindex="-1">
+        <div class="section">
+            <h2 data-i18n="page.allPages">Every page in WDProp</h2>
+            <p data-i18n="page.allPagesIntro">Grouped under the section each belongs to, with a line saying what it is
+                for. Pages about one property, one class or one language are reached from the listing that names them,
+                so they are not repeated here.</p>
+        </div>
+        <!--
+            Filled by wdprop.js from the one list of pages, so this stays what
+            WDProp actually has rather than a copy that falls behind it. It is
+            left empty here for the same reason the dashboard figures are: a
+            list written into the markup goes on being shown after it has
+            stopped being true.
+        -->
+        <div id="pageIndex"></div>
+    </div>
+    <div id="footer" role="contentinfo">
+        <p id="footertext" data-i18n-html="app.footer">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a
+                href="https://mediawiki.org/">MediaWiki</a> API</p>
+    </div>
+</body>
+
+</html>

@@ -106,6 +106,7 @@ var SHELL = [
     "language.html",
     "languages.html",
     "offline.html",
+    "pages.html",
     "path.html",
     "pathviz.html",
     "properties.html",

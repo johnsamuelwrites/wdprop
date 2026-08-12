@@ -30,6 +30,7 @@ WDProp.i18n.add("en", {
     "nav.discussion": "💬 Property Discussion",
     "nav.wikiprojects": "🚀 Wikiprojects",
     "nav.offline": "📴 Offline",
+    "nav.allPages": "🗺️ All pages",
     "nav.about": "ℹ️ About",
 
     /*
@@ -45,6 +46,46 @@ WDProp.i18n.add("en", {
     "crumb.provenance": "Provenance",
     "crumb.wikiprojects": "WikiProjects",
     "crumb.translate": "Translate",
+
+    /*
+     * One line per page, saying what it is for. They are shown where a page is
+     * offered rather than on the page itself: a reader deciding whether to go
+     * somewhere is the one who needs them, and by the time the page is open
+     * its own heading has answered the question.
+     *
+     * Named for the page rather than for the section, because a page keeps its
+     * description if it is ever moved under another one.
+     */
+    "blurb.dashboard": "Coverage at a glance, and the way in to everything else",
+    "blurb.translate": "Translate properties into a language and export the result",
+    "blurb.batch": "What you have picked to translate, and the commands for it",
+    "blurb.campaigns": "A language and a chosen set of properties, worked through together",
+    "blurb.stale": "Translations whose source term has been rewritten since",
+    "blurb.contributions": "What you have exported to QuickStatements from this browser",
+    "blurb.terminology": "One word in the source language translated several different ways",
+    "blurb.gap": "Properties still missing one kind of translation, in one language",
+    "blurb.languages": "Every language Wikidata supports, and how far each is translated",
+    "blurb.atlas": "Supported languages grouped by writing system and classification",
+    "blurb.visualization": "The language codes themselves, searchable",
+    "blurb.labels": "Properties whose label is missing in a language",
+    "blurb.descriptions": "Properties whose description is missing in a language",
+    "blurb.translated": "How many labels and descriptions each language has",
+    "blurb.untranslated": "Languages with no translated labels or descriptions at all",
+    "blurb.datatypes": "The datatypes properties can hold, and how many use each",
+    "blurb.properties": "Every Wikidata property, and the hundred used most",
+    "blurb.propertydesc": "The properties used to describe other properties",
+    "blurb.classes": "The classes properties are grouped into",
+    "blurb.provenance": "Where property statements say their information came from",
+    "blurb.path": "Which language a translation was made from, term by term",
+    "blurb.pathviz": "The same path drawn as a diagram, and downloadable as SVG",
+    "blurb.propertyprovenance": "Statements and the references given for them, counted",
+    "blurb.search": "Find properties or WikiProjects by keyword",
+    "blurb.compare": "Two or more languages set side by side",
+    "blurb.discussion": "The property proposal templates and the languages they reach",
+    "blurb.wikiprojects": "The projects that curate properties, and the properties they use",
+    "blurb.offline": "Keep WDProp and its data usable without a connection",
+    "blurb.allPages": "Every page there is, grouped under the section it belongs to",
+    "blurb.about": "What WDProp is and where its figures come from",
 
     /* Dashboard */
     "dash.totalProperties": "Total properties",
@@ -283,6 +324,10 @@ WDProp.i18n.add("en", {
     /* Pages outside the translation workflow, and the strings the
        original scripts produce */
     "page.query": "Query",
+    "page.allPages": "Every page in WDProp",
+    "page.allPagesIntro": "Grouped under the section each belongs to, with a line saying what it is for. Pages about one property, one class or one language are reached from the listing that names them, so they are not repeated here.",
+    "page.matchingPages": "Pages in WDProp",
+    "page.inThisSection": "In this section",
     "page.translationStats": "Translation Statistics",
     "page.missingStats": "Missing Translation Statistics",
     "page.countLabels": "Count of translated labels",
@@ -339,7 +384,6 @@ WDProp.i18n.add("en", {
     "page.compare": "Compare",
     "page.compareLanguages": "Compare Languages",
     "page.compareIntro": "Compare translation coverage across Wikidata properties",
-    "page.visualization": "Visualization",
     "page.pathOfTranslation": "Path of Translation",
     "page.pathVisualization": "Visualization of Path of Translation",
     "page.sourceDestination": "source → destination",
@@ -526,7 +570,6 @@ WDProp.i18n.add("en", {
     "gap.badClass": "A property class must be an item identifier, for example Q18616576.",
 
     "atlas.heading": "Language Atlas",
-    "atlas.open": "Language Atlas",
     "atlas.intro": "Supported Wikidata languages grouped by the writing system and classification statements Wikidata already has. Unknown means absent from the live data, not inferred.",
     "atlas.filter": "Filter",
     "atlas.filterPlaceholder": "French, Latin, Germanic, fr",

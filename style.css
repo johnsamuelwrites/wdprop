@@ -4314,6 +4314,128 @@ summary:focus-visible,
 }
 
 /* ==========================================================================
+   What sits beneath a section
+   ========================================================================== */
+
+/*
+ * The breadcrumb's opposite number: on a section's own page, the pages that
+ * sit under it. Added by wdprop.js from the one list of pages, so a section
+ * gains an entry here without its markup being touched.
+ *
+ * The colours are the two that are already checked against the page and the
+ * card: the name in --text-primary and the line under it in --text-secondary,
+ * both on --bg-secondary. Nothing new to add to tests/contrast.test.js.
+ */
+
+.wdp-subpages {
+    margin: 0 0 24px;
+}
+
+.wdp-subpages-heading {
+    margin: 0 0 12px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/*
+ * As many as fit, at a width that leaves the description readable rather than
+ * broken over four words a line. Languages has six of these; Provenance has
+ * three, and three should not be stretched across the whole page.
+ *
+ * The grid and the card are shared by the three places that offer a page: a
+ * section listing what is beneath it, pages.html listing everything, and a
+ * search that matched a page name. They are the same offer and they are made
+ * to look like it.
+ */
+.wdp-pagegrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wdp-subpage {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wdp-subpage:hover,
+.wdp-subpage:focus-visible {
+    border-color: var(--accent-strong);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    transform: translateY(-2px);
+}
+
+.wdp-subpage-name {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.wdp-subpage-blurb {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* The lift is decoration; it is not worth the motion to anyone who asked for
+   less of it. The border and the shadow still answer the pointer. */
+@media (prefers-reduced-motion: reduce) {
+
+    .wdp-subpage,
+    .wdp-subpage:hover,
+    .wdp-subpage:focus-visible {
+        transition: none;
+        transform: none;
+    }
+}
+
+/*
+ * pages.html. One group per sidebar entry: the section named and linked, the
+ * line saying what it is for, and the cards for whatever sits beneath it.
+ * Sections with nothing beneath them are the heading and the line alone,
+ * which is the whole of what there is to say about them.
+ */
+
+.wdp-index-group h2 {
+    margin: 0 0 4px;
+}
+
+.wdp-index-group h2 a {
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.wdp-index-group h2 a:hover,
+.wdp-index-group h2 a:focus-visible {
+    color: var(--accent-strong);
+    text-decoration: underline;
+}
+
+.wdp-index-blurb {
+    margin: 0 0 16px;
+    color: var(--text-secondary);
+}
+
+/* Nothing beneath it: the line is the last thing in the group. */
+.wdp-index-blurb:last-child {
+    margin-bottom: 0;
+}
+
+/* ==========================================================================
    Transient messages
    ========================================================================== */
 

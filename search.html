@@ -79,6 +79,19 @@
             </div>
         </div>
 
+        <!--
+            Pages of WDProp itself whose name or description matches what was
+            typed, above the properties. Someone searching for "atlas" or
+            "provenance" is at least as likely to be looking for the page as
+            for a property, and until now the search could only answer with
+            properties. Filled by searchview.js from the list of pages, which
+            is already in the browser: no request, and no wait.
+        -->
+        <div class="section" id="pageMatchesSection" style="display:none;">
+            <h2 data-i18n="page.matchingPages">Pages in WDProp</h2>
+            <div id="pageMatches"></div>
+        </div>
+
         <!-- Results -->
         <div class="section" id="resultsSection" style="display:none;">
             <div id="searchResults"></div>

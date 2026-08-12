@@ -14,6 +14,11 @@
        says how many of them have been named so far, since a long listing is
        fetched as it is paged through. Nothing is requested to build the file
 6. Add one-line description on the main page for every section
+    * Every page now has one, written once in i18n as `blurb.*` and named from
+      the page registry in wdprop.js. They are shown where a page is offered:
+      on the section page above what sits beneath it, on pages.html, and
+      beside a page the search matched. The dashboard is the one place that
+      still offers its sections as an icon and a name alone
     * Translation statistics by languages
     * Navigate properties
     * Search properties
@@ -22,6 +27,9 @@
     * Wikidata WikiProjects
     * About
 7. Add description on every subpage
+    * The description is on the page that offers the subpage rather than on
+      the subpage itself, which is where a reader deciding whether to go there
+      can act on it. A page opened directly still says only its heading
     * Example: Supported languages: what does that mean?
     * Example: WikiProjects: What does that mean?
 8. Add search/filter option on every subpage
@@ -68,6 +76,18 @@
 17. Refactor codes of wdprop.js and mwwdprop.js: Explore classes and better way to handle queries (mediawiki and wikidata).
     * ~~The sidebar is built from one list instead of being repeated in the
       markup of all 39 pages~~
+    * ~~That list and the separate table of pages below it are now one
+      registry, read forwards as well as backwards~~ — the sidebar and the
+      breadcrumb as before, and each section page listing what sits beneath
+      it. tests/nav.test.js fails if a page on disk is not in the registry,
+      which is what had let atlas.html ship reachable only from one line at
+      the foot of languages.html
+    * ~~A page index reachable from the sidebar~~ — pages.html, one line in
+      the sidebar leading to all of them, built from the registry so it cannot
+      fall behind what WDProp has
+    * ~~The search matching page names as well as properties~~ — the list is
+      already in the browser, so the pages are on screen before the query for
+      the properties has been answered
     * ~~Loading, empty and failure states are handled once, in queryWikidata
       and queryMediaWiki, rather than left to each caller~~
     * ~~A listing's columns are grouped by the request that answers them

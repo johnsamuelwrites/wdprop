@@ -41,6 +41,50 @@ function showResultsSection() {
     document.getElementById('querySection').style.display = 'block';
 }
 
+/*
+ * Pages of WDProp whose name or description matches the term, shown above the
+ * properties. This is the other half of what a search is asked for: "atlas",
+ * "provenance" and "compare" are all names of pages, and a search that can
+ * only answer with properties answers none of them.
+ *
+ * It costs nothing — the list of pages is already here — so it is drawn
+ * before the query is sent rather than beside its results, and it is on
+ * screen while Wikidata is still being waited on.
+ */
+function showPageMatches(term) {
+    var section = document.getElementById('pageMatchesSection');
+    var container = document.getElementById('pageMatches');
+    if (!section || !container) {
+        return;
+    }
+
+    var matches = WDProp.nav.match(term);
+
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+
+    /* No heading over an empty list: nothing found is not a result. */
+    section.style.display = matches.length ? 'block' : 'none';
+    if (matches.length) {
+        container.appendChild(WDProp.nav.grid(matches));
+    }
+}
+
+/* What was typed, from the field if it is filled in and the address if not. */
+function searchTerm(form) {
+    var field = form && form.search ? form.search.value : null;
+    if (field) {
+        return field;
+    }
+    var found = /[?&]search=([^&#]*)/.exec(window.location.search);
+    try {
+        return found ? decodeURIComponent(found[1].replace(/\+/g, ' ')) : '';
+    } catch (e) {
+        return found[1];
+    }
+}
+
 function toggleQuerySection() {
     let body = document.getElementById('searchResultsQuery');
     let chevron = document.querySelector('.search-query-chevron');
@@ -61,6 +105,7 @@ function toggleQuerySection() {
 var _origFindProperty = findProperty;
 findProperty = function(event, form) {
     showResultsSection();
+    showPageMatches(searchTerm(form));
     _origFindProperty(event, form);
 };
 
@@ -70,6 +115,7 @@ findPropertyOnLoad = function() {
     // Only reveal if there's actually a search param pending
     if (window.location.search.indexOf('search=') !== -1) {
         showResultsSection();
+        showPageMatches(searchTerm(null));
     }
     _origFindPropertyOnLoad();
 };
