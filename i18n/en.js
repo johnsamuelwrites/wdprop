@@ -411,6 +411,12 @@ WDProp.i18n.add("en", {
     "js.retry": "Try again",
     "js.notInLanguage": "not in this language",
     "js.unavailable": "unavailable",
+    "download.csv": "Download CSV",
+    "download.json": "Download JSON",
+    "download.svg": "Download SVG",
+    "download.whole": "$1 rows",
+    "download.partial": "$1 rows, $2 named so far — the rest carry only their identifier until you page to them",
+
     "js.usageBelow": "fewer than $1",
     "js.usageBelowTitle": "Used fewer than $1 times. The exact figure is on the property's own page.",
 

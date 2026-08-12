@@ -55,6 +55,7 @@ var SHELL = [
     "theme.js",
     "ready.js",
     "activity.js",
+    "download.js",
     "shell.js",
     "actions.js",
     "pager.js",

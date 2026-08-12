@@ -549,6 +549,18 @@ function visualizePath(languageData) {
             seq.textContent = firstOccurrence[language];
             svg.appendChild(seq);
         });
+
+        /*
+         * A way to take the diagram away. It is drawn as SVG rather than as a
+         * picture of one, so what leaves is the diagram itself — it can be
+         * scaled, put in a paper, or edited — and download.js resolves the
+         * colours first, the text being filled with a custom property that
+         * means nothing away from this stylesheet.
+         */
+        if (window.WDProp && window.WDProp.download) {
+            window.WDProp.download.offerSvg(container,
+                wdpropListingName(viz.containerId));
+        }
     });
 }
 
@@ -1259,6 +1271,28 @@ var wdpropClassListing = {
     usage: false
 };
 
+/*
+ * What a downloaded listing is called.
+ *
+ * The section it was rendered into says what it is — propertiesWithDatatype,
+ * classProperties — and the URL says which one, so "wdprop-datatype-CommonsMedia"
+ * rather than thirty files all called wdprop.csv. Everything that is not a
+ * letter or a digit goes, since this becomes a file name on someone else's
+ * machine and need not carry a colon into it.
+ */
+function wdpropListingName(divId) {
+    let parts = ["wdprop", String(divId || "listing")];
+
+    ["datatype", "class", "language", "property", "project"].forEach(function (name) {
+        let value = getValueFromURL(name + "=([^&#=]*)", "");
+        if (value !== "") {
+            parts.push(decodeURIComponent(value));
+        }
+    });
+
+    return parts.join("-").replace(/[^A-Za-z0-9-]+/g, "-").replace(/-+/g, "-");
+}
+
 function wdpropEntityTable(divId, json, listing) {
     const { results } = json;
     let container = document.getElementById(divId);
@@ -1341,6 +1375,16 @@ function wdpropEntityTable(divId, json, listing) {
     };
 
     container.appendChild(table);
+
+    /*
+     * A way to take the listing away. Offered after the table is in the page,
+     * since the control is placed beside it, and named for what the listing is
+     * of so that thirty tables do not all download as the same file.
+     */
+    if (window.WDProp && window.WDProp.download) {
+        window.WDProp.download.offerTable(table, wdpropListingName(divId));
+    }
+
     return records;
 }
 

@@ -38,12 +38,24 @@ const ESTABLISHES_CONTEXT = /overflow(-[xy])?:\s*(hidden|auto|scroll)|display:\s
 const s = suite("layout");
 
 const FLOATED = /(^|[^-\w])float:\s*(left|right)/;
-const chip = ruleFor(".property");
+
+/*
+ * Asked for by element. The same class names are on the identifier cell of a
+ * table row, where a float takes the cell out of the row it belongs to — so
+ * the pill styling names the element it was written for, and this looks for it
+ * under that name.
+ */
+const chip = ruleFor("div.property");
 s.check("the chips are still floated, so containing them still matters",
     FLOATED.test(chip ? chip.body : ""), true);
 s.check("and the same rule covers all four kinds",
     chip ? chip.selectors.sort() : [],
-    [".datatype", ".deletedproperty", ".language", ".property"]);
+    ["div.datatype", "div.deletedproperty", "div.language", "div.property"]);
+s.check("while nothing floats a table cell carrying those names",
+    ["td.property", "td.language", "td.datatype"].filter(sel => {
+        const rule = ruleFor(sel);
+        return rule && FLOATED.test(rule.body);
+    }), []);
 
 /*
  * Each of these is filled by one query and holds the chips it renders. Taken

@@ -126,6 +126,51 @@ window.WDProp = window.WDProp || {};
         }
 
         document.documentElement.setAttribute("lang", current);
+        showCurrentInSwitcher();
+    }
+
+    /*
+     * The chooser has to say which language is being shown.
+     *
+     * It did not. mountSwitcher runs before setLanguage — the switcher has to
+     * exist before there is a language to mark in it — so the option it marked
+     * as selected was whatever `current` was at the time, which is the fallback
+     * and always English. Then the language was worked out, the page was
+     * translated into French, and nothing went back to the chooser: it read
+     * "English" over a French page, and picking French from it did nothing
+     * visible, French already being what was on screen.
+     *
+     * The selected option cannot be settled once at mount for the further
+     * reason that a language other than English arrives asynchronously — the
+     * message file is fetched by a script tag — so `current` changes again when
+     * it lands. Doing it here means it is put right whenever the language
+     * actually takes effect, which is the only moment that is true for every
+     * route in: uselang in the address, the stored choice, and the browser's
+     * own setting.
+     */
+    function showCurrentInSwitcher() {
+        var select = document.getElementById("language-switcher");
+        if (!select) {
+            return;
+        }
+
+        if (select.value !== current) {
+            select.value = current;
+        }
+
+        /*
+         * The attribute as well as the property. They are the same thing to a
+         * browser once the element is live, but the attribute is what a test
+         * reading the built markup sees, and what a page restored from the
+         * back-forward cache is rebuilt from.
+         */
+        for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === current) {
+                select.options[i].setAttribute("selected", "selected");
+            } else {
+                select.options[i].removeAttribute("selected");
+            }
+        }
     }
 
     function each(scope, selector, fn, dataKey) {

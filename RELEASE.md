@@ -145,6 +145,73 @@ What a page costs
 * A table says it is waiting while its rows are being filled, so there is a cue
   beside the data and not only in the header
 
+Colours that can be read
+
+* A property identifier became unreadable exactly when it was pointed at. The
+  cell carried white text on the accent colour, and `tr:hover > td` sets a
+  background without setting an ink — it wins on specificity, so hovering a row
+  replaced the accent behind the identifier with the page's own background and
+  left the text white: white on #f5f7fa. A link that disappears when the
+  pointer reaches it is a link that cannot be followed
+* Underneath it, one class doing two jobs. `.property` names a floating pill in
+  a wall of them and the identifier cell of a table row, and the styling was
+  written for the pill: an accent fill, white ink, and `float: left`, which on
+  a `<td>` takes the cell out of the row it belongs to. The pill is now asked
+  for by element, and the identifier cell is a link on the row's own background
+* The dark theme was worse and always had been. Its accent is a bright cyan and
+  the ink on it was white — 1.77:1, against 4.5:1 for AA — so every identifier
+  on every listing had been drawn that way since the theme was added. There is
+  now a token for the ink that goes on the accent, declared beside it, because
+  it is not white in both themes
+* The light accent is 3.41:1 as text on the page: fine behind a gradient, below
+  AA for anything anyone has to read, and it was the colour of every link.
+  Rather than darken the brand and change every header, sidebar and card, the
+  two obligations are separated — `--accent-color` for decoration that carries
+  no text, `--accent-strong` for text and for a filled surface that carries it.
+  Links are 4.98:1 now and the hue is the same indigo
+* None of this was visible in a diff, and all of it is arithmetic, so it is a
+  test. tests/contrast.test.js reads the tokens out of style.css, resolves both
+  themes, and measures every ink-on-background pair the stylesheet actually
+  makes against WCAG 2.1. The pairs are listed by hand: a pairing is a decision
+  and this is where the decisions are declared. Its first version resolved both
+  themes to the light palette and passed the dark assertions by measuring light
+  colours, which is the fault it exists to catch, one level up
+
+The language chooser
+
+* The application opened in French, correctly, and the chooser beside it read
+  "English". The chooser is built before the language is worked out — it has to
+  exist before there is anything to mark in it — so the option it marked was
+  whatever the language was at that moment, which is the fallback and always
+  English. Nothing went back afterwards. Picking French to correct it did
+  nothing anyone could see, French already being what was on screen
+* It cannot be settled once at mount for a second reason: a language other than
+  English arrives when its message file loads, which is after everything else
+  has finished. It is now put right whenever the language actually takes
+  effect, which is the one moment that is true for all three ways in — uselang
+  in the address, the choice remembered from last time, and the browser's own
+  setting
+
+Taking the results away
+
+* Every listing carries a download beneath it: CSV or JSON, built from the
+  table already in the page, with no request sent. A listing that took twenty
+  seconds to assemble could not be put in a spreadsheet, cited, or handed to
+  anyone without sending them the link and hoping the query still answered
+* The file holds every row the table holds rather than the fifty on show, and
+  the control says how many of them have been named so far — a listing is
+  fetched as it is paged through, so a table of four thousand properties may
+  hold four thousand identifiers and fifty names. Exporting that quietly would
+  produce a file reading as though Wikidata had no name for 3,950 properties
+* The CSV carries a byte order mark. Without one a spreadsheet on Windows reads
+  the UTF-8 as the local code page, and a file of Tamil labels arrives as
+  mojibake — which ruins exactly the properties WDProp exists to translate
+* The path visualisation downloads as SVG, so what leaves is the diagram rather
+  than a picture of it. Its custom properties are resolved to the colours they
+  currently stand for on the way out: the labels are filled with
+  var(--text-primary), which away from this stylesheet means nothing, and the
+  file would otherwise open with no text in it
+
 The application itself
 
 * d3 is gone. It was 511 KB — more than every other script in WDProp put

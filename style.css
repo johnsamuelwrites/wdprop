@@ -11,6 +11,24 @@
     --light-shadow: rgba(0, 0, 0, 0.1);
     --light-accent: #667eea;
     --light-accent-hover: #764ba2;
+    /*
+     * The ink that goes on the accent. Declared beside it rather than written
+     * as "white" at each of the places that use it, because it is not white in
+     * both themes: the dark accent is a bright cyan, and white on it is about
+     * 1.4:1 — a colour pairing, not a colour.
+     */
+    --light-on-accent: #ffffff;
+    /*
+     * The accent again, dark enough to be read as text.
+     *
+     * --light-accent is the brand hue and it is 3.4:1 on the page: fine behind
+     * a gradient or under a border, below AA for anything anyone has to read.
+     * Rather than darken the brand — which would change every header, sidebar
+     * and card on the site — the two obligations are separated. This one is
+     * for text, and for a filled surface that carries text; --accent-color is
+     * for decoration that carries none.
+     */
+    --light-accent-strong: #4c5fd7;
     /* The accent as bare components, for the focus rings that tint it. */
     --light-accent-rgb: 102, 126, 234;
     --light-toggle-icon: '\2600\FE0F';
@@ -28,6 +46,11 @@
     --dark-shadow: rgba(0, 0, 0, 0.3);
     --dark-accent: #00d4ff;
     --dark-accent-hover: #0099cc;
+    --dark-on-accent: #04222b;
+    /* The dark accent is already 10.7:1 on the page, so it needs no darker
+     * twin — the token exists in both themes so the rules using it need not
+     * ask which theme they are in. */
+    --dark-accent-strong: #00d4ff;
     --dark-accent-rgb: 0, 212, 255;
     --dark-toggle-icon: '\1F319';
     --dark-toggle-shift: 30px;
@@ -44,6 +67,8 @@
     --shadow-color: var(--light-shadow);
     --accent-color: var(--light-accent);
     --accent-hover: var(--light-accent-hover);
+    --on-accent: var(--light-on-accent);
+    --accent-strong: var(--light-accent-strong);
     --accent-rgb: var(--light-accent-rgb);
     --toggle-icon: var(--light-toggle-icon);
     --toggle-shift: var(--light-toggle-shift);
@@ -86,6 +111,8 @@
         --shadow-color: var(--dark-shadow);
         --accent-color: var(--dark-accent);
         --accent-hover: var(--dark-accent-hover);
+        --on-accent: var(--dark-on-accent);
+        --accent-strong: var(--dark-accent-strong);
         --accent-rgb: var(--dark-accent-rgb);
         --toggle-icon: var(--dark-toggle-icon);
         --toggle-shift: var(--dark-toggle-shift);
@@ -104,6 +131,8 @@
     --shadow-color: var(--dark-shadow);
     --accent-color: var(--dark-accent);
     --accent-hover: var(--dark-accent-hover);
+    --on-accent: var(--dark-on-accent);
+    --accent-strong: var(--dark-accent-strong);
     --accent-rgb: var(--dark-accent-rgb);
     --toggle-icon: var(--dark-toggle-icon);
     --toggle-shift: var(--dark-toggle-shift);
@@ -872,8 +901,16 @@ tr>td {
  * way in. Paging the rows covers most of what this was for.
  */
 
+/*
+ * A background and the ink on it are one decision, never two. Setting only the
+ * background here is what made the identifier cells unreadable on hover: they
+ * carried their own colour, this replaced what was behind it, and the two no
+ * longer agreed. Saying both means a cell cannot keep an ink that was chosen
+ * for a background this rule has just taken away.
+ */
 tr:hover>td {
     background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .path {
@@ -1059,7 +1096,7 @@ ul li {
 }
 
 a {
-    color: var(--accent-color);
+    color: var(--accent-strong);
     text-decoration: none;
     transition: all 0.3s ease;
     position: relative;
@@ -1067,7 +1104,7 @@ a {
 
 a:link,
 a:visited {
-    color: var(--accent-color);
+    color: var(--accent-strong);
 }
 
 a:hover {
@@ -1089,39 +1126,106 @@ a:hover {
     width: 100%;
 }
 
+/*
+ * A property, a language or a datatype, named by its identifier.
+ *
+ * These classes say what the thing is, not how it looks, and they are put on
+ * two quite different elements: a <div> standing on its own in a wall of them,
+ * and a <td> at the head of a table row. The styling below was written for the
+ * first and was reaching the second as well, which is where two faults came
+ * from:
+ *
+ *   - a floated, accent-filled pill is not a table cell. float on a <td> takes
+ *     it out of the row it belongs to;
+ *   - the pill sets a background and a colour together, but `tr:hover > td`
+ *     sets a background alone, and it wins on specificity. Hovering a row
+ *     therefore replaced the accent behind the identifier with the page's own
+ *     background and left the text white: white on #f5f7fa in the light theme,
+ *     which is how a link became unreadable exactly when pointed at.
+ *
+ * So the pill is now asked for by element. Everything shared — what the thing
+ * is, and that its identifier is read as a code — stays common to both.
+ */
 .property,
 .deletedproperty,
 .language,
 .datatype {
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+div.property,
+div.deletedproperty,
+div.language,
+div.datatype {
     position: relative;
     float: left;
     text-align: center;
-    background: var(--accent-color);
-    color: white;
+    background: var(--accent-strong);
+    color: var(--on-accent);
     line-height: 1.5;
     padding: 8px 16px;
     margin: 6px;
     border-radius: 8px;
     box-shadow: 0 2px 8px var(--shadow-color);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-weight: 500;
 }
 
-.property:hover,
-.language:hover,
-.datatype:hover {
+div.property:hover,
+div.language:hover,
+div.datatype:hover {
     transform: translateY(-4px) scale(1.05);
     box-shadow: 0 6px 20px var(--shadow-color);
 }
 
-.deletedproperty {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+/*
+ * The identifier at the head of a table row. It is a link to the thing the row
+ * is about, so it is coloured as a link and left on the row's own background —
+ * which the row is free to change on hover, now that nothing here depends on
+ * it staying put.
+ */
+td.property,
+td.language,
+td.datatype {
+    white-space: nowrap;
 }
 
-.property>a,
-.language>a,
-.datatype>a {
-    color: white;
+td.property > a,
+td.language > a,
+td.datatype > a,
+td.property > a:link,
+td.property > a:visited,
+td.language > a:link,
+td.language > a:visited,
+td.datatype > a:link,
+td.datatype > a:visited {
+    color: var(--accent-strong);
+}
+
+td.property > a:hover,
+td.language > a:hover,
+td.datatype > a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+div.deletedproperty {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: #ffffff;
+}
+
+/*
+ * Inside a pill the link fills it and takes the pill's own ink. Written as
+ * var(--on-accent) rather than white for the reason given above: the dark
+ * theme's accent is a colour white cannot be read on.
+ */
+div.property>a,
+div.language>a,
+div.datatype>a,
+div.property>a:visited,
+div.language>a:visited,
+div.datatype>a:visited {
+    color: var(--on-accent);
     text-decoration: none;
     display: block;
 }
@@ -1130,12 +1234,6 @@ a:hover {
 .language>a::after,
 .datatype>a::after {
     display: none;
-}
-
-.property>a:visited,
-.language>a:visited,
-.datatype>a:visited {
-    color: white;
 }
 
 .alternate tr:nth-child(2n) {
@@ -4434,4 +4532,36 @@ summary:focus-visible,
 .propertyusage-bound {
     color: var(--text-secondary);
     font-style: italic;
+}
+
+/*
+ * Taking a listing or a diagram away
+ *
+ * Under the table rather than above it: the point of the page is the table,
+ * and a row of buttons between a heading and its content pushes the content
+ * down for a control most readers will not use.
+ */
+
+.wdp-download {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 4px;
+}
+
+.wdp-download-button {
+    font-size: 13px;
+    padding: 6px 14px;
+}
+
+/*
+ * How much of the listing has actually been fetched. Ordinary text, not a
+ * warning: a partly-filled table is the normal state of a long one, and
+ * colouring it as a problem would say something untrue about it.
+ */
+.wdp-download-note {
+    color: var(--text-secondary);
+    font-size: 13px;
+    flex: 1 1 16rem;
 }

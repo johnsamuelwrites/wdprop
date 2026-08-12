@@ -18,6 +18,12 @@ function styleObject() {
         enumerable: false,
         value(name, value) { this[name] = String(value); },
     });
+    /* Its other half. A CSSStyleDeclaration has both, and code that writes a
+       property through setProperty reads it back through this one. */
+    Object.defineProperty(style, "getPropertyValue", {
+        enumerable: false,
+        value(name) { return name in this ? this[name] : ""; },
+    });
     return style;
 }
 
@@ -33,6 +39,15 @@ function element(tag) {
         get tagName() { return String(this.tag).toUpperCase(); },
         setAttribute(k, v) {
             this.attrs[k] = String(v);
+            /*
+             * The DOM reflects this one into the property, and code that reads
+             * option.value rather than getAttribute("value") is reading the
+             * property. Without this an <option> built by setAttribute has a
+             * value to a test and an empty string to the application.
+             */
+            if (k === "value") {
+                this.value = String(v);
+            }
             if (k.indexOf("data-i18n") === 0) {
                 const suffix = k.slice("data-i18n".length);
                 this.dataset[suffix
@@ -42,6 +57,7 @@ function element(tag) {
         },
         getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
         removeAttribute(k) { delete this.attrs[k]; },
+        hasAttribute(k) { return k in this.attrs; },
         appendChild(c) { this.children.push(c); c.parent = this; return c; },
         removeChild(c) { this.children = this.children.filter(x => x !== c); },
         /* Sets parentNode, as the DOM does: the pager control is inserted this
@@ -61,6 +77,8 @@ function element(tag) {
             return out;
         },
         get firstChild() { return this.children[0] || null; },
+        /* What a <select> reports, so the language chooser can be inspected. */
+        get options() { return this.children.filter(c => c.tag === "option"); },
         get textContent() {
             if (this.text) return this.text;
             return this.children.map(c => c.text ?? c.textContent ?? "").join("");
