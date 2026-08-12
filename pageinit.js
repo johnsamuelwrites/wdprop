@@ -33,6 +33,7 @@
         "aliases/language.html": function () { getTranslatedAliases(); },
         "aliases/translated.html": function () { getCountOfTranslatedAliases(); },
         "aliases/untranslated.html": function () { getMissingPropertyAliases(); },
+        "atlas.html": function () { initLanguageAtlas(); },
         "class.html": function () { getClassProperties(); },
         "classes.html": function () { getClasses(); },
         "compare.html": function () { getComparisonResultsOnLoad(); },

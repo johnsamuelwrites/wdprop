@@ -4135,6 +4135,7 @@ var wdpropPagesBelow = {
     "translated.html":         { under: "languages.html",    label: "page.translationStats" },
     "untranslated.html":       { under: "languages.html",    label: "page.missingStats" },
     "visualization.html":      { under: "languages.html",    label: "page.languageCodes" },
+    "atlas.html":              { under: "languages.html",    label: "atlas.heading" },
     "wikiproject.html":        { under: "wikiprojects.html", subject: "project" },
     "path.html":               { under: "provenance.html",   label: "page.pathOfTranslation" },
     "pathviz.html":            { under: "provenance.html",   label: "page.pathVisualization" },

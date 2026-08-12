@@ -701,6 +701,70 @@ body {
     line-height: 1.6;
 }
 
+/* ─── Language Atlas ─── */
+.atlas-hero p {
+    color: var(--text-secondary);
+}
+
+.atlas-search {
+    max-width: 520px;
+    margin-top: 18px;
+}
+
+.atlas-search label {
+    display: grid;
+    gap: 7px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.atlas-search input {
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.atlas-summary-grid {
+    align-items: stretch;
+}
+
+.atlas-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.atlas-chip {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+}
+
+.atlas-chip:hover,
+.atlas-chip:focus {
+    border-color: var(--accent-strong);
+    outline: none;
+}
+
+.atlas-count {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.atlas-table td {
+    vertical-align: top;
+}
+
 /* ─── Search page ─── */
 .search-hero {
     background: var(--bg-secondary);

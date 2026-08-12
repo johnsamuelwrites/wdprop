@@ -20,6 +20,7 @@ requests out altogether:
 | Suite | Covers |
 |---|---|
 | `wdprop.test.js` | Query building in the original scripts, and the three defects fixed in them |
+| `atlas.test.js` | Language Atlas query shape and grouping without inferred data |
 | `i18n.test.js` | Message files: coverage across languages, placeholders, unused and undefined keys |
 | `usage.test.js` | Usage counts: caching, expiry, bounded concurrency, and both live sources |
 | `nav.test.js` | Working out the current sidebar entry and the breadcrumb from the address, and building the sidebar |

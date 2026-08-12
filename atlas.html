@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html>
+
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WDProp: Language Atlas: John Samuel</title>
+        <link rel="manifest" href="manifest.webmanifest" />
+        <link rel="stylesheet" type="text/css" href="style.css" />
+        <script src="theme.js"></script>
+        <script defer src="ready.js"></script>
+        <script defer src="activity.js"></script>
+        <script defer src="shell.js"></script>
+        <script defer src="actions.js"></script>
+        <script defer src="pager.js"></script>
+        <script defer type="text/javascript" src="i18n.js"></script>
+        <script defer type="text/javascript" src="i18n/en.js"></script>
+        <script defer src="download.js"></script>
+        <script defer type="text/javascript" src="wdprop.js"></script>
+        <script defer type="text/javascript" src="atlas.js"></script>
+        <script defer type="text/javascript" src="offline.js"></script>
+        <script defer src="pageinit.js"></script>
+    </head>
+
+    <body>
+        <wdprop-shell></wdprop-shell>
+        <div id="content" role="main" tabindex="-1">
+            <div class="section atlas-hero">
+                <h2 data-i18n="atlas.heading">Language Atlas</h2>
+                <p data-i18n="atlas.intro">Supported Wikidata languages grouped by the writing system and classification statements Wikidata already has. Unknown means absent from the live data, not inferred.</p>
+                <div class="atlas-search">
+                    <label>
+                        <span data-i18n="atlas.filter">Filter</span>
+                        <input id="atlasFilter" type="text" placeholder="French, Latin, Germanic, fr"
+                            data-i18n-placeholder="atlas.filterPlaceholder" autocomplete="off" />
+                    </label>
+                </div>
+            </div>
+
+            <div class="dashboard-grid atlas-summary-grid">
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h2 class="widget-title" data-i18n="atlas.byScript">By script</h2>
+                    </div>
+                    <div id="atlasScripts" class="atlas-groups"></div>
+                </div>
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h2 class="widget-title" data-i18n="atlas.byFamily">By classification</h2>
+                    </div>
+                    <div id="atlasFamilies" class="atlas-groups"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="widget-header">
+                    <h2 class="widget-title" data-i18n="atlas.languages">Languages</h2>
+                    <span id="atlasCount" class="atlas-count"></span>
+                </div>
+                <div id="atlasLanguages"></div>
+            </div>
+
+            <div class="section">
+                <h2 data-i18n="page.query">Query</h2>
+                <div id="atlasLanguagesQuery"></div>
+            </div>
+        </div>
+        <div id="footer" role="contentinfo">
+            <p id="footertext" data-i18n-html="app.footer">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a
+                    href="https://mediawiki.org/">MediaWiki</a> API</p>
+        </div>
+    </body>
+
+</html>
