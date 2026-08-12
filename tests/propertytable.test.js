@@ -292,7 +292,8 @@ function settled() {
         t.check("filled rows are not fetched a second time", requests.length, 0);
 
         return usageSuite();
-    }).then(() => countSuite())
+    }).then(() => planSuite())
+      .then(() => countSuite())
       .then(() => classesSuite())
       .then(() => filterSuite())
       .then(() => batchSuite())
@@ -333,7 +334,118 @@ function usageSuite() {
         t.check("a count that was read is shown", cellText(body[0], 3), "4M");
         t.check("one that was not is not shown as zero",
             cellText(body[1], 3), "unavailable");
-        delete sandbox.window.WDProp.usage;
+
+        /*
+         * usage.js answers the tail of the ranking as a bound rather than
+         * spending a request per property on a figure nobody needs exactly.
+         * A bound is a different claim from a count and has to read as one.
+         */
+        asked = [];
+        sandbox.window.WDProp.usage.counts = ids => {
+            asked.push(ids.slice());
+            return Promise.resolve({ P18: { below: 1200 } });
+        };
+        const bounded = render(["P18"]);
+        const boundedBody = bodyRows(tableIn(bounded.container));
+        sandbox.wdpropRowsShown(tableIn(bounded.container), boundedBody);
+
+        return settled().then(() => {
+            t.check("a figure known only as a bound says so",
+                cellText(boundedBody[0], 3), "fewer than 1200");
+            t.check("and is set apart from an exact one",
+                boundedBody[0].children[3].getAttribute("class"),
+                "propertyusage propertyusage-bound");
+            delete sandbox.window.WDProp.usage;
+        });
+    });
+}
+
+/* ------------------------------------ one request per source, not per column */
+
+function planSuite() {
+    /*
+     * The shape this was rewritten into. Columns are grouped by the source
+     * that answers them, and the source is asked once for the union of what
+     * they want — so a page of a table costs one request per source however
+     * many columns it draws, and a column added to an answer already being
+     * fetched costs nothing at all.
+     *
+     * Under the old shape every column fetched for itself, which is why the
+     * usage column was fifty requests a page: it is the fault this makes
+     * structurally hard to reintroduce.
+     */
+    let usageCalls = 0;
+    sandbox.window.WDProp.usage = {
+        counts: ids => {
+            usageCalls++;
+            const found = {};
+            ids.forEach(id => { found[id] = 7; });
+            return Promise.resolve(found);
+        },
+        format: n => String(n),
+    };
+
+    const ids = [];
+    for (let i = 1; i <= 50; i++) ids.push("P" + i);
+
+    requests = [];
+    answer = () => entities(ids.map(id => entity(id, { ta: "பெயர்" })));
+
+    /*
+     * The cue beside the data. The header says how many requests the page has
+     * cost altogether; the table says whether it is waiting on one of them.
+     */
+    sandbox.window.WDProp.activity = {
+        busy: (node, waiting) => {
+            if (waiting) {
+                node.setAttribute("aria-busy", "true");
+            } else {
+                node.removeAttribute("aria-busy");
+            }
+        },
+    };
+
+    const { container } = render(ids);
+    const table = tableIn(container);
+    const body = bodyRows(table);
+    const filling = sandbox.wdpropRowsShown(table, body);
+
+    t.check("fifty rows, one request for their terms", requests.length, 1);
+    t.check("and one for their usage, not fifty", usageCalls, 1);
+    t.check("the table says it is waiting", table.getAttribute("aria-busy"), "true");
+
+    return filling.then(() => {
+        t.check("and stops saying so once the rows are filled",
+            table.getAttribute("aria-busy"), null);
+        delete sandbox.window.WDProp.activity;
+    }).then(() => {
+        /*
+         * A third column reading from an answer already being fetched. This is
+         * what the grouping is for: the aliases and the related-language terms
+         * are in the wbgetentities answer that the labels already come from.
+         */
+        const extra = {
+            source: "terms",
+            wants: row => !!row.wdpropLabelCell && !row.wdpropExtraFilled,
+            mark: row => { row.wdpropExtraFilled = true; },
+            show: (row, entity) => { row.wdpropExtraSaw = !!entity; },
+            fail: row => { row.wdpropExtraSaw = false; },
+        };
+
+        const before = requests.length;
+        const second = render(ids);
+        const secondBody = bodyRows(tableIn(second.container));
+        usageCalls = 0;
+
+        return sandbox.wdpropFillPlan(secondBody,
+            sandbox.wdpropListingColumns.concat([extra])).then(() => {
+            t.check("a column added to a source already asked costs no request",
+                requests.length - before, 1);
+            t.check("and is still filled from that one answer",
+                secondBody.every(row => row.wdpropExtraSaw === true), true);
+            t.check("the other source is asked once, as before", usageCalls, 1);
+            delete sandbox.window.WDProp.usage;
+        });
     });
 }
 

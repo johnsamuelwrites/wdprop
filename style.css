@@ -4269,3 +4269,169 @@ summary:focus-visible,
 .templatecell > a {
     text-decoration: none;
 }
+
+/*
+ * What the page has asked Wikidata for
+ *
+ * A dot in the header, turning while a request is in flight, and beside it the
+ * number of requests this page has made. The number is the point: it should
+ * stay where it is as a table is paged through, and a page whose count climbs
+ * with every page turn has a fault in it. Kept small and quiet — it is a gauge
+ * on the instrument panel, not a thing to read.
+ */
+
+.wdp-activity {
+    position: relative;
+    margin-left: auto;
+    margin-right: 12px;
+}
+
+.wdp-activity-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-accent);
+    font: inherit;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.wdp-activity-button:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.wdp-activity-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--wdp-ok);
+    flex: none;
+}
+
+/*
+ * Busy is a turning ring rather than a colour change alone: the difference
+ * between waiting and finished must be visible without depending on telling
+ * two colours apart.
+ */
+.wdp-activity-busy .wdp-activity-dot {
+    background: transparent;
+    border: 2px solid var(--text-accent);
+    border-top-color: transparent;
+    width: 11px;
+    height: 11px;
+    box-sizing: border-box;
+    animation: wdprop-activity-spin 0.8s linear infinite;
+}
+
+@keyframes wdprop-activity-spin {
+    to { transform: rotate(360deg); }
+}
+
+/*
+ * With animation turned off the ring cannot turn, so busy has to look
+ * different some other way. It becomes a filled amber dot: still not colour
+ * alone, since the shape changes from ring to disc as well.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .wdp-activity-busy .wdp-activity-dot {
+        background: var(--wdp-warn);
+        border-color: var(--wdp-warn);
+    }
+}
+
+.wdp-activity-log {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 120;
+    width: min(30rem, 90vw);
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 16px 18px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: 0 12px 32px var(--shadow-color);
+}
+
+.wdp-activity-log[hidden] {
+    display: none;
+}
+
+.wdp-activity-heading {
+    margin: 0 0 12px;
+    font-size: 15px;
+}
+
+.wdp-activity-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wdp-activity-entry {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+}
+
+.wdp-activity-what {
+    overflow-wrap: anywhere;
+}
+
+.wdp-activity-source,
+.wdp-activity-when {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.wdp-activity-when {
+    text-align: right;
+}
+
+.wdp-activity-failed .wdp-activity-when {
+    color: var(--wdp-danger);
+}
+
+/* Not a request at all, which is the point of showing it. */
+.wdp-activity-local .wdp-activity-what {
+    font-style: italic;
+}
+
+.wdp-activity-total,
+.wdp-activity-empty {
+    margin: 12px 0 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+/*
+ * A table waiting on the rows it is showing. Faint, because the header already
+ * carries the news and a whole table dimmed at every page turn would be worse
+ * than no cue at all.
+ */
+[aria-busy="true"].propertytable {
+    opacity: 0.75;
+    transition: opacity 0.2s ease;
+}
+
+/*
+ * A usage figure known only as a bound — the property is below the part of the
+ * ranked report that has been read. Set apart from an exact figure, since
+ * "fewer than 1,200" and "1,200" are different claims.
+ */
+.propertyusage-bound {
+    color: var(--text-secondary);
+    font-style: italic;
+}

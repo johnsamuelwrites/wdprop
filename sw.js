@@ -26,7 +26,7 @@
  * from a disk gives no registration, and needs none. See offline.js.
  */
 
-var SHELL_VERSION = "wdprop-shell-v2";
+var SHELL_VERSION = "wdprop-shell-v3";
 var DATA_VERSION = "wdprop-data-v1";
 
 /* Answers from Wikidata kept at once, oldest discarded first. */
@@ -54,6 +54,7 @@ var SHELL = [
 
     "theme.js",
     "ready.js",
+    "activity.js",
     "shell.js",
     "actions.js",
     "pager.js",

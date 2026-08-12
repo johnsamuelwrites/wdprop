@@ -83,6 +83,35 @@ t.check("the skip link comes first, before anything focusable",
     built.children[0].attrs["class"], "skip-link");
 t.check("and points at the main region", built.children[0].attrs.href, "#content");
 
+console.log("\n-- The request counter --");
+{
+    /*
+     * activity.js counts what the page asks Wikidata for and needs somewhere
+     * to show it. It is put in the header here rather than in the markup so
+     * that it is on all forty-one pages without forty-one copies of it — the
+     * same reason the header itself moved here.
+     */
+    const withActivity = load();
+    const mounted = [];
+    withActivity.sandbox.window.WDProp.activity = {
+        mount: container => { mounted.push(container); },
+    };
+
+    const fragment = withActivity.sandbox.window.WDProp.shell.build();
+    const boxes = index(fragment);
+    t.check("it is offered the header to build itself into", mounted.length, 1);
+    t.check("the header, and not some other box",
+        mounted[0] === boxes["header"], true);
+
+    /*
+     * A page that does not load activity.js still has to build a header. The
+     * counter is an instrument, not a part of the frame.
+     */
+    const without = load();
+    t.check("and a page without it still builds",
+        "header" in index(without.sandbox.window.WDProp.shell.build()), true);
+}
+
 console.log("\n-- Landmarks are named --");
 t.check("the header is a banner", ids["header"].attrs.role, "banner");
 t.check("the sidebar is a navigation", ids["sidebar"].attrs.role, "navigation");

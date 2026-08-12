@@ -1268,8 +1268,14 @@ window.WDProp = window.WDProp || {};
      * choice of what to work on, so they must never hold up the work itself.
      */
     function loadUsage(ids) {
+        /*
+         * A figure already held may be an exact count or a bound — usage.js
+         * answers the tail of the ranking with "fewer than n" rather than
+         * spending a request per property on a number nobody needs precisely.
+         * Both are answers, so neither is asked for twice.
+         */
         var wanted = ids.filter(function (id) {
-            return typeof state.usage[id] !== "number";
+            return state.usage[id] === undefined;
         });
         if (!wanted.length) {
             applyUsage();
@@ -1288,10 +1294,14 @@ window.WDProp = window.WDProp || {};
         var slots = document.querySelectorAll("[data-usage-for]");
         for (var i = 0; i < slots.length; i++) {
             var id = slots[i].getAttribute("data-usage-for");
+            var held = state.usage[id];
             clear(slots[i]);
-            if (typeof state.usage[id] === "number") {
+            if (typeof held === "number") {
                 slots[i].appendChild(document.createTextNode(
-                    t("translate.usedOn", [WDProp.usage.format(state.usage[id])])));
+                    t("translate.usedOn", [WDProp.usage.format(held)])));
+            } else if (held && typeof held.below === "number") {
+                slots[i].appendChild(document.createTextNode(
+                    t("translate.usedUnder", [WDProp.usage.format(held.below)])));
             }
         }
     }

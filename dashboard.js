@@ -451,13 +451,26 @@ function whenText(at) {
  * so this says how many are being reused rather than fetched again.
  */
 function cacheText() {
+    const day = 24 * 60 * 60 * 1000;
     let cached = 0;
     try {
         const held = JSON.parse(localStorage.getItem('wdprop-usage-counts')) || {};
-        const day = 24 * 60 * 60 * 1000;
         cached = Object.keys(held).filter(id => (Date.now() - held[id].at) < day).length;
     } catch (e) {
         cached = 0;
+    }
+    /*
+     * The ranked reports are where nearly all of these come from — one request
+     * holds a thousand of them — so counting only the singly-fetched figures
+     * would report an empty cache while thousands were being reused.
+     */
+    try {
+        const ranks = JSON.parse(localStorage.getItem('wdprop-usage-ranks'));
+        if (ranks && ranks.counts && (Date.now() - ranks.at) < day) {
+            cached += Object.keys(ranks.counts).length;
+        }
+    } catch (e) {
+        /* Left as it was. */
     }
     return cached ? wdpropText('dash.cacheHolding', [cached]) : wdpropText('dash.cacheEmpty');
 }

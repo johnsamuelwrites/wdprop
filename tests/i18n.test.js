@@ -36,7 +36,7 @@ const MODULES = ["translate.js", "batch.js", "campaign.js", "contributionsview.j
     "cart.js", "terminology.js", "usage.js", "i18n.js", "wdprop.js", "mwwdprop.js", "dashboard.js",
     "shell.js", "stale.js", "staleview.js", "offline.js", "offlineview.js", "contributions.js",
     "compare.js", "visualization.js", "validate.js", "qs.js",
-    "searchview.js", "classesview.js", "wikiprojectsview.js"];
+    "searchview.js", "classesview.js", "wikiprojectsview.js", "activity.js"];
 const usedInJs = new Set();
 for (const f of MODULES) {
     const src = fs.readFileSync(path.join(ROOT, f), "utf8");

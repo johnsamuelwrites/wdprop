@@ -41,6 +41,7 @@ function element(tag) {
             }
         },
         getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
+        removeAttribute(k) { delete this.attrs[k]; },
         appendChild(c) { this.children.push(c); c.parent = this; return c; },
         removeChild(c) { this.children = this.children.filter(x => x !== c); },
         /* Sets parentNode, as the DOM does: the pager control is inserted this

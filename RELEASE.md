@@ -101,6 +101,50 @@ Human-driven translation, alongside the existing analysis.
 * The sidebar is built from one list rather than repeated in the markup of
   every page, where the copies had begun to drift apart
 
+What a page costs
+
+* The header shows how many requests the page has made, turning while any of
+  them is in flight, and opens into what they were for — "terms of 50
+  properties", not "action=wbgetentities" — with how long each took and whether
+  it worked. The figure is the point rather than the list: it should stay where
+  it is as a table is paged through, and a page whose count climbs with every
+  page turn has a fault in it. It counts by replacing window.fetch rather than
+  by asking each caller to report itself, because a request that forgets to
+  report is exactly the one worth knowing about. Nothing is sent anywhere and
+  nothing is kept between page loads
+* It found the fault it was built to find. The usage column asked the search
+  API for one property at a time: a page of fifty rows was fifty requests, and
+  fifty more for every page turned. Each was quick, so from the outside there
+  was nothing to see but a page that was slow today
+* The community already maintains the answer. Its property reports are ranked
+  by use and paged a thousand at a time — 1-1000 is the thousand most used
+  properties with their exact counts, then 1001-2000, to the end of about
+  fourteen thousand. One page is one request, 18 KB compressed, and covers a
+  thousand properties. A table of fifty now costs one request, and the next
+  page of it costs none
+* Being ranked is what makes the tail cheap too. A property absent from the
+  reports read so far is used less than the last row of the deepest one read,
+  so the honest answer is "fewer than 1,200" rather than a request per cell for
+  a figure nobody needs precisely — which is all the column is for: enough to
+  sort by, enough to choose by. A bound is shown as a bound and never as a
+  count. The exact figure is on the property's own page, where one request
+  answers for one property, and that page now shows it
+* At most two reports are read for any one call, so a page of a table costs at
+  most two requests however obscure its properties are. What is read
+  accumulates in the day's cache, which the dashboard now counts properly: it
+  had been reporting an empty cache while thousands of figures were being
+  reused
+* Underneath, a listing's columns are grouped by the request that answers them
+  rather than each fetching for itself. The label and the description always
+  came from one call because they happened to be written as one column; the
+  aliases and the term in a related language are in that same answer and are
+  columns WDProp does not draw yet. Under the old shape each would have added a
+  request per page. A column reading from an answer already being fetched now
+  costs nothing, and the fault the usage column had is structurally harder to
+  reintroduce
+* A table says it is waiting while its rows are being filled, so there is a cue
+  beside the data and not only in the header
+
 The application itself
 
 * d3 is gone. It was 511 KB — more than every other script in WDProp put

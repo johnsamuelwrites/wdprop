@@ -56,6 +56,13 @@
       markup of all 39 pages~~
     * ~~Loading, empty and failure states are handled once, in queryWikidata
       and queryMediaWiki, rather than left to each caller~~
+    * ~~A listing's columns are grouped by the request that answers them
+      rather than each fetching for itself, so a page costs one request per
+      source however many columns it draws~~
+22. ~~Show what a page costs~~
+    * ~~A count of requests in the header, and what they were for~~
+    * Watch the count on the pages not yet looked at — anything that grows
+      with the number of rows is the same fault the usage column had
 18. ~~Show additional information on property page~~
     * ~~property creation date~~
     * ~~property data type~~

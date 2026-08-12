@@ -92,6 +92,16 @@
         logo.appendChild(el("span", { id: "subtitle", "data-i18n": "app.subtitle" },
             "Everything about Wikidata properties"));
         header.appendChild(logo);
+        /*
+         * How many requests the page has cost, and what they were for. Built
+         * by activity.js, which is loaded before this file and has been
+         * counting since the page opened; put here so that it appears on every
+         * page without thirty-nine copies of the markup.
+         */
+        if (window.WDProp && window.WDProp.activity) {
+            window.WDProp.activity.mount(header);
+        }
+
         header.appendChild(el("div", {
             id: "theme-toggle",
             role: "button",

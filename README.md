@@ -34,6 +34,8 @@
 * The sidebar marks the section you are in, and a page reached by a shared link — a single property, class, datatype, language or WikiProject — shows a breadcrumb back to the listing it belongs to
 * The dashboard counts everything it shows, live; nothing on it is written into the page in advance, so a figure it could not obtain reads as such rather than as a plausible number
 * Every section says which of the three things happened: results, nothing found, or a query that failed — the last with the reason and a way to ask again. Long tables are shown 50 rows at a time
+* The header counts what the page has asked Wikidata for, and opens into a list of those requests in words, with how long each took. A page of a table costs a fixed number of requests however many rows it has — the usage column alone used to cost one per row
+* How heavily a property is used comes from the community's ranked property reports, a thousand properties to a request, so a table costs one request and the next page of it none. Beyond what has been read the figure is shown as a bound — "fewer than 1,200" — rather than fetched a cell at a time; the exact count is on the property's own page
 * Properties are listed by name, not by number: a datatype, class or provenance listing shows each property's label and description, marks the ones your language has not reached yet, counts them in the heading, and hands that set to the workbench in one step. The names are fetched for the rows on show, so a listing of ten thousand properties costs a page of fifty
 
 ## Tests

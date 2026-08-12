@@ -1069,38 +1069,79 @@ function wdpropShowTerms(row, entity, language) {
 }
 
 /*
- * Fills the label and description of the rows currently on show.
+ * ---------------------------------------------------------------------------
+ * The columns of a listing, and the requests behind them
+ * ---------------------------------------------------------------------------
  *
- * Rows already filled are skipped, so paging back and forth costs nothing
- * beyond the first visit to each page.
+ * A source is one request. A column is one cell in a row. The two are not the
+ * same thing and used to be treated as though they were: each column fetched
+ * for itself, so a table cost one request per column per page, and the label
+ * and the description — which arrive in the same answer, from the same call,
+ * and always did — were the only pair that shared one because they happened to
+ * be written as a single column.
+ *
+ * That is the wrong way round for what comes next. The aliases of a property,
+ * and its term in a related language, are in the answer wbgetentities already
+ * sends: they are columns WDProp does not draw yet, and drawing them must cost
+ * nothing. Under the old shape each would have added a request per page.
+ *
+ * So columns declare which source answers them, and the source is asked once
+ * for whatever the columns between them want. Adding a column that reads from
+ * a source already being asked is free.
  */
-function wdpropFillTerms(rows) {
-    let language = wdpropLabelLanguage();
 
-    return wdpropFillLater(rows, {
-        wants: function (row) {
-            return row.wdpropLabelCell && !row.wdpropTermsFilled;
-        },
-        mark: function (row) { row.wdpropTermsFilled = true; },
-        key: function (row) { return row.wdpropEntityId; },
+var wdpropSources = {
+    /*
+     * Labels and descriptions, from the entity API. Fifty identifiers per
+     * request for an anonymous caller, which is also a page of a table.
+     */
+    terms: {
         batch: wdpropTermsPerRequest,
-        fetch: function (ids) { return wdpropFetchTerms(ids, language); },
-        show: function (row, entity) {
-            wdpropShowTerms(row, entity, language);
-        },
-        /*
-         * Not the same as a property with no label. Saying "not in this
-         * language" because the request failed would report a translation as
-         * missing on no evidence, and on this page that is the whole point of
-         * the row.
-         */
-        fail: function (row) {
-            row.wdpropTermsFilled = false;
-            wdpropUnavailable(row.wdpropLabelCell);
-            wdpropClear(row.wdpropDescriptionCell);
+        available: function () { return true; },
+        fetch: function (ids) {
+            return wdpropFetchTerms(ids, wdpropLabelLanguage());
         }
-    });
-}
+    },
+
+    /*
+     * How heavily a property is used. usage.js answers a whole page from the
+     * community's ranked report, which it holds for a day — so this is at most
+     * one request per page and usually none.
+     */
+    usage: {
+        batch: wdpropTermsPerRequest,
+        available: function () {
+            return !!(window.WDProp && window.WDProp.usage);
+        },
+        fetch: function (ids) { return window.WDProp.usage.counts(ids); }
+    }
+};
+
+/*
+ * The label and the description are two cells out of one answer, so they are
+ * one column here: nothing is gained by splitting what is shown from a single
+ * object in a single pass.
+ */
+var wdpropTermsColumn = {
+    source: "terms",
+    wants: function (row) {
+        return row.wdpropLabelCell && !row.wdpropTermsFilled;
+    },
+    mark: function (row) { row.wdpropTermsFilled = true; },
+    show: function (row, entity) {
+        wdpropShowTerms(row, entity, wdpropLabelLanguage());
+    },
+    /*
+     * Not the same as a property with no label. Saying "not in this language"
+     * because the request failed would report a translation as missing on no
+     * evidence, and on this page that is the whole point of the row.
+     */
+    fail: function (row) {
+        row.wdpropTermsFilled = false;
+        wdpropUnavailable(row.wdpropLabelCell);
+        wdpropClear(row.wdpropDescriptionCell);
+    }
+};
 
 /* A cell whose value could not be fetched, which is not a value of none. */
 function wdpropUnavailable(cell) {
@@ -1113,52 +1154,57 @@ function wdpropUnavailable(cell) {
 }
 
 /*
- * Fills the usage column of the rows currently on show.
+ * How often a property is used. It cannot come out of the same query as the
+ * labels — see the note on wdpropPropertyRecord — so it is a second source,
+ * answered by usage.js.
  *
- * How often a property is used cannot come out of the same query as the
- * labels — see the note on wdpropPropertyRecord — so it is fetched
- * afterwards, from usage.js, which reads it from the search API and caches it
- * for a day.
- *
- * Only the rows on show are asked for. A datatype can hold several thousand
- * properties, and counting all of them would mean thousands of requests to
- * fill fifty cells.
+ * Only the rows on show are asked about. A datatype can hold several thousand
+ * properties, and a figure wanted for fifty cells must not be fetched for all
+ * of them.
  */
-function wdpropFillUsage(rows) {
-    if (!(window.WDProp && window.WDProp.usage)) {
-        return Promise.resolve();
-    }
-
-    return wdpropFillLater(rows, {
-        wants: function (row) {
-            return row.wdpropUsageCell && !row.wdpropUsageCell.wdpropFilled;
-        },
-        mark: function (row) { row.wdpropUsageCell.wdpropFilled = true; },
-        key: function (row) { return row.wdpropEntityId; },
-        fetch: function (ids) { return window.WDProp.usage.counts(ids); },
-        show: function (row, count) {
-            let cell = row.wdpropUsageCell;
-            wdpropClear(cell);
-            if (typeof count === "number") {
-                cell.setAttribute("class", "propertyusage");
-                cell.setAttribute("title", count.toLocaleString());
-                cell.appendChild(document.createTextNode(
-                    window.WDProp.usage.format(count)));
-            } else {
-                /*
-                 * A count that could not be read is never shown as zero,
-                 * which would read as "never used".
-                 */
-                wdpropUnavailable(cell);
-                cell.setAttribute("class", "propertyusage missingvalue");
-            }
-        },
-        fail: function (row) {
-            wdpropUnavailable(row.wdpropUsageCell);
-            row.wdpropUsageCell.setAttribute("class", "propertyusage missingvalue");
+var wdpropUsageColumn = {
+    source: "usage",
+    wants: function (row) {
+        return row.wdpropUsageCell && !row.wdpropUsageCell.wdpropFilled;
+    },
+    mark: function (row) { row.wdpropUsageCell.wdpropFilled = true; },
+    show: function (row, count) {
+        let cell = row.wdpropUsageCell;
+        wdpropClear(cell);
+        if (count && typeof count.below === "number") {
+            /*
+             * Known only as a bound: the property is not in the part of the
+             * ranked report that has been read, so all that is certain is
+             * that it is used less than the last row of it. Shown as the
+             * bound rather than fetched exactly, which would be one request
+             * for one cell. The property's own page gives the exact figure,
+             * where one request answers for one property.
+             */
+            cell.setAttribute("class", "propertyusage propertyusage-bound");
+            cell.setAttribute("title", wdpropText("js.usageBelowTitle",
+                [count.below.toLocaleString()]));
+            cell.appendChild(document.createTextNode(
+                wdpropText("js.usageBelow",
+                    [window.WDProp.usage.format(count.below)])));
+        } else if (typeof count === "number") {
+            cell.setAttribute("class", "propertyusage");
+            cell.setAttribute("title", count.toLocaleString());
+            cell.appendChild(document.createTextNode(
+                window.WDProp.usage.format(count)));
+        } else {
+            /*
+             * A count that could not be read is never shown as zero, which
+             * would read as "never used".
+             */
+            wdpropUnavailable(cell);
+            cell.setAttribute("class", "propertyusage missingvalue");
         }
-    });
-}
+    },
+    fail: function (row) {
+        wdpropUnavailable(row.wdpropUsageCell);
+        row.wdpropUsageCell.setAttribute("class", "propertyusage missingvalue");
+    }
+};
 
 /*
  * The language to ask the label service for.
@@ -1290,7 +1336,9 @@ function wdpropEntityTable(divId, json, listing) {
      * reached, and once for the first page. A table too short to page is
      * filled the same way, since the pager never runs for it.
      */
-    table.wdpropOnPage = wdpropFillRows;
+    table.wdpropOnPage = function (rows) {
+        return wdpropFillRows(rows, table);
+    };
 
     container.appendChild(table);
     return records;
@@ -1300,10 +1348,13 @@ function createDivPropertyTable(divId, json) {
     return wdpropEntityTable(divId, json, wdpropPropertyListing);
 }
 
+/* The columns every property listing draws. A listing without a usage cell
+ * simply has no row wanting that column, so the source is never asked. */
+var wdpropListingColumns = [wdpropTermsColumn, wdpropUsageColumn];
+
 /* Everything a page of rows needs fetching for it, once it is on show. */
-function wdpropFillRows(rows) {
-    wdpropFillTerms(rows);
-    wdpropFillUsage(rows);
+function wdpropFillRows(rows, region) {
+    return wdpropFillPlan(rows, wdpropListingColumns, region);
 }
 
 /*
@@ -1422,15 +1473,34 @@ function wdpropAskForColumn(sparqlQuery, variable) {
  * once for the terms and once for the usage counts, and the two copies had
  * already diverged on what happens when the request fails.
  *
- * A spec says which rows still want filling, what to ask about, how to ask,
- * and how to show an answer — and, separately, how to show that there was no
- * answer. That last one is the part worth having in one place: a request that
- * failed and a property that genuinely has no label are different things, and
- * the terms copy had been showing both as "not in this language".
+ * A column says which rows still want it, how to show an answer and — kept
+ * separate — how to show that there was no answer. That last one is the part
+ * worth having in one place: a request that failed and a property that
+ * genuinely has no label are different things, and the terms copy had been
+ * showing both as "not in this language".
+ *
+ * The batching is by source and not by column, which is the whole point: the
+ * columns wanting the same source are collected first, and the source is then
+ * asked once for the union of the rows they want. A listing pays for the
+ * answers it needs, not for the cells it draws.
  */
-function wdpropFillLater(rows, spec) {
-    let pending = rows.filter(spec.wants);
-    if (pending.length === 0) {
+function wdpropFillFrom(rows, source, columns) {
+    /*
+     * Which columns want which rows, worked out before anything is marked —
+     * marking is what makes wants() false, so asking afterwards would find
+     * nothing wanted by anyone.
+     */
+    let claims = [];
+    for (const row of rows) {
+        let wanted = columns.filter(function (column) {
+            return column.wants(row);
+        });
+        if (wanted.length > 0) {
+            claims.push({ row: row, columns: wanted });
+        }
+    }
+
+    if (claims.length === 0) {
         return Promise.resolve();
     }
 
@@ -1438,25 +1508,74 @@ function wdpropFillLater(rows, spec) {
      * Marked before the request rather than after it, so that paging away and
      * back while one is in flight does not ask for the same rows again.
      */
-    pending.forEach(spec.mark);
+    claims.forEach(function (claim) {
+        claim.columns.forEach(function (column) { column.mark(claim.row); });
+    });
 
-    let size = spec.batch || pending.length;
+    let size = source.batch || claims.length;
     let batches = [];
-    for (let from = 0; from < pending.length; from += size) {
-        batches.push(pending.slice(from, from + size));
+    for (let from = 0; from < claims.length; from += size) {
+        batches.push(claims.slice(from, from + size));
     }
 
     return Promise.all(batches.map(function (batch) {
-        return spec.fetch(batch.map(spec.key)).then(function (answer) {
-            for (const row of batch) {
-                spec.show(row, answer[spec.key(row)]);
+        return source.fetch(batch.map(function (claim) {
+            return claim.row.wdpropEntityId;
+        })).then(function (answer) {
+            for (const claim of batch) {
+                for (const column of claim.columns) {
+                    column.show(claim.row, answer[claim.row.wdpropEntityId]);
+                }
             }
         }).catch(function () {
-            for (const row of batch) {
-                spec.fail(row);
+            for (const claim of batch) {
+                for (const column of claim.columns) {
+                    column.fail(claim.row);
+                }
             }
         });
     }));
+}
+
+/*
+ * Everything a page of rows wants, asked for in as few requests as there are
+ * sources behind it.
+ *
+ * The sources run beside each other rather than one after the other. They
+ * answer at different speeds — the terms in a few hundred milliseconds, the
+ * usage counts either instantly from the day's cache or after a report is
+ * read — and the names of the properties are what the reader is waiting for.
+ * Making them queue behind a slower answer would hold back the fast one for
+ * no gain, since they are separate services and neither blocks the other.
+ */
+function wdpropFillPlan(rows, columns, region) {
+    let names = Object.keys(wdpropSources).filter(function (name) {
+        return wdpropSources[name].available();
+    });
+
+    let running = names.map(function (name) {
+        let wanted = columns.filter(function (column) {
+            return column.source === name;
+        });
+        if (wanted.length === 0) {
+            return Promise.resolve();
+        }
+        return wdpropFillFrom(rows, wdpropSources[name], wanted);
+    });
+
+    /*
+     * The table says it is waiting while any of them is. This is the cue next
+     * to the data; activity.js carries the other one, in the header, which
+     * says how many requests the page has cost altogether.
+     */
+    if (region && window.WDProp && window.WDProp.activity) {
+        window.WDProp.activity.busy(region, true);
+        return Promise.all(running).then(function () {
+            window.WDProp.activity.busy(region, false);
+        });
+    }
+
+    return Promise.all(running);
 }
 
 function wdpropClear(div) {
@@ -1602,10 +1721,13 @@ function wdpropIsHeaderRow(row) {
  * at — the property tables fetch a usage count per row, which would be
  * thousands of requests if done for a whole datatype at once.
  */
+/* Returns what the table started, so a caller — a test, in practice — can
+ * wait for the rows to be filled rather than for a fixed number of ticks. */
 function wdpropRowsShown(table, rows) {
     if (typeof table.wdpropOnPage === "function") {
-        table.wdpropOnPage(rows);
+        return table.wdpropOnPage(rows);
     }
+    return Promise.resolve();
 }
 
 /*
@@ -2646,6 +2768,33 @@ function getPropertiesNeedingTranslation() {
 }
 
 
+/*
+ * How many items use this property, exactly.
+ *
+ * The listings answer this as a bound for all but the most used properties —
+ * a table must not spend a request a row on a figure nobody needs precisely —
+ * and this is where the bound is redeemed. One property, one request, which is
+ * the trade that makes the bound acceptable everywhere else.
+ */
+function updatePropertyUsage(property) {
+    let cell = document.getElementById("wikidatapropertyusage");
+    if (!cell || !(window.WDProp && window.WDProp.usage)) {
+        return;
+    }
+
+    cell.innerHTML = "…";
+    window.WDProp.usage.exact(property).then(function (count) {
+        wdpropClear(cell);
+        if (typeof count === "number") {
+            cell.setAttribute("title", count.toLocaleString());
+            cell.appendChild(document.createTextNode(count.toLocaleString()));
+        } else {
+            /* Never shown as zero, which would read as "never used". */
+            wdpropUnavailable(cell);
+        }
+    });
+}
+
 function getPropertyDetails() {
     let property = getValueFromURL("property=([^&#=]*)", "P31");
 
@@ -2656,6 +2805,7 @@ function getPropertyDetails() {
     fetchWikidataPage(property, language);
     updateModificationDate(property, language);
     updateCreationDate(property, language);
+    updatePropertyUsage(property);
 
     link = document.getElementById("wikidatalink");
     link.setAttribute('href', "https://www.wikidata.org/entity/" + property);
