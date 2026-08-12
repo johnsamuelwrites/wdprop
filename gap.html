@@ -1,0 +1,113 @@
+<!DOCTYPE HTML>
+<html>
+
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WDProp: Translation Gap Radar: John Samuel</title>
+        <link rel="manifest" href="manifest.webmanifest" />
+        <link rel="stylesheet" type="text/css" href="style.css" />
+        <script src="theme.js"></script>
+        <script defer src="ready.js"></script>
+        <script defer src="activity.js"></script>
+        <script defer src="shell.js"></script>
+        <script defer src="actions.js"></script>
+        <script defer src="pager.js"></script>
+        <script defer type="text/javascript" src="i18n.js"></script>
+        <script defer type="text/javascript" src="i18n/en.js"></script>
+        <script defer src="download.js"></script>
+        <script defer type="text/javascript" src="wdprop.js"></script>
+        <script defer type="text/javascript" src="gap.js"></script>
+        <script defer src="pageinit.js"></script>
+    </head>
+
+    <body>
+        <wdprop-shell></wdprop-shell>
+        <div id="content" role="main" tabindex="-1">
+            <div class="section gap-hero">
+                <h2 data-i18n="gap.heading">Translation Gap Radar</h2>
+                <p data-i18n="gap.intro">A live, bounded view of properties still missing one kind of translation. The page asks Wikidata for aggregate coverage and one limited worklist; labels for the visible rows are fetched in one batched API request.</p>
+            </div>
+
+            <div class="section">
+                <form id="gapForm" class="gap-form">
+                    <label>
+                        <span data-i18n="gap.language">Language</span>
+                        <input id="gapLanguage" name="language" type="text" inputmode="latin" value="en"
+                            aria-describedby="gapBudget" />
+                    </label>
+                    <label>
+                        <span data-i18n="gap.term">Missing term</span>
+                        <select id="gapTerm" name="term">
+                            <option value="label" data-i18n="term.label">label</option>
+                            <option value="description" data-i18n="term.description">description</option>
+                            <option value="alias" data-i18n="term.alias">alias</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span data-i18n="gap.scope">Scope</span>
+                        <select id="gapScope" name="scope">
+                            <option value="all" data-i18n="gap.scopeAll">All properties</option>
+                            <option value="datatype" data-i18n="gap.scopeDatatype">One datatype</option>
+                            <option value="class" data-i18n="gap.scopeClass">One property class</option>
+                        </select>
+                    </label>
+                    <label id="gapScopeValueWrap">
+                        <span data-i18n="gap.scopeValue">Scope value</span>
+                        <input id="gapScopeValue" name="value" type="text" placeholder="wikibase:ExternalId"
+                            data-i18n-placeholder="gap.scopeValuePlaceholder" />
+                    </label>
+                    <label>
+                        <span data-i18n="gap.limit">Rows</span>
+                        <select id="gapLimit" name="limit">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </label>
+                    <button type="submit" class="wdp-button" data-i18n="gap.load">Measure gaps</button>
+                </form>
+                <p id="gapBudget" class="gap-budget" data-i18n="gap.budget">Request budget: two SPARQL requests on load, then one batched entity API request for each visible table page. No worklist state is stored by this page.</p>
+            </div>
+
+            <div class="dashboard-grid gap-grid">
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h2 class="widget-title" data-i18n="gap.coverage">Coverage</h2>
+                    </div>
+                    <div id="gapCoverage"></div>
+                </div>
+
+                <div class="dashboard-widget">
+                    <div class="widget-header">
+                        <h2 class="widget-title" data-i18n="gap.liveRules">Live rules</h2>
+                    </div>
+                    <ul class="gap-rules">
+                        <li data-i18n="gap.ruleBounded">The list is limited before enrichment.</li>
+                        <li data-i18n="gap.ruleNoRows">No request is sent per table row.</li>
+                        <li data-i18n="gap.ruleUnknown">Missing source data is shown as unavailable, not guessed.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="widget-header">
+                    <h2 class="widget-title" data-i18n="gap.results">Missing properties</h2>
+                    <a id="gapWorkbench" class="widget-action" href="./translate.html" data-i18n="gap.openWorkbench">Open in workbench</a>
+                </div>
+                <div id="gapResults"></div>
+            </div>
+
+            <div class="section">
+                <h2 data-i18n="page.query">Query</h2>
+                <p><span data-i18n="gap.coverageQuery">Coverage query</span>: <span id="gapCoverageQuery"></span></p>
+                <p><span data-i18n="gap.resultsQuery">Worklist query</span>: <span id="gapResultsQuery"></span></p>
+            </div>
+        </div>
+        <div id="footer" role="contentinfo">
+            <p id="footertext" data-i18n-html="app.footer">Powered by <a href="https://www.wikidata.org/">Wikidata</a> and <a
+                    href="https://mediawiki.org/">MediaWiki</a> API</p>
+        </div>
+    </body>
+
+</html>

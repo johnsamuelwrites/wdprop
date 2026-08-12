@@ -168,10 +168,10 @@ s.check("an escaped space survives",
 
 console.log("\n-- Building the sidebar --");
 let page = visit("/wdprop/index.html", "");
-s.check("every entry is there", page.links.length, 17);
+s.check("every entry is there", page.links.length, 18);
 s.check("in the order they are declared", page.hrefs, [
     "./index.html", "./translate.html", "./campaign.html", "./stale.html",
-    "./contributions.html", "./terminology.html", "./languages.html", "./datatypes.html",
+    "./contributions.html", "./terminology.html", "./gap.html", "./languages.html", "./datatypes.html",
     "./properties.html", "./classes.html", "./provenance.html", "./search.html",
     "./compare.html", "./templates/translated.html", "./wikiprojects.html",
     "./offline.html", "./wdprop.html"]);

@@ -615,6 +615,92 @@ body {
     text-align: center;
 }
 
+/* ─── Translation Gap Radar ─── */
+.gap-hero p,
+.gap-budget,
+.gap-rules {
+    color: var(--text-secondary);
+}
+
+.gap-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    align-items: end;
+}
+
+.gap-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.gap-form input,
+.gap-form select {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.gap-form .wdp-button {
+    min-height: 42px;
+    margin: 0;
+}
+
+.gap-budget {
+    margin: 16px 0 0;
+    font-size: 14px;
+}
+
+.gap-grid {
+    align-items: stretch;
+}
+
+.gap-meter {
+    display: grid;
+    gap: 14px;
+}
+
+.gap-meter-number {
+    color: var(--text-primary);
+    font-size: 34px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.gap-meter-bar {
+    height: 14px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+.gap-meter-bar span {
+    display: block;
+    height: 100%;
+    background: var(--accent-strong);
+}
+
+.gap-meter p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.gap-rules {
+    margin: 0;
+    padding-left: 20px;
+    line-height: 1.6;
+}
+
 /* ─── Search page ─── */
 .search-hero {
     background: var(--bg-secondary);

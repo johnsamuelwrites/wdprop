@@ -4102,6 +4102,7 @@ var wdpropSections = [
     { file: "stale.html",                key: "nav.stale" },
     { file: "contributions.html",        key: "nav.contributions" },
     { file: "terminology.html",          key: "nav.terminology" },
+    { file: "gap.html",                  key: "nav.gap" },
     { file: "languages.html",            key: "nav.languages" },
     { file: "datatypes.html",            key: "nav.datatypes" },
     { file: "properties.html",           key: "nav.properties" },

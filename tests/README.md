@@ -26,6 +26,7 @@ requests out altogether:
 | `states.test.js` | What a section shows while its query runs, when it finds nothing, and when it fails; paging a long table |
 | `layout.test.js` | Stylesheet rules other rules depend on: the boxes that contain the floated chips |
 | `dashboard.test.js` | That the landing page shows only what it fetched, says so when it cannot, and ranks correctly |
+| `gap.test.js` | Translation Gap Radar query shape and validation stay bounded |
 | `markup.test.js` | Page structure the stylesheet relies on: nothing outside the main region, where the sidebar covers it; every page carries the shell and defers its scripts |
 | `shell.test.js` | `<wdprop-shell>`: the boxes it builds, their landmarks and names, the keyboard on both controls, and where the logo links from a subdirectory |
 | `actions.test.js` | `data-action` dispatch, that every control names an action something registers and the reverse, and what each page starts when it opens |

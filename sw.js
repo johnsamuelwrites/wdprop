@@ -26,7 +26,7 @@
  * from a disk gives no registration, and needs none. See offline.js.
  */
 
-var SHELL_VERSION = "wdprop-shell-v3";
+var SHELL_VERSION = "wdprop-shell-v4";
 var DATA_VERSION = "wdprop-data-v1";
 
 /* Answers from Wikidata kept at once, oldest discarded first. */
@@ -88,6 +88,7 @@ var SHELL = [
     "searchview.js",
     "classesview.js",
     "wikiprojectsview.js",
+    "gap.js",
 
     "batch.html",
     "campaign.html",
@@ -97,6 +98,7 @@ var SHELL = [
     "contributions.html",
     "datatype.html",
     "datatypes.html",
+    "gap.html",
     "descriptions.html",
     "labels.html",
     "language.html",

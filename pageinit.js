@@ -41,6 +41,7 @@
         "descriptions.html": function () {
             getPropertyDescriptionsNeedingTranslation();
         },
+        "gap.html": function () { initGapRadar(); },
         "descriptions/language.html": function () { getTranslatedDescriptions(); },
         "descriptions/translated.html": function () {
             getCountOfTranslatedDescriptions();
