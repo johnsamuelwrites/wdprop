@@ -128,6 +128,7 @@ const pairs = [
     ["--accent-strong", "--bg-primary", "a link on the page"],
     ["--accent-strong", "--bg-secondary", "a link on a card"],
     ["--on-accent", "--accent-strong", "the ink inside a filled accent"],
+    ["--nav-hover-text", "--nav-hover-bg", "a navigation link being pointed at"],
 
     ["--accent-hover", "--bg-primary", "a link being pointed at"],
     ["--accent-hover", "--bg-secondary", "a link being pointed at, on a card"],

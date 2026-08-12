@@ -375,6 +375,7 @@ WDProp.i18n.add("fr", {
     "js.share": "Part de la plus grande",
     "js.totalClasses": "Total : $1 classes",
     "js.totalDatatypes": "Total : $1 types de données",
+    "js.filterDatatypes": "Filtrer les types de données",
     "js.datatype": "Type de données",
     "js.properties": "Propriétés",
     "js.stillNeeded": "Encore à faire",

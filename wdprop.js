@@ -2405,6 +2405,13 @@ function createDivDataTypes(divId, json) {
     total.innerHTML = wdpropText("js.totalDatatypes", [results.bindings.length]);
     container.appendChild(total);
 
+    let filter = document.createElement("input");
+    filter.setAttribute("type", "search");
+    filter.setAttribute("class", "wdp-input wdp-table-filter");
+    filter.setAttribute("placeholder", wdpropText("js.filterDatatypes"));
+    filter.setAttribute("aria-label", wdpropText("js.filterDatatypes"));
+    container.appendChild(filter);
+
     let table = document.createElement("table");
     table.setAttribute("class", "alternate propertytable");
 
@@ -2453,6 +2460,13 @@ function createDivDataTypes(divId, json) {
     }
 
     container.appendChild(table);
+    filter.addEventListener("input", function () {
+        let wanted = filter.value.trim().toLowerCase();
+        wdpropFilterTable(table, function (row) {
+            return wanted === "" ||
+                String(row.wdpropDatatype).toLowerCase().indexOf(wanted) !== -1;
+        });
+    });
     wdpropFillDatatypeCounts(rows);
 }
 

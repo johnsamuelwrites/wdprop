@@ -29,6 +29,8 @@
      * for decoration that carries none.
      */
     --light-accent-strong: #4c5fd7;
+    --light-nav-hover-bg: #ffffff;
+    --light-nav-hover-text: #332154;
     /* The accent as bare components, for the focus rings that tint it. */
     --light-accent-rgb: 102, 126, 234;
     --light-toggle-icon: '\2600\FE0F';
@@ -51,6 +53,8 @@
      * twin — the token exists in both themes so the rules using it need not
      * ask which theme they are in. */
     --dark-accent-strong: #00d4ff;
+    --dark-nav-hover-bg: #00d4ff;
+    --dark-nav-hover-text: #04222b;
     --dark-accent-rgb: 0, 212, 255;
     --dark-toggle-icon: '\1F319';
     --dark-toggle-shift: 30px;
@@ -69,6 +73,8 @@
     --accent-hover: var(--light-accent-hover);
     --on-accent: var(--light-on-accent);
     --accent-strong: var(--light-accent-strong);
+    --nav-hover-bg: var(--light-nav-hover-bg);
+    --nav-hover-text: var(--light-nav-hover-text);
     --accent-rgb: var(--light-accent-rgb);
     --toggle-icon: var(--light-toggle-icon);
     --toggle-shift: var(--light-toggle-shift);
@@ -113,6 +119,8 @@
         --accent-hover: var(--dark-accent-hover);
         --on-accent: var(--dark-on-accent);
         --accent-strong: var(--dark-accent-strong);
+        --nav-hover-bg: var(--dark-nav-hover-bg);
+        --nav-hover-text: var(--dark-nav-hover-text);
         --accent-rgb: var(--dark-accent-rgb);
         --toggle-icon: var(--dark-toggle-icon);
         --toggle-shift: var(--dark-toggle-shift);
@@ -133,6 +141,8 @@
     --accent-hover: var(--dark-accent-hover);
     --on-accent: var(--dark-on-accent);
     --accent-strong: var(--dark-accent-strong);
+    --nav-hover-bg: var(--dark-nav-hover-bg);
+    --nav-hover-text: var(--dark-nav-hover-text);
     --accent-rgb: var(--dark-accent-rgb);
     --toggle-icon: var(--dark-toggle-icon);
     --toggle-shift: var(--dark-toggle-shift);
@@ -229,7 +239,7 @@ body {
 
 /* Kept small: the list can carry a scrollbar, and a wider shift clips against it. */
 #sidebarlinks li:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--nav-hover-bg);
     transform: translateX(4px);
 }
 
@@ -241,7 +251,7 @@ body {
     transform: translateY(-50%);
     width: 4px;
     height: 0;
-    background: var(--text-accent);
+    background: var(--nav-hover-text);
     border-radius: 0 4px 4px 0;
     transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -278,8 +288,14 @@ body {
 }
 
 #sidebar a:hover {
-    color: #ffffff;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    color: var(--nav-hover-text);
+    text-shadow: none;
+}
+
+#sidebarlinks li:hover a,
+#sidebarlinks li:hover a:link,
+#sidebarlinks li:hover a:visited {
+    color: var(--nav-hover-text);
 }
 
 /*
@@ -870,12 +886,12 @@ table {
 }
 
 tr>th {
-    background: var(--accent-color);
+    background: var(--accent-strong);
     font-size: 15px;
     font-weight: 600;
     line-height: 1.5;
     text-align: center;
-    color: white;
+    color: var(--on-accent);
     padding: 16px 20px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -1483,8 +1499,8 @@ img {
     justify-content: center;
     gap: 12px;
     padding: 20px 24px;
-    background: var(--accent-color);
-    color: #ffffff;
+    background: var(--accent-strong);
+    color: var(--on-accent);
     border-radius: 12px;
     font-size: 16px;
     font-weight: 600;
@@ -1497,11 +1513,11 @@ img {
 
 .action-btn:link,
 .action-btn:visited {
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .action-btn:hover {
-    color: #ffffff !important;
+    color: var(--on-accent) !important;
     transform: translateY(-4px) scale(1.02);
     box-shadow: 0 8px 25px rgba(var(--accent-rgb), 0.4);
 }
@@ -3128,14 +3144,14 @@ img {
 }
 
 .wdp-button.wdp-primary {
-    background: var(--accent-color);
-    border-color: var(--accent-color);
-    color: #ffffff;
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+    color: var(--on-accent);
 }
 
 .wdp-button.wdp-primary:link,
 .wdp-button.wdp-primary:visited {
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 .wdp-button:disabled {
@@ -3327,8 +3343,8 @@ img {
     display: inline-block;
     padding: 2px 10px;
     border-radius: 12px;
-    background: var(--accent-color);
-    color: #ffffff;
+    background: var(--accent-strong);
+    color: var(--on-accent);
     font-size: 12px;
 }
 
@@ -3362,6 +3378,12 @@ img {
     outline: none;
     border-color: var(--accent-color);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.wdp-table-filter {
+    display: block;
+    width: min(100%, 420px);
+    margin: 12px 0 8px;
 }
 
 .wdp-input-small {
@@ -3971,6 +3993,11 @@ tr.cn-changed {
     cursor: pointer;
 }
 
+.language-switcher:hover {
+    background: var(--nav-hover-bg);
+    color: var(--nav-hover-text);
+}
+
 .language-switcher option {
     color: var(--text-primary);
     background: var(--bg-secondary);
@@ -4000,8 +4027,8 @@ tr.cn-changed {
     z-index: 300;
     padding: 10px 18px;
     border-radius: 0 0 8px 8px;
-    background: var(--accent-color);
-    color: #ffffff;
+    background: var(--accent-strong);
+    color: var(--on-accent);
     font-weight: 600;
     text-decoration: none;
     transition: top 0.2s ease;
@@ -4013,7 +4040,7 @@ tr.cn-changed {
 
 .skip-link:link,
 .skip-link:visited {
-    color: #ffffff;
+    color: var(--on-accent);
 }
 
 /*

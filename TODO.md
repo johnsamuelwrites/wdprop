@@ -27,9 +27,12 @@
 8. Add search/filter option on every subpage
     * The property classes and the WikiProjects filter as you type, through
       wdpropFilterTable, which re-pages what matches rather than hiding rows
-    * The listings that do not yet offer it: datatypes, provenance, the
-      per-language property lists. It is one call per page against a table
-      that is already built
+    * ~~Datatypes~~ — the datatype table now has a search box before the rows;
+      it narrows the rows by datatype name and lets the existing pager rebuild
+      itself over the match set
+    * The listings that do not yet offer it: provenance and the per-language
+      property lists. It is one call per page against a table that is already
+      built
     * Example: User can type en or eng or english
 9. Languages:
     * Group languages by
@@ -93,6 +96,15 @@
       themes, every ink-on-background pair the stylesheet actually makes,
       against WCAG AA. It was written after white on the dark accent (1.77:1)
       and the light accent as link text (3.41:1) had both been shipped
+    * ~~Sidebar and language chooser hover contrast~~ — the hover state now has
+      its own surface and ink tokens. Light mode uses a white navigation tile
+      with dark text; dark mode uses the cyan accent with the dark on-accent
+      ink, so hovering Properties, Languages or the chooser changes both the
+      background and the text as one decision
+    * ~~Filled accent controls carry the readable accent~~ — table headings,
+      primary action buttons, skip links, primary WDProp buttons and small
+      tags use `--accent-strong` with `--on-accent`, leaving `--accent-color`
+      for decoration that does not carry text
     * Add a pair to tests/contrast.test.js whenever a rule puts an ink on a
       background it did not before. The list is deliberately written by hand:
       a pairing is a decision, and this is where the decisions are declared
