@@ -124,4 +124,74 @@ s.check("no page carries an inline script",
     pages.filter(p => /<script(?![^>]*\bsrc=)[^>]*>[^<]*\S/.test(fs.readFileSync(p, "utf8")))
         .map(p => path.relative(ROOT, p)), []);
 
+/*
+ * A page must load every file it will actually reach into.
+ *
+ * search.html shipped without mwwdprop.js. Its search had just been moved
+ * there, so findPropertyOnLoad — which is in wdprop.js, which the page does
+ * load — called a function that did not exist on that page, and the search
+ * silently returned nothing. Nothing caught it: the offline suite checks that
+ * every script a page names is cached, which is the other direction, and the
+ * search suite loaded mwwdprop.js into its sandbox because it was testing the
+ * search rather than the page.
+ *
+ * Asked here as reachability from the page's own entry point in pageinit.js,
+ * following calls between WDProp's top-level functions. Not every function in
+ * every file a page loads: wdprop.js is shared by all forty-four pages and
+ * mentions functions belonging to files most of them have no use for. What
+ * matters is what the page will actually run.
+ *
+ * Calls preceded by a dot are skipped — .filter( and .trim( are not these
+ * functions — and only names WDProp itself defines are followed.
+ */
+{
+    /* The body of the block that opens at the first { at or after `from`. */
+    function blockAt(source, from) {
+        let start = source.indexOf("{", from), depth = 0, end = start;
+        for (; end < source.length; end++) {
+            if (source[end] === "{") depth++;
+            else if (source[end] === "}" && --depth === 0) break;
+        }
+        return source.slice(start, end + 1);
+    }
+
+    const scripts = fs.readdirSync(ROOT).filter(f => f.endsWith(".js"));
+    const definedIn = {}, bodyOf = {};
+    for (const file of scripts) {
+        const source = fs.readFileSync(path.join(ROOT, file), "utf8");
+        for (const m of source.matchAll(/^function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) {
+            definedIn[m[1]] = file;
+            bodyOf[m[1]] = blockAt(source, m.index);
+        }
+    }
+
+    const namesIn = text => [...new Set([...text.matchAll(/(^|[^.\w$])([A-Za-z_$][\w$]*)\s*\(/g)]
+        .map(m => m[2]).filter(name => name in definedIn))];
+
+    const init = fs.readFileSync(path.join(ROOT, "pageinit.js"), "utf8");
+    const gaps = [];
+    for (const m of init.matchAll(/"([^"]+\.html)":\s*function\s*\(\)\s*\{/g)) {
+        const page = m[1];
+        const html = fs.readFileSync(path.join(ROOT, page), "utf8");
+        const dir = path.dirname(page);
+        const loaded = new Set([...html.matchAll(/src="([^"]+\.js)"/g)]
+            .map(hit => path.normalize(path.join(dir === "." ? "" : dir, hit[1]))
+                .split(path.sep).join("/")));
+
+        const seen = new Set();
+        const pending = namesIn(blockAt(init, m.index + m[0].length - 1));
+        while (pending.length) {
+            const name = pending.pop();
+            if (seen.has(name)) continue;
+            seen.add(name);
+            if (!loaded.has(definedIn[name])) {
+                gaps.push(`${page} reaches ${name}, which is in ${definedIn[name]}`);
+            } else {
+                pending.push(...namesIn(bodyOf[name]));
+            }
+        }
+    }
+    s.check("every page loads the files its entry point reaches", gaps.sort(), []);
+}
+
 process.exit(s.done());

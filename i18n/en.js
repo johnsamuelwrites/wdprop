@@ -327,6 +327,7 @@ WDProp.i18n.add("en", {
     "page.allPages": "Every page in WDProp",
     "page.allPagesIntro": "Grouped under the section each belongs to, with a line saying what it is for. Pages about one property, one class or one language are reached from the listing that names them, so they are not repeated here.",
     "page.matchingPages": "Pages in WDProp",
+    "page.showRequest": "Show the request",
     "page.inThisSection": "In this section",
     "page.translationStats": "Translation Statistics",
     "page.missingStats": "Missing Translation Statistics",

@@ -300,6 +300,7 @@ WDProp.i18n.add("fr", {
     "page.allPages": "Toutes les pages de WDProp",
     "page.allPagesIntro": "Regroupées par la rubrique à laquelle chacune appartient, avec une ligne indiquant à quoi elle sert. Les pages consacrées à une seule propriété, une seule classe ou une seule langue s'atteignent depuis la liste qui les nomme, elles ne sont donc pas reprises ici.",
     "page.matchingPages": "Pages de WDProp",
+    "page.showRequest": "Afficher la requête",
     "page.inThisSection": "Dans cette rubrique",
     "page.translationStats": "Statistiques de traduction",
     "page.missingStats": "Statistiques des traductions manquantes",

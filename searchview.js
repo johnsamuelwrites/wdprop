@@ -31,9 +31,8 @@ function switchSearchTab(tab) {
 function fillAndSubmitProject(event, value) {
     event.preventDefault();
     document.getElementById('searchproject').value = value;
-    let sparqlQuery = getSearchWikiProjectQuery("'" + value + "'");
-    queryWikidata(sparqlQuery, createDivWikiProjects, "searchResults");
     showResultsSection();
+    searchWikiProjects(value, "searchResults");
 }
 
 function showResultsSection() {

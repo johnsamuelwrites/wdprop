@@ -52,23 +52,35 @@
         'comparisonResultsAliases':      'compare-chart-aliases'
     };
 
-    // ── Parse chips rendered by createDivTranslatedLabelsCount ──
-    // Each chip is a <div class="language"><a>en (2847)</a></div>
-    function parseChips(sourceDiv) {
-        var chips = sourceDiv.querySelectorAll('.language a');
-        var data = [];
-        chips.forEach(function (a) {
-            var txt = a.textContent.trim();        // "en (2847)"
-            var match = txt.match(/^(.+?)\s*\((\d+)\)$/);
-            if (match) {
-                data.push({
-                    lang: match[1].trim(),
-                    count: parseInt(match[2], 10),
-                    href: a.getAttribute('href') || '#'
-                });
-            }
+    /*
+     * The counts, from the answer.
+     *
+     * This used to read them back out of the page: the original callback drew
+     * a chip per language reading "en (2847)", and this found every `.language
+     * a`, matched that text with a regular expression, and turned it back into
+     * a language and a number. The chips became a table — every listing in
+     * WDProp did — and the selector then matched nothing, so all three charts
+     * said "No data available" for every comparison, while the query behind
+     * them was answering perfectly well.
+     *
+     * The answer is the argument to this callback. Nothing needs parsing.
+     */
+    function countsFrom(json) {
+        var bindings = (json && json.results && json.results.bindings) || [];
+
+        var data = bindings.map(function (binding) {
+            var code = binding.languageCode.value;
+            return {
+                lang: code,
+                count: Number(binding.total.value),
+                href: './language.html?language=' + encodeURIComponent(code)
+            };
         });
-        return data; // already sorted DESC by SPARQL
+
+        /* The chart reads the first row as the largest. ORDER BY says so, but
+           the chart should not fall over if a query is ever asked without. */
+        data.sort(function (a, b) { return b.count - a.count; });
+        return data;
     }
 
     // ── Render a horizontal bar chart ──
@@ -198,9 +210,7 @@
 
             // If this divId is one we care about, convert to chart
             if (divId in CHART_MAP) {
-                var sourceDiv = document.getElementById(divId);
-                var data = parseChips(sourceDiv);
-                renderCompareChart(CHART_MAP[divId], data);
+                renderCompareChart(CHART_MAP[divId], countsFrom(json));
 
                 // Show the chart area once at least one chart has rendered
                 var chartArea = document.getElementById('compareChartArea');

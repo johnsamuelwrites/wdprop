@@ -236,20 +236,72 @@ function coverageQuery() {
     }`;
 }
 
-function renderCoverage(binding) {
+/*
+ * These figures are kept, and that is the whole of what makes this widget
+ * usable.
+ *
+ * The query counts, for each of five languages, how many of the thirteen
+ * thousand properties carry a label in it. Measured against the live service
+ * it takes 20 seconds, and there is no faster way to ask: a triple store has
+ * no index over labels, so every one of those counts is a scan, and asking as
+ * one pass over five languages rather than five joins is 19. Meanwhile a
+ * dashboard is the page nobody waits on — it is the first thing opened and
+ * the figures were still not there when the reader had moved on.
+ *
+ * So it is asked once a day. Held figures are drawn immediately, whatever
+ * their age, and refreshed behind them only when the day is up: property
+ * translations move by a handful a day, and a figure from this morning is not
+ * meaningfully less true than one from this second. What is shown says which
+ * it is.
+ *
+ * usage.js keeps its counts the same way and for the same reason.
+ */
+const COVERAGE_KEY = 'wdprop-dashboard-coverage';
+const COVERAGE_DAY = 24 * 60 * 60 * 1000;
+
+function readCoverage() {
+    try {
+        const held = JSON.parse(localStorage.getItem(COVERAGE_KEY));
+        /* Written by an older version, or half-written: ask again. */
+        if (held && held.counts && typeof held.total === 'number' && held.total) {
+            return held;
+        }
+    } catch (e) {
+        /* An unreadable cache is no cache. */
+    }
+    return null;
+}
+
+function writeCoverage(figures) {
+    try {
+        localStorage.setItem(COVERAGE_KEY, JSON.stringify(figures));
+    } catch (e) {
+        /* A browser that refuses to store simply fetches every time. */
+    }
+}
+
+function coverageFrom(binding) {
+    const counts = {};
+    COVERAGE_LANGUAGES.forEach(({ code }) => {
+        counts[code] = parseInt(binding['n_' + code].value, 10);
+    });
+    return { total: parseInt(binding.total.value, 10), counts: counts, at: Date.now() };
+}
+
+function renderCoverage(figures, held) {
     const list = document.getElementById('translationProgress');
     if (!list) {
         return;
     }
     clearNode(list);
 
-    const total = parseInt(binding.total.value, 10);
+    const total = figures.total;
     if (!total) {
         throw new Error('No properties were counted.');
     }
 
     COVERAGE_LANGUAGES.forEach(({ code, name }) => {
-        const translated = parseInt(binding['n_' + code].value, 10);
+        const translated = figures.counts[code];
         const percentage = Math.round((translated / total) * 100);
 
         const item = textNode('div', 'progress-item');
@@ -276,22 +328,50 @@ function renderCoverage(binding) {
 
         list.appendChild(item);
     });
+
+    /*
+     * Only for figures that were kept. "Figures from just now" beneath figures
+     * that arrived just now says nothing worth the line.
+     */
+    if (held) {
+        const when = textNode('p', 'progress-asof',
+            wdpropText('dash.lastUpdated') + ' ' + whenText(new Date(figures.at)));
+        list.appendChild(when);
+    }
 }
 
 function updateTranslationProgress() {
     const list = document.getElementById('translationProgress');
-    if (list) {
+    const held = readCoverage();
+
+    if (held) {
+        renderCoverage(held, true);
+    } else if (list) {
         clearNode(list);
         list.appendChild(textNode('p', 'wdp-empty', wdpropText('js.fetching')));
+    }
+
+    /* Still good for today. Nothing is asked, and nothing is counted against
+       the page for asking it. */
+    if (held && (Date.now() - held.at) < COVERAGE_DAY) {
+        return;
     }
 
     queryDashboardData(coverageQuery()).then(json => {
         if (!json.results || !json.results.bindings.length) {
             throw new Error('The coverage query returned nothing.');
         }
-        renderCoverage(json.results.bindings[0]);
+        const figures = coverageFrom(json.results.bindings[0]);
+        renderCoverage(figures, false);
+        /* Written after rendering, so figures that cannot be drawn — a total
+           of zero — are not the ones kept for tomorrow. */
+        writeCoverage(figures);
     }).catch(() => {
-        showWidgetFailure(list);
+        /* Day-old figures beat a failure message. The line under them already
+           says how old they are. */
+        if (!held) {
+            showWidgetFailure(list);
+        }
     });
 }
 
@@ -430,7 +510,9 @@ function updateTopProperties() {
 
 /*
  * How long ago, in words. Anything within the minute is "just now"; past an
- * hour the clock time is more use than a count of minutes.
+ * hour the clock time is more use than a count of minutes, and past a day the
+ * clock time alone is a lie — the coverage figures are kept for a day and are
+ * routinely read the following morning.
  */
 function whenText(at) {
     if (!at) {
@@ -443,7 +525,10 @@ function whenText(at) {
     if (minutes < 60) {
         return wdpropText('dash.minutesAgo', [minutes]);
     }
-    return at.toLocaleTimeString();
+    if (minutes < 60 * 24) {
+        return at.toLocaleTimeString();
+    }
+    return at.toLocaleDateString();
 }
 
 /*

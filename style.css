@@ -1761,6 +1761,18 @@ img {
     color: var(--accent-color);
 }
 
+/*
+ * When the coverage figures are from, shown only when they were kept from an
+ * earlier visit. The query behind them takes twenty seconds, so they are asked
+ * for once a day and drawn from store in between; a reader is owed the date on
+ * a figure that was not fetched for them.
+ */
+.progress-asof {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
 .progress-bar-container {
     height: 8px;
     background: var(--bg-primary);

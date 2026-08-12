@@ -711,12 +711,12 @@ function createDivComparisonResults(divId, json) {
 function createDivWikiProjects(divId, titles) {
     let container = document.getElementById(divId);
 
-    if (titles && titles.results) {
-        titles = titles.results.bindings.map(function (binding) {
-            return binding['title'].value;
-        });
-    }
-
+    /*
+     * Titles, always. This used to accept a SPARQL answer as well, for the
+     * search page, which asked the query service which project titles contain
+     * a word. That search goes to the search index now, like the listing, so
+     * both callers arrive with an array.
+     */
     let total = document.createElement("h3");
     total.innerHTML = wdpropText("js.totalProjects", [titles.length]);
     container.appendChild(total);
@@ -756,44 +756,55 @@ function createDivWikiProjects(divId, titles) {
     return titles;
 }
 
-function createDivSearchProperties(divId, json) {
-    const { head: { vars }, results } = json;
+/*
+ * The search results: one row per property, in the order they were given.
+ *
+ * `rows` are plain objects — { property, label } — rather than SPARQL
+ * bindings, because the search no longer goes through the query service. The
+ * order is the search index's order, which is by relevance, so nothing here
+ * sorts them.
+ */
+function createDivSearchProperties(divId, rows) {
     let properties = document.getElementById(divId);
+    /* A second search replaces the first rather than piling up beneath it. */
+    wdpropClear(properties);
+
     let total = document.createElement("h3");
-    total.innerHTML = wdpropText("js.totalProperties", [results.bindings.length]);
-    while (properties.hasChildNodes()) {
-        properties.removeChild(properties.lastChild);
-    }
+    total.innerHTML = wdpropText("js.totalProperties", [rows.length]);
     properties.appendChild(total);
+
     let table = document.createElement("table");
-    let th = document.createElement("tr");
-    let td = document.createElement("th");
-    td.innerHTML = wdpropText("js.property");
-    th.appendChild(td);
-    td = document.createElement("th");
-    td.innerHTML = wdpropText("js.label");
-    th.appendChild(td);
-    table.appendChild(th);
-    let tr = "";
-    for (const result of results.bindings) {
-        tr = document.createElement("tr");
+    table.setAttribute("class", "alternate propertytable");
+
+    let head = document.createElement("tr");
+    wdpropHeaderCell(head, "js.property");
+    wdpropHeaderCell(head, "js.label");
+    table.appendChild(head);
+
+    for (const row of rows) {
+        let tr = document.createElement("tr");
 
         let property = document.createElement("td");
         property.setAttribute('class', "property");
         let a = document.createElement("a");
-        a.setAttribute('href', "property.html?property=" + result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-        let text = document.createTextNode(result['property'].value.replace("http://www.wikidata.org/entity/", ""));
-        a.appendChild(text);
+        a.setAttribute('href', "property.html?property=" + row.property);
+        a.appendChild(document.createTextNode(row.property));
         property.appendChild(a);
         tr.appendChild(property);
 
-        td = document.createElement("td");
-        td.setAttribute('class', "searchresultvalue");
-        td.innerHTML = result['label'].value;
-        tr.appendChild(td);
+        /*
+         * Wikidata's own text, put in as text. It used to be assigned through
+         * innerHTML, which made a label containing a < or an & Wikidata's
+         * markup rather than Wikidata's label.
+         */
+        let label = document.createElement("td");
+        label.setAttribute('class', "searchresultvalue");
+        label.appendChild(document.createTextNode(row.label));
+        tr.appendChild(label);
 
         table.appendChild(tr);
     }
+
     properties.appendChild(table);
 }
 
@@ -3078,67 +3089,6 @@ function getPropertyDescriptors() {
     queryWikidata(sparqlQuery, createDivPropertyDescriptors, "propertyDescriptors");
 }
 
-function getSearchQuery(language, search) {
-    const sparqlQuery = `
-    PREFIX wikibase: <http://wikiba.se/ontology#>
-    SELECT DISTINCT ?property ?label
-    {
-      {
-        SELECT ?property ?label
-        WHERE
-        {
-          ?property a wikibase:Property;
-                      rdfs:label ?label FILTER (lang(?label) = "` + language + `").
-          FILTER(contains(lcase(?label), lcase(` + search + `)))
-        }
-      }
-      UNION
-      {
-        SELECT ?property ?label
-        WHERE
-        {
-          [rdfs:label ?ilabel] wdt:P1963 ?property.
-          ?property rdfs:label ?label FILTER(lang(?label)="` + language + `").
-          FILTER (lang(?ilabel)="en" && contains(lcase(?ilabel), lcase(` + search + `)))
-        }
-      }
-      UNION
-      {
-        SELECT DISTINCT ?property ?label
-        WHERE
-        {
-          ?property a wikibase:Property;
-                    wdt:P31  [rdfs:label ?ilabel];
-                    rdfs:label ?label FILTER (lang(?label)="` + language + `").
-          FILTER (lang(?ilabel)="en" && contains(lcase(?ilabel), lcase(` + search + `)))
-        }
-      } 
-    }
-    ORDER by ?label
-    `;
-    return (sparqlQuery);
-}
-
-function getSearchWikiProjectQuery(search) {
-    const sparqlQuery = `
-    SELECT ?title WHERE{
-     FILTER (contains(lcase(?title), lcase(` + search + `))).
-     {
-       SELECT ?title WHERE {
-        SERVICE wikibase:mwapi {
-          bd:serviceParam wikibase:api "Search" .
-          bd:serviceParam wikibase:endpoint "www.wikidata.org" .
-          bd:serviceParam mwapi:srsearch "Wikidata:WikiProject" .
-          ?title wikibase:apiOutput mwapi:title .
-        }
-        FILTER(contains(?title, "Wikidata:WikiProject" ))
-       }
-      }
-    }
-  `;
-    return sparqlQuery;
-}
-
 /*
  * The limit and offset this used to read from the URL are gone with the paging
  * scheme that used them, and so is the substitution that destroyed its own
@@ -3176,21 +3126,23 @@ function getWikiProjects() {
 }
 
 
-function findWikiProjects(e, form) {
+/*
+ * The two searches. Both go to the search index rather than to the query
+ * service; searchProperties and searchWikiProjects are in mwwdprop.js, with
+ * the measurements that put them there.
+ *
+ * The term was wrapped in quotation marks here before being pasted into a
+ * SPARQL string, which is why it looks unguarded now: there is no query being
+ * built to inject into, and the term is escaped where it is used, as one URL
+ * parameter.
+ */
+function findWikiProjects(e) {
     e.preventDefault();
-    let search = document.getElementById("searchproject").value;
-    sparqlQuery = getSearchWikiProjectQuery("'" + search + "'");
-    queryWikidata(sparqlQuery, createDivWikiProjects, "searchResults");
-}
-
-
-function findWikiProjectsOnLoad() {
-    limit = 500;
-    offset = 500;
-    let search = getValueFromURL("search=([^&#=]*)", "heritage");
-    sparqlQuery = getSearchWikiProjectQuery('"' + search + '"');
-    document.getElementById("search").value = search;
-    queryWikidata(sparqlQuery, createDivWikiProjects, "allWikiProjects");
+    let search = document.getElementById("searchproject").value.trim();
+    if (search == "") {
+        return;
+    }
+    searchWikiProjects(search, "searchResults");
 }
 
 function findPropertyOnLoad() {
@@ -3201,17 +3153,18 @@ function findPropertyOnLoad() {
         return;
     }
 
-    sparqlQuery = getSearchQuery(language, '"' + search + '"');
     document.getElementById("search").value = search;
-    queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
+    searchProperties(search, language, "searchResults");
 }
 
 function findProperty(e) {
     e.preventDefault();
     let language = getValueFromURL("language=([^&#=]*)", "en");
-    let search = '"' + document.getElementById("search").value + '"';
-    sparqlQuery = getSearchQuery(language, search);
-    queryWikidata(sparqlQuery, createDivSearchProperties, "searchResults");
+    let search = document.getElementById("search").value.trim();
+    if (search == "") {
+        return;
+    }
+    searchProperties(search, language, "searchResults");
 }
 
 function createDivTranslationPathOptimized(divId, json) {

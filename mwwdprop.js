@@ -141,6 +141,240 @@ function fetchWikiProjects() {
 
 /*
  * ===========================================================================
+ * Searching for a property
+ * ===========================================================================
+ *
+ * search.html asked the query service three questions at once and joined them
+ * with UNION: properties whose label contains the term, properties named by
+ * P1963 on an item whose label contains it, and properties whose P31 class is
+ * labelled with it. The last two matched a label in every language Wikidata
+ * has and threw all but English away afterwards, which is the whole cost:
+ * measured against the live service, ?search=software took 58 seconds, of
+ * which the first branch was 5; the third, asked on its own, was refused
+ * after 8.
+ *
+ * A triple store has no text index, so every one of those contains() is a
+ * scan. The search index is a text index, and answers the same question in a
+ * third of a second. This is the move the WikiProjects listing above already
+ * made, for the same reason, and the comment there records the same figures.
+ *
+ * What comes back is not the same set, and is better rather than only faster.
+ * A property page carries its labels, aliases and descriptions in every
+ * language, so the index finds a property described as being about software
+ * without being called software, which is what the two expensive branches
+ * were reaching for by way of P1963 and P31. The order is by relevance
+ * instead of alphabetical, so the property being looked for is near the top
+ * rather than wherever the alphabet puts it.
+ */
+
+/*
+ * 50 is the most the API will return in one request to an ordinary client, so
+ * two pages are asked for at once rather than one after the other. Beyond the
+ * first hundred the relevance is thin and nobody is reading.
+ */
+var propertySearchPerRequest = 50;
+var propertySearchRequests = 2;
+
+/* Namespace 120 is Property: on Wikidata. */
+function propertySearchUrl(term, offset) {
+    return endpointUrl + "?action=query&list=search" +
+        "&srsearch=" + encodeURIComponent(term) +
+        "&srnamespace=120&srlimit=" + propertySearchPerRequest +
+        "&sroffset=" + offset +
+        "&srprop=&format=json&origin=*";
+}
+
+function propertyLabelsUrl(ids, language) {
+    return endpointUrl + "?action=wbgetentities" +
+        "&ids=" + encodeURIComponent(ids.join("|")) +
+        "&props=labels" +
+        "&languages=" + encodeURIComponent(language + "|en") +
+        "&format=json&origin=*";
+}
+
+/*
+ * The property identifiers the search knows of, in relevance order and
+ * without repeats.
+ *
+ * A page that fails contributes nothing rather than failing the search: the
+ * second fifty are worth less than the first. All of them failing is a failed
+ * search, though, and says so — an empty list would otherwise be shown as
+ * "nothing found", which is a different statement and an untrue one.
+ */
+function fetchPropertySearch(term) {
+    var offsets = [];
+    for (var i = 0; i < propertySearchRequests; i++) {
+        offsets.push(i * propertySearchPerRequest);
+    }
+
+    var failures = 0;
+
+    return Promise.all(offsets.map(function (offset) {
+        return fetch(propertySearchUrl(term, offset)).then(wdpropReadJson)
+            .then(function (json) {
+                if (json && json.error) {
+                    throw new Error(json.error.code || "api");
+                }
+                return (json.query && json.query.search) || [];
+            }).catch(function () {
+                failures++;
+                return [];
+            });
+    })).then(function (parts) {
+        if (failures === offsets.length) {
+            throw new Error("search");
+        }
+
+        var seen = {};
+        var ids = [];
+        for (var i = 0; i < parts.length; i++) {
+            for (var j = 0; j < parts[i].length; j++) {
+                var id = String(parts[i][j].title || "").replace(/^Property:/, "");
+                /* A search can reach a subpage or a redirect; neither is a
+                   property, and property.html would have nothing to show. */
+                if (!/^P\d+$/.test(id) || seen[id]) {
+                    continue;
+                }
+                seen[id] = true;
+                ids.push(id);
+            }
+        }
+        return ids;
+    });
+}
+
+/*
+ * What each of them is called. The search answers with identifiers, and P1547
+ * on its own tells a reader nothing.
+ *
+ * English is asked for alongside the language wanted so that a property with
+ * no label in that language is still named. It is a search result, and a row
+ * reading "P1547" and nothing else is of no use to anyone; which properties
+ * are missing a translation is the question the rest of WDProp is for.
+ *
+ * Fifty identifiers to a request, which is the API's limit, so a full search
+ * costs two of these however many rows it draws.
+ */
+function fetchPropertyLabels(ids, language) {
+    var chunks = [];
+    for (var i = 0; i < ids.length; i += 50) {
+        chunks.push(ids.slice(i, i + 50));
+    }
+
+    return Promise.all(chunks.map(function (chunk) {
+        return fetch(propertyLabelsUrl(chunk, language)).then(wdpropReadJson)
+            .then(function (json) {
+                return (json && json.entities) || {};
+            }).catch(function () {
+                return {};
+            });
+    })).then(function (parts) {
+        var labels = {};
+        for (var i = 0; i < parts.length; i++) {
+            for (var id in parts[i]) {
+                var found = parts[i][id].labels || {};
+                var chosen = found[language] || found.en;
+                if (chosen && chosen.value) {
+                    labels[id] = chosen.value;
+                }
+            }
+        }
+        return labels;
+    });
+}
+
+/*
+ * The whole search: the index for what matches, then the names for what it
+ * found. Four requests at the most, whatever the term, and they overlap.
+ */
+function searchProperties(term, language, divId) {
+    var div = document.getElementById(divId);
+    if (div == null) {
+        return;
+    }
+
+    wdpropShowLoading(div);
+    showMediaWikiQuery(propertySearchUrl(term, 0), divId);
+
+    fetchPropertySearch(term).then(function (ids) {
+        if (!ids.length) {
+            wdpropClear(div);
+            wdpropShowEmpty(div);
+            return;
+        }
+        return fetchPropertyLabels(ids, language).then(function (labels) {
+            wdpropClear(div);
+            createDivSearchProperties(divId, ids.map(function (id) {
+                return { property: id, label: labels[id] || "" };
+            }));
+            wdpropPaginate(div);
+        });
+    }).catch(function (error) {
+        wdpropShowError(div, wdpropReason(error), function () {
+            searchProperties(term, language, divId);
+        });
+    });
+}
+
+/*
+ * ===========================================================================
+ * Searching for a WikiProject
+ * ===========================================================================
+ *
+ * The same fault, on the other tab of the same page: a SPARQL query that
+ * federated to the search API for every page whose text mentions
+ * "Wikidata:WikiProject", brought them all back, and then filtered them by
+ * title with contains(). 27 seconds for "heritage".
+ *
+ * Asked of the index as a title search it is one request and four tenths of a
+ * second, and it is a better question: a project is found by its name rather
+ * than by a page somewhere happening to mention both words.
+ */
+function wikiProjectSearchUrl(term) {
+    return endpointUrl + "?action=query&list=search" +
+        "&srsearch=" + encodeURIComponent("intitle:WikiProject intitle:" + term) +
+        "&srnamespace=4&srlimit=" + wikiProjectsPerRequest +
+        "&srprop=&format=json&origin=*";
+}
+
+function searchWikiProjects(term, divId) {
+    var div = document.getElementById(divId);
+    if (div == null) {
+        return;
+    }
+
+    wdpropShowLoading(div);
+    showMediaWikiQuery(wikiProjectSearchUrl(term), divId);
+
+    fetch(wikiProjectSearchUrl(term)).then(wdpropReadJson).then(function (json) {
+        if (json && json.error) {
+            throw new Error(json.error.code || "api");
+        }
+
+        var titles = ((json.query && json.query.search) || []).map(function (hit) {
+            return hit.title;
+        }).filter(function (title) {
+            /* As the listing does: the prefix alone would keep the index page
+               that lists the projects, and the bare "Wikidata:WikiProject". */
+            return /^Wikidata:WikiProject[ /]/.test(title);
+        });
+
+        wdpropClear(div);
+        if (!titles.length) {
+            wdpropShowEmpty(div);
+            return;
+        }
+        createDivWikiProjects(divId, titles);
+        wdpropPaginate(div);
+    }).catch(function (error) {
+        wdpropShowError(div, wdpropReason(error), function () {
+            searchWikiProjects(term, divId);
+        });
+    });
+}
+
+/*
+ * ===========================================================================
  * The property-discussion templates
  * ===========================================================================
  *

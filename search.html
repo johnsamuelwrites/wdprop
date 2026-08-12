@@ -17,6 +17,8 @@
     <script defer type="text/javascript" src="i18n/en.js"></script>
     <script defer src="download.js"></script>
     <script defer type="text/javascript" src="wdprop.js"></script>
+    <!-- Both searches on this page go to the MediaWiki search index. -->
+    <script defer type="text/javascript" src="mwwdprop.js"></script>
     <script defer type="text/javascript" src="offline.js"></script>
     <script defer src="searchview.js"></script>
     <script defer src="pageinit.js"></script>
@@ -99,8 +101,15 @@
 
         <!-- Query (collapsed by default) -->
         <div class="section search-query-section" id="querySection" style="display:none;">
+            <!--
+                Not SPARQL any more: both tabs ask the search index, so what
+                this reveals is the API request that was made. It said "Show
+                SPARQL Query" in English on every page whatever the interface
+                language, which was two things wrong with one line.
+            -->
             <button class="search-query-toggle" data-action="toggleQuerySection">
-                <span class="search-query-toggle-icon">⚙️</span> Show SPARQL Query
+                <span class="search-query-toggle-icon">⚙️</span>
+                <span data-i18n="page.showRequest">Show the request</span>
                 <span class="search-query-chevron">▼</span>
             </button>
             <div id="searchResultsQuery" class="search-query-body" style="display:none;"></div>

@@ -78,7 +78,15 @@ function context() {
         },
         clearInterval: (handle) => { if (handle) handle.live = false; },
         setTimeout: () => 0,
-        localStorage: { getItem: () => null, setItem() {} },
+        /*
+         * Programmable, because the coverage figures are kept here for a day:
+         * the query behind them takes twenty seconds, which is longer than a
+         * dashboard gets looked at. `store` is set per case.
+         */
+        localStorage: {
+            getItem: key => (key in store ? store[key] : null),
+            setItem(key, value) { store[key] = String(value); },
+        },
         window: {
             WDProp: {
                 i18n: { t: (key, params) => {
@@ -126,8 +134,18 @@ const flush = async () => {
     for (let i = 0; i < 6; i++) await new Promise(r => setImmediate(r));
 };
 
-/* Rebuilds the page and runs dashboard.js against a given set of answers. */
-function load(responder) {
+/* What localStorage holds for the case being run. */
+let store = {};
+
+/*
+ * Rebuilds the page and runs dashboard.js against a given set of answers.
+ * Opens a fresh browser each time — an empty store — unless `keep` says to
+ * carry what the last one wrote, which is how a second visit is tested.
+ */
+function load(responder, keep) {
+    if (!keep) {
+        store = {};
+    }
     for (const id of ["statProperties", "statLanguages", "statDatatypes", "statClasses",
         "translationProgress", "topProperties", "serviceStatus"]) {
         elements[id] = node(id === "topProperties" ? "table" : "div");
@@ -136,6 +154,9 @@ function load(responder) {
     answer = responder;
     vm.runInContext(source, context(), { filename: "dashboard.js" });
 }
+
+const COVERAGE_KEY = "wdprop-dashboard-coverage";
+const HOUR = 60 * 60 * 1000;
 
 const ok = body => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) });
 const refused = () => Promise.resolve({ ok: false, status: 429, statusText: "" });
@@ -248,6 +269,72 @@ function everythingWorks(url) {
     const named = elements.topProperties.find("property-name")[0];
     s.check("a label is written as text", named.textContent, "<img src=x onerror=alert(1)>");
     s.check("so it cannot bring elements with it", named.children.every(c => c.text !== undefined), true);
+
+    /*
+     * The coverage query is 20 seconds against the live service, and there is
+     * no faster way to ask it: labels are not indexed, so each count is a
+     * scan. A dashboard is the page nobody waits on, so the figures are kept
+     * for a day.
+     */
+    console.log("\n-- The coverage figures are kept --");
+    load(everythingWorks);
+    await flush();
+    s.check("with nothing kept, they are asked for",
+        requests.filter(u => u.includes("n_en")).length, 1);
+    s.check("and what came back is kept", COVERAGE_KEY in store, true);
+    const kept = JSON.parse(store[COVERAGE_KEY]);
+    s.check("as the counts, not as the answer that carried them",
+        [kept.total, kept.counts.en, kept.counts.ja], [12000, 11880, 5160]);
+
+    load(everythingWorks, true);
+    await flush();
+    s.check("kept figures are not asked for again the same day",
+        requests.filter(u => u.includes("n_en")).length, 0);
+    s.check("and are shown all the same",
+        elements.translationProgress.find("progress-value")[0].textContent, "99%");
+    s.check("saying when they are from",
+        elements.translationProgress.find("progress-asof")[0].textContent, "Figures from just now");
+
+    /* Yesterday's are still drawn at once; the fresh ones replace them. */
+    store[COVERAGE_KEY] = JSON.stringify(
+        { total: 12000, counts: { en: 6000, de: 0, fr: 0, es: 0, ja: 0 }, at: Date.now() - 25 * HOUR });
+    load(everythingWorks, true);
+    s.check("a day-old figure is drawn before anything is asked",
+        elements.translationProgress.find("progress-value")[0].textContent, "50%");
+    await flush();
+    s.check("and is refreshed behind it",
+        requests.filter(u => u.includes("n_en")).length, 1);
+    s.check("leaving the figure that arrived",
+        elements.translationProgress.find("progress-value")[0].textContent, "99%");
+    s.check("with no date under it, having just been fetched",
+        elements.translationProgress.find("progress-asof").length, 0);
+
+    /*
+     * Kept figures beat a failure message: they are what the reader came for,
+     * and the line under them says how old they are.
+     */
+    store[COVERAGE_KEY] = JSON.stringify(
+        { total: 12000, counts: { en: 6000, de: 0, fr: 0, es: 0, ja: 0 }, at: Date.now() - 25 * HOUR });
+    load(refused, true);
+    await flush();
+    s.check("a refused refresh leaves the kept figures on screen",
+        elements.translationProgress.find("progress-value")[0].textContent, "50%");
+    s.check("dated, so nobody reads them as current",
+        elements.translationProgress.find("progress-asof").length, 1);
+
+    /* Half-written, or written by an older version of this file. */
+    store[COVERAGE_KEY] = "{\"total\":0}";
+    load(everythingWorks, true);
+    await flush();
+    s.check("an unusable cache is asked past, not shown",
+        [requests.filter(u => u.includes("n_en")).length,
+         elements.translationProgress.find("progress-value")[0].textContent], [1, "99%"]);
+
+    store[COVERAGE_KEY] = "not json";
+    load(everythingWorks, true);
+    await flush();
+    s.check("and so is one that cannot be read at all",
+        requests.filter(u => u.includes("n_en")).length, 1);
 
     process.exit(s.done());
 })();

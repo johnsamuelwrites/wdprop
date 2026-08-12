@@ -191,15 +191,13 @@ function renderSuite() {
         rows.map(r => r.wdpropProjectName), ["Books", "Heritage"]);
 
     /*
-     * The search page asks the query service a different question — which
-     * project titles contain a word — so a SPARQL answer has to work here too.
+     * The search page renders through here too. It used to arrive with a
+     * SPARQL answer, which this had a branch for; it asks the search index
+     * now, so both callers arrive with titles and the branch is gone.
      */
     targets.searchResults = element("div");
-    sandbox.createDivWikiProjects("searchResults", {
-        head: { vars: ["title"] },
-        results: { bindings: [{ title: { value: "Wikidata:WikiProject Music" } }] },
-    });
-    t.check("a SPARQL answer is accepted as well as an array",
+    sandbox.createDivWikiProjects("searchResults", ["Wikidata:WikiProject Music"]);
+    t.check("the search page renders through the same table",
         textOf(bodyRows(tableIn(targets.searchResults))[0].children[0]), "Music");
 
     return Promise.resolve();

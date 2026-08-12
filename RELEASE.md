@@ -28,6 +28,19 @@ Human-driven translation, alongside the existing analysis.
 * The sidebar shows which section you are in, and pages reached by a shared or
   bookmarked link — a property, a class, a WikiProject — carry a breadcrumb
   back to the listing they belong to
+* Sixteen pages could be reached only by someone who already knew they were
+  there. WDProp knew its own shape — which page sits under which section — but
+  used it solely to draw that breadcrumb, which is read after arriving. Read
+  the other way, the same list gives each section page a card for everything
+  beneath it, with a line saying what it is for. Only one section had linked
+  its own pages at all, and the Language Atlas was a bare line of text at the
+  foot of it
+* An index of every page, one line in the sidebar rather than sixteen, built
+  from that same list. A test compares it against the files on disk in both
+  directions, so a page that exists cannot go unlisted
+* The search finds WDProp's own pages as well as properties, matching a name,
+  a description or an address. The list is already in the browser, so they are
+  on screen before Wikidata has answered
 * A section shows placeholder rows the shape of the results it is waiting for,
   says so plainly when a query finds nothing, and when a query fails says what
   went wrong and offers to ask again
@@ -61,6 +74,42 @@ Human-driven translation, alongside the existing analysis.
   directly, by title rather than by free text, and with its nine pages of five
   hundred requested at once — they are reached by offset, so none waits on
   another — the same listing is 4,339 projects in 1.6 seconds
+* Both searches on search.html make the same move, and were worse. Finding a
+  property asked the query service three questions joined with UNION: labels
+  containing the term, properties named by P1963 on an item whose label
+  contains it, and properties whose P31 class is labelled with it. The last
+  two matched a label in every language Wikidata has and threw all but English
+  away afterwards, which is a scan per language for want of a text index.
+  ?search=software took 58 seconds, of which the first branch was 5; the third,
+  asked on its own, was refused after 8. The search index answers in 0.4, and
+  answers better: a property page carries its labels, aliases and descriptions
+  in every language, so a property described as being about software is found
+  without being called software, ranked by relevance rather than sorted by
+  label. Finding a WikiProject was the same shape — every page mentioning
+  "Wikidata:WikiProject" fetched through SPARQL and then filtered by title,
+  27 seconds for "heritage" — and is now one title search, four tenths of a
+  second
+* A property label was put into its cell through innerHTML, so a label
+  containing a `<` was markup by the time it was read. It is text now
+* compare.html said "No data available" for every comparison. Its bar charts
+  read their numbers back out of the page — the callback drew a chip per
+  language reading "en (2847)", and the chart found each `.language a`, matched
+  that text with a regular expression, and turned it back into a language and a
+  count. The chips became a table, as every listing did, and the selector then
+  matched nothing, while the query behind it answered perfectly well. The
+  answer is the argument to that callback; nothing needs parsing
+* The dashboard's translation coverage took 20 seconds to arrive, which is
+  longer than a dashboard is looked at. There is no faster way to ask it —
+  labels are not indexed, so each of the five counts is a scan of thirteen
+  thousand properties, and asking as one pass rather than five joins is 19
+  seconds — so the figures are kept for a day. What was kept is drawn at once,
+  whatever its age, refreshed behind it only when the day is up, and dated
+  where it came from store rather than from Wikidata
+* A page has to load the files it will actually reach into. search.html did not
+  load mwwdprop.js, where its search had just moved, so the search called a
+  function that did not exist on that page and quietly returned nothing. The
+  test suite now walks each page's entry point in pageinit.js through WDProp's
+  own calls and fails if it reaches a file the page does not load
 * Beneath it sat two paging schemes, neither of which ran. The renderer
   appended "next" links carrying limit and offset in the URL, while
   wikiprojects.js overrode the query to drop LIMIT and OFFSET altogether and

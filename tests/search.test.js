@@ -1,0 +1,392 @@
+/*
+ * search.html: finding a property, and finding a WikiProject.
+ *
+ * Both tabs asked the query service. The property search joined three
+ * questions with UNION, two of which matched a label in every language
+ * Wikidata has and then threw all but English away; against the live service
+ * ?search=software took 58 seconds, and the third branch on its own was
+ * refused after 8. The WikiProject tab federated back to the search API from
+ * inside SPARQL, fetched every page mentioning "Wikidata:WikiProject", and
+ * filtered the lot by title: 27 seconds for "heritage".
+ *
+ * A triple store has no text index, so every contains() over labels is a
+ * scan. Asked of the search index instead, the same two questions answer in
+ * about a third of a second each. The last case in this file is live and
+ * checks that this stays true.
+ *
+ * fetch is a dispatcher the tests program per case; nothing else reaches a
+ * network.
+ */
+const fs = require("fs"), path = require("path"), vm = require("vm");
+const { element, suite } = require("./helpers");
+const ROOT = path.join(__dirname, "..");
+
+const t = suite("search");
+
+/* ------------------------------------------------------------------ set-up */
+
+const dict = {};
+const i18n = {
+    add: (lang, d) => { if (lang === "en") Object.assign(dict, d); },
+    t: (key, params) => {
+        let s = dict[key];
+        if (s === undefined) return key;
+        (params || []).forEach((v, i) => { s = s.split("$" + (i + 1)).join(String(v)); });
+        return s;
+    },
+    current: () => "en",
+};
+
+global.window = global.window || {};
+global.window.WDProp = { i18n: i18n };
+global.WDProp = global.window.WDProp;
+require(ROOT + "/i18n/en.js");
+
+let targets = {};
+let requests = [];
+let answer = () => ({});
+
+const sandbox = {
+    console,
+    setTimeout,
+    window: {
+        location: { search: "" },
+        matchMedia: () => ({ matches: false }),
+        WDProp: { i18n },
+        addEventListener() {},
+    },
+    localStorage: { getItem: () => null, setItem() {} },
+    navigator: { language: "en" },
+    document: {
+        readyState: "complete",
+        body: element("body"),
+        documentElement: element("html"),
+        getElementById: id => (targets[id] = targets[id] || element("div")),
+        createElement: element,
+        createElementNS: (ns, tag) => element(tag),
+        createTextNode: text => { const n = element("#text"); n.text = String(text); return n; },
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        addEventListener() {},
+    },
+    fetch: url => {
+        requests.push(url);
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(answer(url)) });
+    },
+};
+sandbox.globalThis = sandbox;
+vm.createContext(sandbox);
+for (const file of ["ready.js", "wdprop.js", "pager.js", "mwwdprop.js"]) {
+    vm.runInContext(fs.readFileSync(path.join(ROOT, file), "utf8"), sandbox, { filename: file });
+}
+
+/* ----------------------------------------------------------------- helpers */
+
+function textOf(node) {
+    if (!node) return "";
+    if (node.text) return node.text;
+    return (node.innerHTML || "") + node.children.map(textOf).join("");
+}
+
+function tableIn(container) {
+    return container.children.find(c => c.tag === "table");
+}
+
+function bodyRows(table) {
+    return table.children.filter(c => c.tag === "tr" && c.children[0].tag === "td");
+}
+
+/* Long enough for the chain of promises a search is made of to run out. */
+function settled() {
+    return new Promise(resolve => setImmediate(() => setImmediate(resolve)));
+}
+
+function hits(ids) {
+    return { query: { search: ids.map(id => ({ title: "Property:" + id })) } };
+}
+
+function entities(labels) {
+    const out = {};
+    for (const id in labels) out[id] = { labels: labels[id] };
+    return { entities: out };
+}
+
+const isSearch = url => url.indexOf("list=search") !== -1;
+const offsetOf = url => Number(/sroffset=(\d+)/.exec(url)[1]);
+const idsOf = url => decodeURIComponent(/[?&]ids=([^&]*)/.exec(url)[1]).split("|");
+
+/* ------------------------------------------------------ what is asked for */
+
+function requestSuite() {
+    requests = [];
+    answer = url => (isSearch(url)
+        ? hits(offsetOf(url) === 0 ? ["P31", "P279"] : ["P1963"])
+        : entities({ P31: { en: { value: "instance of" } } }));
+
+    return sandbox.fetchPropertySearch("software").then(ids => {
+        console.log("\n-- The index, not the query service --");
+        t.check("nothing is asked of the query service",
+            requests.filter(u => u.indexOf("query.wikidata.org") !== -1), []);
+        t.check("two pages, asked for at once", requests.map(offsetOf), [0, 50]);
+        t.check("within the property namespace",
+            requests[0].indexOf("srnamespace=120") !== -1, true);
+        t.check("the term is one parameter, escaped",
+            requests[0].indexOf("srsearch=software") !== -1, true);
+        /* It was pasted into a SPARQL string in quotation marks before. */
+        t.check("and a term with a quotation mark in it stays one parameter", (() => {
+            requests = [];
+            sandbox.propertySearchUrl('say "hello"', 0);
+            return sandbox.propertySearchUrl('say "hello"', 0)
+                .indexOf("srsearch=say%20%22hello%22") !== -1;
+        })(), true);
+
+        console.log("\n-- What comes back --");
+        t.check("the identifiers, in the order the index gave them",
+            ids, ["P31", "P279", "P1963"]);
+    });
+}
+
+/* ------------------------------------------------- what is not a property */
+
+function siftingSuite() {
+    requests = [];
+    answer = () => ({
+        query: {
+            search: [
+                { title: "Property:P31" },
+                /* A search reaches subpages and talk pages; property.html
+                   would have nothing to show for either. */
+                { title: "Property:P31/documentation" },
+                { title: "Property talk:P31" },
+                { title: "Q42" },
+                /* And the same property can be on both pages. */
+                { title: "Property:P279" },
+                { title: "Property:P31" },
+            ],
+        },
+    });
+
+    return sandbox.fetchPropertySearch("x").then(ids => {
+        console.log("\n-- Only properties --");
+        t.check("a subpage, a talk page and an item are all left out",
+            ids, ["P31", "P279"]);
+    });
+}
+
+/* ------------------------------------------------------- a page that fails */
+
+function failureSuite() {
+    console.log("\n-- When a request fails --");
+
+    requests = [];
+    answer = url => (offsetOf(url) === 0
+        ? hits(["P31"])
+        : { error: { code: "srsearch-error" } });
+
+    return sandbox.fetchPropertySearch("x").then(ids => {
+        t.check("one page failing costs that page and nothing else", ids, ["P31"]);
+
+        /*
+         * Both failing is a failed search, and has to say so. Answering with
+         * an empty list would put "nothing found" on screen, which is a
+         * different statement and an untrue one.
+         */
+        answer = () => ({ error: { code: "srsearch-error" } });
+        return sandbox.fetchPropertySearch("x").then(
+            () => t.check("both failing is an error, not an empty result", "resolved", "rejected"),
+            () => t.check("both failing is an error, not an empty result", "rejected", "rejected"));
+    });
+}
+
+/* ----------------------------------------------------------- naming them */
+
+function labelSuite() {
+    console.log("\n-- Naming what was found --");
+
+    requests = [];
+    const many = [];
+    for (let i = 1; i <= 120; i++) many.push("P" + i);
+    answer = () => entities({});
+
+    return sandbox.fetchPropertyLabels(many, "ta").then(() => {
+        t.check("fifty identifiers to a request, which is the API's limit",
+            requests.map(u => idsOf(u).length), [50, 50, 20]);
+        t.check("the language wanted is asked for, and English with it",
+            decodeURIComponent(requests[0]).indexOf("languages=ta|en") !== -1, true);
+
+        requests = [];
+        answer = () => entities({
+            P31: { ta: { value: "வகை" }, en: { value: "instance of" } },
+            P279: { en: { value: "subclass of" } },
+            P1963: {},
+        });
+
+        return sandbox.fetchPropertyLabels(["P31", "P279", "P1963"], "ta").then(labels => {
+            t.check("the language wanted wins where there is one", labels.P31, "வகை");
+            /*
+             * A search result reading "P279" and nothing else is of no use.
+             * Which properties are missing a translation is a question the
+             * rest of WDProp answers; this page is for finding one.
+             */
+            t.check("English stands in where there is not", labels.P279, "subclass of");
+            t.check("and a property with no label at all is left unnamed",
+                "P1963" in labels, false);
+        });
+    });
+}
+
+/* ------------------------------------------------------------- the table */
+
+function renderSuite() {
+    console.log("\n-- The results table --");
+
+    targets.searchResults = element("div");
+    sandbox.createDivSearchProperties("searchResults", [
+        { property: "P348", label: "software version identifier" },
+        { property: "P408", label: "software engine" },
+        { property: "P1547", label: "" },
+    ]);
+
+    const container = targets.searchResults;
+    const rows = bodyRows(tableIn(container));
+
+    t.check("the heading counts them",
+        textOf(container.children.find(c => c.tag === "h3")), "Total 3 properties");
+    t.check("one row each", rows.length, 3);
+    t.check("the order the index gave them is kept",
+        rows.map(r => textOf(r.children[0])), ["P348", "P408", "P1547"]);
+    t.check("each links to its page here",
+        rows[0].children[0].children[0].getAttribute("href"), "property.html?property=P348");
+    t.check("with the label beside it", textOf(rows[1].children[1]), "software engine");
+    t.check("and no label leaves the cell empty rather than inventing one",
+        textOf(rows[2].children[1]), "");
+
+    /*
+     * Wikidata's text is Wikidata's text. The label was assigned through
+     * innerHTML, so a label containing a < was markup by the time it was read.
+     */
+    targets.searchResults = element("div");
+    sandbox.createDivSearchProperties("searchResults", [
+        { property: "P1", label: "<b>not bold</b> & <" },
+    ]);
+    const cell = bodyRows(tableIn(targets.searchResults))[0].children[1];
+    t.check("a label is put in as text, not as markup",
+        [cell.innerHTML, textOf(cell)], ["", "<b>not bold</b> & <"]);
+
+    /* Rebuilt in place: a second search must not sit under the first. */
+    sandbox.createDivSearchProperties("searchResults", [{ property: "P2", label: "two" }]);
+    t.check("a second search replaces the first",
+        bodyRows(tableIn(targets.searchResults)).map(r => textOf(r.children[0])), ["P2"]);
+
+    return Promise.resolve();
+}
+
+/* ------------------------------------------------------- the whole search */
+
+function wholeSuite() {
+    console.log("\n-- End to end --");
+
+    requests = [];
+    targets.searchResults = element("div");
+    answer = url => (isSearch(url)
+        ? hits(offsetOf(url) === 0 ? ["P348", "P408"] : [])
+        : entities({
+            P348: { en: { value: "software version identifier" } },
+            P408: { en: { value: "software engine" } },
+        }));
+
+    sandbox.searchProperties("software", "en", "searchResults");
+
+    return settled().then(() => {
+        t.check("three requests: two pages of the index, one for the names",
+            requests.length, 3);
+        t.check("and none of them to the query service",
+            requests.filter(u => u.indexOf("query.wikidata.org") !== -1), []);
+        t.check("the rows are drawn",
+            bodyRows(tableIn(targets.searchResults)).map(r => textOf(r.children[1])),
+            ["software version identifier", "software engine"]);
+
+        /* Nothing found says so, and does not ask for names it has not got. */
+        requests = [];
+        targets.searchResults = element("div");
+        answer = () => hits([]);
+        sandbox.searchProperties("zzzz", "en", "searchResults");
+
+        return settled().then(() => {
+            t.check("nothing found asks for no names", requests.length, 2);
+            t.check("and draws no table", tableIn(targets.searchResults), undefined);
+        });
+    });
+}
+
+/* --------------------------------------------------------- WikiProjects */
+
+function projectSuite() {
+    console.log("\n-- The WikiProjects tab --");
+
+    requests = [];
+    targets.searchResults = element("div");
+    answer = () => ({
+        query: {
+            search: [
+                { title: "Wikidata:WikiProject Cultural heritage" },
+                { title: "Wikidata:WikiProject Heritage Collections" },
+                /* The index page listing the projects, and the bare prefix:
+                   neither is a project. */
+                { title: "Wikidata:WikiProjects" },
+                { title: "Wikidata:WikiProject" },
+            ],
+        },
+    });
+
+    sandbox.searchWikiProjects("heritage", "searchResults");
+
+    return settled().then(() => {
+        t.check("one request", requests.length, 1);
+        t.check("a title search in the project namespace",
+            decodeURIComponent(requests[0]).indexOf("srsearch=intitle:WikiProject intitle:heritage") !== -1 &&
+            requests[0].indexOf("srnamespace=4") !== -1, true);
+        t.check("the projects are drawn, and the two that are not are left out",
+            bodyRows(tableIn(targets.searchResults)).map(r => textOf(r.children[0])),
+            ["Cultural heritage", "Heritage Collections"]);
+    });
+}
+
+/* ------------------------------------------------------------------- live */
+
+function liveSuite() {
+    console.log("\n-- Live: the search that took a minute --");
+
+    const started = Date.now();
+    return fetch(sandbox.propertySearchUrl("software", 0))
+        .then(r => r.json())
+        .then(json => {
+            const elapsed = Date.now() - started;
+            const found = (json.query && json.query.search) || [];
+            t.check("the index answers", found.length > 0, true);
+            t.check("with properties",
+                found.every(hit => /^Property:P\d+$/.test(hit.title)), true);
+            /*
+             * The SPARQL it replaced took 58 seconds for this term. Five is
+             * far above anything measured — three tenths of a second is
+             * usual — and low enough that a return to scanning labels fails
+             * here rather than in front of someone.
+             */
+            t.check("in under five seconds", elapsed < 5000, true);
+            t.note(`${found.length} properties for "software" in ${elapsed} ms, ` +
+                `of ${json.query.searchinfo.totalhits} the index has`);
+        })
+        .catch(error => {
+            t.check("the live search could be reached", String(error), "no error");
+        });
+}
+
+requestSuite()
+    .then(siftingSuite)
+    .then(failureSuite)
+    .then(labelSuite)
+    .then(renderSuite)
+    .then(wholeSuite)
+    .then(projectSuite)
+    .then(liveSuite)
+    .then(() => process.exit(t.done()));
