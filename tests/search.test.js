@@ -45,6 +45,8 @@ require(ROOT + "/i18n/en.js");
 let targets = {};
 let requests = [];
 let answer = () => ({});
+/* Handlers searchview.js registered, so a case can fire one. */
+const listeners = {};
 
 const sandbox = {
     console,
@@ -54,6 +56,7 @@ const sandbox = {
         matchMedia: () => ({ matches: false }),
         WDProp: { i18n },
         addEventListener() {},
+        history: { replaceState: (state, title, url) => written.push(url) },
     },
     localStorage: { getItem: () => null, setItem() {} },
     navigator: { language: "en" },
@@ -67,16 +70,19 @@ const sandbox = {
         createTextNode: text => { const n = element("#text"); n.text = String(text); return n; },
         querySelector: () => null,
         querySelectorAll: () => [],
-        addEventListener() {},
+        addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); },
     },
     fetch: url => {
         requests.push(url);
         return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(answer(url)) });
     },
 };
+/* searchview.js registers the page's controls and reaches for these. */
+sandbox.window.WDProp.actions = { add() {} };
+sandbox.WDProp = sandbox.window.WDProp;
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
-for (const file of ["ready.js", "wdprop.js", "pager.js", "mwwdprop.js"]) {
+for (const file of ["ready.js", "wdprop.js", "pager.js", "mwwdprop.js", "searchview.js"]) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), "utf8"), sandbox, { filename: file });
 }
 
@@ -110,6 +116,10 @@ function entities(labels) {
     for (const id in labels) out[id] = { labels: labels[id] };
     return { entities: out };
 }
+
+/* Where the address bar was left. searchview.js writes it so a result page
+   can be bookmarked and sent on. */
+let written = [];
 
 const isSearch = url => url.indexOf("list=search") !== -1;
 const offsetOf = url => Number(/sroffset=(\d+)/.exec(url)[1]);
@@ -221,16 +231,17 @@ function labelSuite() {
             P1963: {},
         });
 
+        /*
+         * Both are handed on rather than one being chosen here: the row says
+         * which of the three states a property is in, and it cannot say that
+         * from a string that has already had the choice made for it.
+         */
         return sandbox.fetchPropertyLabels(["P31", "P279", "P1963"], "ta").then(labels => {
-            t.check("the language wanted wins where there is one", labels.P31, "வகை");
-            /*
-             * A search result reading "P279" and nothing else is of no use.
-             * Which properties are missing a translation is a question the
-             * rest of WDProp answers; this page is for finding one.
-             */
-            t.check("English stands in where there is not", labels.P279, "subclass of");
-            t.check("and a property with no label at all is left unnamed",
-                "P1963" in labels, false);
+            t.check("what came back is passed on as it came",
+                [labels.P31.ta.value, labels.P31.en.value], ["வகை", "instance of"]);
+            t.check("including a property with only the English one",
+                [("ta" in labels.P279), labels.P279.en.value], [false, "subclass of"]);
+            t.check("and one with neither", labels.P1963, {});
         });
     });
 }
@@ -242,10 +253,10 @@ function renderSuite() {
 
     targets.searchResults = element("div");
     sandbox.createDivSearchProperties("searchResults", [
-        { property: "P348", label: "software version identifier" },
-        { property: "P408", label: "software engine" },
-        { property: "P1547", label: "" },
-    ]);
+        { property: "P348", labels: { fr: { value: "version du logiciel" }, en: { value: "software version identifier" } } },
+        { property: "P408", labels: { en: { value: "software engine" } } },
+        { property: "P1547", labels: {} },
+    ], "fr");
 
     const container = targets.searchResults;
     const rows = bodyRows(tableIn(container));
@@ -257,9 +268,21 @@ function renderSuite() {
         rows.map(r => textOf(r.children[0])), ["P348", "P408", "P1547"]);
     t.check("each links to its page here",
         rows[0].children[0].children[0].getAttribute("href"), "property.html?property=P348");
-    t.check("with the label beside it", textOf(rows[1].children[1]), "software engine");
-    t.check("and no label leaves the cell empty rather than inventing one",
-        textOf(rows[2].children[1]), "");
+
+    /*
+     * The three states every other listing shows. A reader working in French
+     * was shown the English label with nothing to say so, on a tool whose
+     * subject is which languages Wikidata has reached.
+     */
+    t.check("a property named in the language being read reads as itself",
+        textOf(rows[0].children[1]), "version du logiciel");
+    t.check("and its row is not marked as untranslated",
+        rows[0].getAttribute("class"), null);
+    t.check("one named only in English says so",
+        textOf(rows[1].children[1]), "software engine (not yet in this language)");
+    t.check("and its row is marked", rows[1].getAttribute("class"), "untranslatedrow");
+    t.check("one named in neither says that instead",
+        textOf(rows[2].children[1]), "not in this language");
 
     /*
      * Wikidata's text is Wikidata's text. The label was assigned through
@@ -267,14 +290,15 @@ function renderSuite() {
      */
     targets.searchResults = element("div");
     sandbox.createDivSearchProperties("searchResults", [
-        { property: "P1", label: "<b>not bold</b> & <" },
-    ]);
+        { property: "P1", labels: { fr: { value: "<b>not bold</b> & <" } } },
+    ], "fr");
     const cell = bodyRows(tableIn(targets.searchResults))[0].children[1];
     t.check("a label is put in as text, not as markup",
         [cell.innerHTML, textOf(cell)], ["", "<b>not bold</b> & <"]);
 
     /* Rebuilt in place: a second search must not sit under the first. */
-    sandbox.createDivSearchProperties("searchResults", [{ property: "P2", label: "two" }]);
+    sandbox.createDivSearchProperties("searchResults",
+        [{ property: "P2", labels: { fr: { value: "deux" } } }], "fr");
     t.check("a second search replaces the first",
         bodyRows(tableIn(targets.searchResults)).map(r => textOf(r.children[0])), ["P2"]);
 
@@ -315,6 +339,212 @@ function wholeSuite() {
         return settled().then(() => {
             t.check("nothing found asks for no names", requests.length, 2);
             t.check("and draws no table", tableIn(targets.searchResults), undefined);
+        });
+    });
+}
+
+/* ------------------------------------------------ which language is asked */
+
+function languageSuite() {
+    console.log("\n-- The language the results are named in --");
+
+    /*
+     * "en" was the default written into findPropertyOnLoad, and again into
+     * every example link on this page and on the dashboard. A reader working
+     * in French searched in French, read a French interface, and got English
+     * labels — on a tool whose subject is which languages Wikidata has been
+     * translated into.
+     */
+    const asked = () => decodeURIComponent(
+        /[?&]languages=([^&]*)/.exec(requests.filter(u => !isSearch(u))[0])[1]);
+
+    answer = url => (isSearch(url) ? hits(["P31"]) : entities({ P31: {} }));
+    i18n.current = () => "fr";
+
+    /*
+     * Each of these is a page opening at a different address. Whether the
+     * address named a language is decided once when a page loads, so it is set
+     * here alongside the address rather than left over from the last case.
+     */
+    const visit = search => {
+        requests = [];
+        written = [];
+        targets = {};
+        targets.search = element("input");
+        targets.searchproject = element("input");
+        sandbox.window.location = { pathname: "/search.html", search: search };
+        sandbox.wdpropLanguagePinned = sandbox.wdpropLanguageIsPinned(search);
+    };
+
+    visit("?search=logiciel");
+    sandbox.findPropertyOnLoad();
+
+    return settled().then(() => {
+        t.check("with none in the address, the interface language is used", asked(), "fr|en");
+        t.check("and the term goes into the field, not the language",
+            targets.search.value, "logiciel");
+
+        /*
+         * A shared link naming a language means that language, whatever the
+         * interface of whoever opens it. That is what makes one worth sending.
+         */
+        visit("?search=x&language=ta");
+        sandbox.findPropertyOnLoad();
+
+        return settled().then(() => {
+            t.check("a language in the address wins over the interface", asked(), "ta|en");
+
+            /* And the form, on a page whose address named nothing. */
+            visit("");
+            targets.search.value = "logiciel";
+            sandbox.findProperty({ preventDefault() {} });
+
+            return settled().then(() => {
+                t.check("typing into the form asks the same way", asked(), "fr|en");
+                i18n.current = () => "en";
+            });
+        });
+    });
+}
+
+/* ---------------------------------------------- a link worth sending on */
+
+function bookmarkSuite() {
+    console.log("\n-- The address says what is being shown --");
+
+    answer = url => (isSearch(url) ? hits(["P31"]) : entities({ P31: {} }));
+    i18n.current = () => "fr";
+
+    const visit = search => {
+        requests = [];
+        written = [];
+        targets = {};
+        targets.search = element("input");
+        targets.searchproject = element("input");
+        sandbox.window.location = { pathname: "/search.html", search: search };
+        sandbox.wdpropLanguagePinned = sandbox.wdpropLanguageIsPinned(search);
+    };
+
+    /*
+     * A search typed into the form never reached the address: the submit is
+     * cancelled so the results can be drawn in place, and there was nothing
+     * left to bookmark or to send to anyone.
+     */
+    visit("");
+    targets.search.value = "logiciel";
+    sandbox.findProperty({ preventDefault() {} });
+
+    return settled().then(() => {
+        t.check("a typed search goes into the address",
+            written.pop(), "./search.html?search=logiciel&language=fr");
+
+        /* Which is the point: the recipient sees what the sender saw. */
+        visit("?search=logiciel");
+        sandbox.findPropertyOnLoad();
+
+        return settled().then(() => {
+            t.check("a link that named no language is answered and made explicit",
+                written.pop(), "./search.html?search=logiciel&language=fr");
+
+            visit("?search=x&language=ta");
+            sandbox.findPropertyOnLoad();
+
+            return settled().then(() => {
+                t.check("one that named a language keeps the one it named",
+                    written.pop(), "./search.html?search=x&language=ta");
+
+                /* uselang was asked for explicitly, so it survives. */
+                visit("?search=x&uselang=es");
+                sandbox.findPropertyOnLoad();
+
+                return settled().then(() => {
+                    t.check("an interface language in the address is kept beside it",
+                        written.pop(), "./search.html?search=x&language=fr&uselang=es");
+
+                    /* A project is found by its title, which is one string on
+                       Wikidata whatever the interface language. */
+                    visit("");
+                    targets.searchproject.value = "heritage";
+                    sandbox.findWikiProjects({ preventDefault() {} });
+
+                    return settled().then(() => {
+                        t.check("a WikiProject search is bookmarkable and needs no language",
+                            written.pop(), "./search.html?searchproject=heritage");
+                        i18n.current = () => "en";
+                    });
+                });
+            });
+        });
+    });
+}
+
+/* -------------------------------- the two languages are not one question */
+
+function pinningSuite() {
+    console.log("\n-- Interface language and language parameter --");
+
+    answer = url => (isSearch(url) ? hits(["P31"]) : entities({ P31: {} }));
+    const askedFor = () => decodeURIComponent(
+        /[?&]languages=([^&]*)/.exec(requests.filter(u => !isSearch(u)).pop())[1]);
+    const change = language => {
+        i18n.current = () => language;
+        (listeners["wdprop:language"] || []).forEach(fn => fn({ detail: language }));
+    };
+
+    const visit = search => {
+        requests = [];
+        written = [];
+        targets = {};
+        targets.search = element("input");
+        targets.searchproject = element("input");
+        sandbox.window.location = { pathname: "/search.html", search: search };
+        sandbox.wdpropLanguagePinned = sandbox.wdpropLanguageIsPinned(search);
+    };
+
+    /*
+     * Nothing in the address said which language, so the labels are in the one
+     * being read, and reading in another changes what they should be.
+     */
+    i18n.current = () => "fr";
+    visit("?search=logiciel");
+    sandbox.findPropertyOnLoad();
+
+    return settled().then(() => {
+        t.check("with no language in the address, the results follow the interface",
+            askedFor(), "fr|en");
+
+        requests = [];
+        written = [];
+        change("es");
+        return settled().then(() => {
+            t.check("so changing it fetches them again", askedFor(), "es|en");
+            t.check("and the address follows",
+                written, ["./search.html?search=logiciel&language=es"]);
+
+            /*
+             * A link saying language=ta is a link about Tamil however the
+             * person opening it has their interface set. That is the whole
+             * reason for keeping the two apart, and it is what makes one
+             * worth sending.
+             */
+            i18n.current = () => "fr";
+            visit("?search=x&language=ta");
+            sandbox.findPropertyOnLoad();
+
+            return settled().then(() => {
+                t.check("a language in the address is not the interface's to override",
+                    askedFor(), "ta|en");
+
+                requests = [];
+                written = [];
+                change("es");
+                return settled().then(() => {
+                    t.check("and changing the interface fetches nothing",
+                        requests, []);
+                    t.check("and rewrites nothing", written, []);
+                    i18n.current = () => "en";
+                });
+            });
         });
     });
 }
@@ -387,6 +617,9 @@ requestSuite()
     .then(labelSuite)
     .then(renderSuite)
     .then(wholeSuite)
+    .then(languageSuite)
+    .then(bookmarkSuite)
+    .then(pinningSuite)
     .then(projectSuite)
     .then(liveSuite)
     .then(() => process.exit(t.done()));

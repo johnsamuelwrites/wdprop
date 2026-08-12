@@ -91,6 +91,61 @@ Human-driven translation, alongside the existing analysis.
   second
 * A property label was put into its cell through innerHTML, so a label
   containing a `<` was markup by the time it was read. It is text now
+* Search results came back in English however the interface was set. "en" was
+  the default written into the search, and written again into every example
+  link on the dashboard and the search page, so a reader working in French
+  searched in French, read a French interface, and got English labels — on a
+  tool whose subject is which languages Wikidata has been translated into. The
+  results are named in the language being read; an address naming a language
+  still means that language. Where a property has no label in it, the English
+  one is shown and marked as English, which is the same three states every
+  other listing shows rather than a silent substitution
+* The interface language and the `language` parameter are two questions and are
+  kept apart. The first is what WDProp's own words are in, chosen with the
+  switcher or with uselang, and belongs to whoever is reading; the second is
+  which language's labels a page is about, and is what makes a link worth
+  sending to someone. A search typed into the form never reached the address at
+  all — the submit is cancelled so the results can be drawn in place — so there
+  was nothing to bookmark and nothing to share. The address now carries the
+  term and the language actually used, and a link that names a language means
+  that language whatever the interface of whoever opens it. One that names none
+  is answered with the language being read, and changing that changes the
+  results
+* Changing language with results on screen refetches them. The interface
+  retranslates itself from the message files, and Wikidata's text cannot: it
+  was fetched in one language and has to be asked for again. i18n.js announces
+  the change now, for any section that needs to
+* The dashboard is drawn again when the language changes, and it needed to be:
+  its language names, service words and the line saying when the coverage
+  figures are from are built in JavaScript from messages looked up as they are
+  built, and that moment is before the language has arrived — every message
+  file but English is fetched by a script tag. A French page drew its dashboard
+  in English and never revisited it
+* The translation coverage list is in order of coverage. It came out in the
+  order the languages are declared in, which put German above French on three
+  thousand fewer property labels, so the bars went up and then down again
+* A WikiProject is not one page, and its properties are no longer looked for
+  as though it were. Wikidata:WikiProject Cultural heritage links to no
+  property at all — the 56 it works with are spread over its reports and
+  guidelines — and Organizations keeps its 44 on /Ontology and /Public Sector
+  Organizations. Both came back empty. The project's whole tree is asked for
+  at once now, as allpages over the project namespace with the links of every
+  page it returns narrowed to properties: one request and a third of a second
+  for either of those, and a line under the table saying how many pages the
+  properties were found across. Backlinks — "what links here" — answer the
+  question from the other end, for one property at a time, so finding a
+  project's properties that way would mean asking it of all thirteen thousand.
+  A property named in prose rather than linked is still not found: the link
+  tables are what MediaWiki records, transclusions included
+* A project with no properties left three sections saying they were still
+  fetching. Their statistics take the properties from a SPARQL VALUES block,
+  and with none to put in it WDQS reads the empty block as no constraint at
+  all and goes through every label in Wikidata — 33 seconds, three times over,
+  before answering 502. Nothing is asked when there is nothing to ask about
+* wikiproject.html offered two examples — "WikiProjects related to Heritage",
+  "…to programming language" — as links to itself carrying a search parameter
+  that page reads nothing of, so both landed on the same default project
+  whatever they said. They point at the search now, which honours them
 * compare.html said "No data available" for every comparison. Its bar charts
   read their numbers back out of the page — the callback drew a chip per
   language reading "en (2847)", and the chart found each `.language a`, matched

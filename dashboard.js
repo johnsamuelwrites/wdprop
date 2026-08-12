@@ -288,11 +288,18 @@ function coverageFrom(binding) {
     return { total: parseInt(binding.total.value, 10), counts: counts, at: Date.now() };
 }
 
+/*
+ * What the coverage list is currently showing, so it can be drawn again in
+ * another language without asking Wikidata for figures it already has.
+ */
+let shownCoverage = null;
+
 function renderCoverage(figures, held) {
     const list = document.getElementById('translationProgress');
     if (!list) {
         return;
     }
+    shownCoverage = { figures: figures, held: held };
     clearNode(list);
 
     const total = figures.total;
@@ -300,7 +307,17 @@ function renderCoverage(figures, held) {
         throw new Error('No properties were counted.');
     }
 
-    COVERAGE_LANGUAGES.forEach(({ code, name }) => {
+    /*
+     * Best served first. COVERAGE_LANGUAGES is written in an order that suits
+     * reading the file, and the list came out in it: English, German, French,
+     * Spanish, Japanese, whatever their figures. French has some three
+     * thousand more property labels than German, so the bars went up and then
+     * down again, which is the one thing a row of bars is read for.
+     */
+    const ordered = COVERAGE_LANGUAGES.slice().sort(
+        (a, b) => figures.counts[b.code] - figures.counts[a.code]);
+
+    ordered.forEach(({ code, name }) => {
         const translated = figures.counts[code];
         const percentage = Math.round((translated / total) * 100);
 
@@ -602,8 +619,31 @@ function renderServiceStatus() {
     grid.appendChild(statusRow('dash.cacheStatus', cacheText()));
 }
 
+/*
+ * Drawn again when the language changes.
+ *
+ * i18n.js retranslates the page from data-i18n attributes, and none of this
+ * has any: the language names, the service words and the line saying when the
+ * figures are from are built here, out of messages looked up at the moment
+ * they were built. That moment is usually before the language has arrived —
+ * every file but English is fetched by a script tag, so a French page renders
+ * its dashboard in English and then never revisits it. "Figures from" stayed
+ * in English on a French page for exactly that reason.
+ *
+ * Nothing is fetched again: the coverage figures are the ones already shown,
+ * and the service words come from what this page's own requests did.
+ */
+function retranslateDashboard() {
+    if (shownCoverage) {
+        renderCoverage(shownCoverage.figures, shownCoverage.held);
+    }
+    renderServiceStatus();
+}
+
 // Animate all stat values on page load
 function initDashboard() {
+    document.addEventListener('wdprop:language', retranslateDashboard);
+
     renderServiceStatus();
     updateHeroStats();
     updateTranslationProgress();

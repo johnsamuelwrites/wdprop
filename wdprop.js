@@ -759,12 +759,12 @@ function createDivWikiProjects(divId, titles) {
 /*
  * The search results: one row per property, in the order they were given.
  *
- * `rows` are plain objects — { property, label } — rather than SPARQL
+ * `rows` are plain objects — { property, labels } — rather than SPARQL
  * bindings, because the search no longer goes through the query service. The
  * order is the search index's order, which is by relevance, so nothing here
  * sorts them.
  */
-function createDivSearchProperties(divId, rows) {
+function createDivSearchProperties(divId, rows, language) {
     let properties = document.getElementById(divId);
     /* A second search replaces the first rather than piling up beneath it. */
     wdpropClear(properties);
@@ -793,13 +793,41 @@ function createDivSearchProperties(divId, rows) {
         tr.appendChild(property);
 
         /*
-         * Wikidata's own text, put in as text. It used to be assigned through
+         * The same three states the other listings show: named in the language
+         * being read, named only in English, or not named at all. A search on a
+         * translation tool that quietly showed the English label would hide the
+         * one thing the reader is here to find out.
+         *
+         * Wikidata's own text goes in as text. It used to be assigned through
          * innerHTML, which made a label containing a < or an & Wikidata's
          * markup rather than Wikidata's label.
          */
+        let labels = row.labels || {};
+        let target = labels[language];
+        let fallback = labels["en"];
+
         let label = document.createElement("td");
-        label.setAttribute('class', "searchresultvalue");
-        label.appendChild(document.createTextNode(row.label));
+        label.setAttribute('class',
+            target || fallback ? "searchresultvalue" : "searchresultvalue missingvalue");
+
+        if (target) {
+            label.appendChild(document.createTextNode(target.value));
+        } else if (fallback) {
+            label.appendChild(document.createTextNode(fallback.value));
+            /* Marked in words rather than left to the row's tint, which a
+               monochrome screen and a screen reader both lose. */
+            let note = document.createElement("span");
+            note.setAttribute("class", "missingvalue fallbacklabel");
+            note.appendChild(document.createTextNode(" " + wdpropText("js.fallbackLabel")));
+            label.appendChild(note);
+        } else {
+            label.appendChild(document.createTextNode(wdpropText("js.notInLanguage")));
+        }
+
+        if (!target) {
+            tr.setAttribute("class", "untranslatedrow");
+        }
+
         tr.appendChild(label);
 
         table.appendChild(tr);
@@ -3145,8 +3173,45 @@ function findWikiProjects(e) {
     searchWikiProjects(search, "searchResults");
 }
 
+/*
+ * Two languages, and they are not the same question.
+ *
+ *   the interface language   what WDProp's own words are in, chosen with the
+ *                            switcher or with uselang, and the reader's alone
+ *   ?language=               which language's labels the results are named in,
+ *                            which is what the page is *about* and what makes
+ *                            one worth sending to someone else
+ *
+ * It was "en", written as the default here and again into every example link
+ * on this page and on the dashboard, so a reader working in French got English
+ * labels — on a tool whose subject is which languages Wikidata has reached.
+ * Answering it with the interface language alone is the opposite mistake:
+ * nothing in the address then says what is being shown, and the same link sent
+ * to two people shows them two different things.
+ *
+ * So both. An address that names a language means that language, whatever the
+ * interface is set to; an address that names none is answered with the
+ * language being read, and searchview.js writes that answer into the address
+ * so the page can be bookmarked and sent on. Which of the two happened is
+ * decided here, once, before anything of ours has been written into the
+ * address — otherwise the answer we filled in would come back looking like the
+ * reader's own choice.
+ */
+function wdpropLanguageIsPinned(search) {
+    return /[?&]language=/.test(String(search || ""));
+}
+
+var wdpropLanguagePinned = wdpropLanguageIsPinned(window.location.search);
+
+function wdpropSearchLanguage() {
+    if (wdpropLanguagePinned) {
+        return wdpropLabelLanguage();
+    }
+    return (window.WDProp && window.WDProp.i18n)
+        ? window.WDProp.i18n.current() : "en";
+}
+
 function findPropertyOnLoad() {
-    let language = getValueFromURL("language=([^&#=]*)", "en");
     let search = getValueFromURL("search=([^&#=]*)", "");
 
     if (search == "") {
@@ -3154,17 +3219,16 @@ function findPropertyOnLoad() {
     }
 
     document.getElementById("search").value = search;
-    searchProperties(search, language, "searchResults");
+    searchProperties(search, wdpropSearchLanguage(), "searchResults");
 }
 
 function findProperty(e) {
     e.preventDefault();
-    let language = getValueFromURL("language=([^&#=]*)", "en");
     let search = document.getElementById("search").value.trim();
     if (search == "") {
         return;
     }
-    searchProperties(search, language, "searchResults");
+    searchProperties(search, wdpropSearchLanguage(), "searchResults");
 }
 
 function createDivTranslationPathOptimized(divId, json) {

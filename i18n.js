@@ -127,6 +127,31 @@ window.WDProp = window.WDProp || {};
 
         document.documentElement.setAttribute("lang", current);
         showCurrentInSwitcher();
+        announce();
+    }
+
+    /*
+     * That the language changed, for the parts of a page this cannot reach.
+     *
+     * Everything above is text WDProp wrote, and retranslating it is a matter
+     * of looking the key up again. What Wikidata sent is not: a table of
+     * property labels was fetched in one language and cannot be moved to
+     * another without asking again. Those sections listen for this and refetch
+     * themselves; search.html is the first.
+     *
+     * Guarded because the tests run this against a stand-in document, and
+     * because nothing here is worth an exception on a page that translated
+     * perfectly well.
+     */
+    function announce() {
+        if (typeof CustomEvent !== "function" || !document.dispatchEvent) {
+            return;
+        }
+        try {
+            document.dispatchEvent(new CustomEvent("wdprop:language", { detail: current }));
+        } catch (e) {
+            /* Left as it was. */
+        }
     }
 
     /*

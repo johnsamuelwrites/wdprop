@@ -207,54 +207,118 @@ function renderSuite() {
 
 function projectSuite() {
     /*
-     * The identifiers are already in the links the API returned, so the SPARQL
-     * query this page used to run purely to put a label beside each one is
-     * gone — and with it its hardcoded English, on a page about translating
-     * into other languages. The table names them from the entity API.
+     * A project is not one page. Wikidata:WikiProject Cultural heritage links
+     * to no property at all, and the fifty-six it works with are spread over
+     * its reports and guidelines; Organizations keeps its forty-four on
+     * /Ontology and /Public Sector Organizations. Asked for the links of the
+     * one page named in the address — which is what this did — both came back
+     * empty, which is not what either project says about itself.
      */
+    const project = "Wikidata:WikiProject Books";
+
+    function page(title, ids) {
+        return { title, links: ids.map(id => ({ title: "Property:" + id })) };
+    }
+
+    /* The tree, answered in two parts, as a large project's would be. */
+    const tree = url => (/continue=more/.test(url)
+        ? { query: { pages: { 4: page(project + "/Reports/2024", ["P1476", "P50"]) } } }
+        : {
+            continue: { continue: "more" },
+            query: {
+                pages: {
+                    /* The main page, which lists nothing at all. */
+                    1: page(project, []),
+                    2: page(project + "/Ontology", ["P31", "P279"]),
+                    /* The same property on two pages is one property. */
+                    3: page(project + "/Team", ["P31"]),
+                    /* A prefix match that is not part of this project. */
+                    5: page("Wikidata:WikiProject Books Extra", ["P9999"]),
+                    /* Some project pages carry a bare Property:P link. */
+                    6: page(project + "/Notes", ["P"]),
+                },
+            },
+        });
+
     requests = [];
-    answer = () => ({ entities: {} });
+    answer = url => (url.includes("wbgetentities") ? { entities: {} } : tree(url));
 
     targets.allProperties = element("div");
     targets.WikiProject = element("h2");
+    for (const id of ["translatedLabelsCount", "translatedDescriptionsCount",
+        "translatedAliasesCount"]) {
+        targets[id] = element("div");
+    }
 
-    sandbox.createDivWikprojectProperties("allProperties", {
-        query: {
-            pages: {
-                "123": {
-                    title: "Wikidata:WikiProject Books",
-                    links: [
-                        { title: "Property:P31" },
-                        { title: "Wikidata:WikiProject Books/Team" },
-                        { title: "Property:P" },
-                        { title: "Property:P1476" },
-                    ],
-                },
-            },
-        },
+    sandbox.showWikiProjectProperties(project, "allProperties");
+
+    return settled().then(() => settled()).then(() => {
+        const rows = bodyRows(tableIn(targets.allProperties));
+
+        t.check("the whole tree is asked for, not the one page",
+            decodeURIComponent(requests[0]).includes("generator=allpages") &&
+            decodeURIComponent(requests[0]).includes("gapprefix=WikiProject Books"), true);
+        t.check("and only the links that are properties",
+            requests[0].includes("plnamespace=120"), true);
+        t.check("the page says which project it is showing",
+            targets.WikiProject.textContent, project);
+        t.check("the properties of the subpages are the project's properties",
+            rows.map(r => r.wdpropEntityId), ["P31", "P279", "P1476", "P50"]);
+        t.check("one on two pages is one property", rows.length, 4);
+        t.check("a page that merely shares the prefix is not part of it",
+            rows.map(r => r.wdpropEntityId).includes("P9999"), false);
+        t.check("nor is the bare Property:P link some pages carry",
+            rows.map(r => r.wdpropEntityId).includes("P"), false);
+        t.check("the heading counts them, which it never used to show",
+            textOf(targets.allProperties.children.find(c => c.tag === "h3")),
+            "Total 4 properties");
+        /* A reader who knows the main page lists nothing is owed this. */
+        t.check("and a line says where they were found",
+            textOf(targets.allProperties.children.find(
+                c => c.getAttribute && c.getAttribute("class") === "wdp-note")),
+            "Found across 5 pages of this project, including its subpages.");
+        t.check("the second page of the tree is followed",
+            requests.filter(u => u.includes("generator=allpages")).length, 2);
+        t.check("they are named from the entity API, not the query service",
+            requests.filter(u => u.includes("wbgetentities")).length, 1);
+        t.check("and the statistics are asked for, once each",
+            requests.filter(u => u.includes("query.wikidata.org")).length, 3);
+
+        return emptyProjectSuite();
     });
+}
 
-    const rows = bodyRows(tableIn(targets.allProperties));
+/* ------------------------------------------- a project with no properties */
 
-    t.check("the page says which project it is showing",
-        targets.WikiProject.textContent, "Wikidata:WikiProject Books");
-    t.check("the heading counts the properties, which it never used to show",
-        textOf(targets.allProperties.children.find(c => c.tag === "h3")),
-        "Total 2 properties");
-    t.check("only the property links become rows",
-        rows.map(r => r.wdpropEntityId), ["P31", "P1476"]);
-    t.check("the bare Property:P link some project pages carry is not one",
-        rows.length, 2);
-
+function emptyProjectSuite() {
     /*
-     * The table is short enough to need no pager, so wdpropPaginate hands its
-     * rows straight to the fill functions — the terms are already on their way.
+     * The three statistics take their properties from a VALUES block. With
+     * none to put in it, WDQS reads the empty block as no constraint at all
+     * and goes through every label in Wikidata: 33 seconds, three times over,
+     * and then 502. That is what left this page saying it was still fetching
+     * long after it had found nothing to fetch.
      */
-    return settled().then(() => {
-        t.check("nothing is asked of the query service",
-            requests.filter(u => u.indexOf("query.wikidata.org") !== -1).length, 0);
-        t.check("they are named from the entity API instead",
-            requests.filter(u => u.indexOf("wbgetentities") !== -1).length, 1);
+    requests = [];
+    answer = () => ({ query: { pages: { 1: { title: "Wikidata:WikiProject Empty", links: [] } } } });
+
+    targets.allProperties = element("div");
+    for (const id of ["translatedLabelsCount", "translatedDescriptionsCount",
+        "translatedAliasesCount"]) {
+        targets[id] = element("div");
+    }
+
+    sandbox.showWikiProjectProperties("Wikidata:WikiProject Empty", "allProperties");
+
+    return settled().then(() => settled()).then(() => {
+        t.check("a project with no properties says so",
+            textOf(targets.allProperties), "Nothing found for this query.");
+        t.check("and nothing is asked of the query service",
+            requests.filter(u => u.includes("query.wikidata.org")), []);
+        t.check("the three statistics say the same rather than going on fetching",
+            ["translatedLabelsCount", "translatedDescriptionsCount", "translatedAliasesCount"]
+                .map(id => textOf(targets[id])),
+            ["Nothing found for this query.", "Nothing found for this query.",
+             "Nothing found for this query."]);
     });
 }
 

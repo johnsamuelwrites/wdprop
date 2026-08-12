@@ -432,6 +432,7 @@ WDProp.i18n.add("en", {
        have no label in the language the labels were asked in. */
     "js.withoutLabel": " — $1 without a label in this language",
     "js.fallbackLabel": "(not yet in this language)",
+    "js.acrossProjectPages": "Found across $1 pages of this project, including its subpages.",
     /* $1 is how far the property number map reaches, $2 the highest property
        number there is, $3 how many of those numbers are properties today. */
     "js.propertyNumberSpace": "P1 to P$1 of P$2 — $3 properties exist, the gaps were deleted",

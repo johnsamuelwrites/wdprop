@@ -58,6 +58,8 @@ require(path.join(ROOT, "i18n", "en.js"));
 const elements = {};
 let answer = null;
 let requests = [];
+/* Listeners dashboard.js registered on the document. */
+let handlers = {};
 
 /*
  * A fresh context for each run: dashboard.js declares its constants with
@@ -117,7 +119,8 @@ function context() {
             createTextNode: t => ({ text: String(t) }),
             querySelector: () => null,
             querySelectorAll: () => [],
-            addEventListener() {},
+            /* Kept, so a case can fire the language change i18n.js announces. */
+            addEventListener(type, fn) { (handlers[type] = handlers[type] || []).push(fn); },
             head: node("head"),
         },
         fetch: (url) => { requests.push(url); return answer(url); },
@@ -151,6 +154,7 @@ function load(responder, keep) {
         elements[id] = node(id === "topProperties" ? "table" : "div");
     }
     requests = [];
+    handlers = {};
     answer = responder;
     vm.runInContext(source, context(), { filename: "dashboard.js" });
 }
@@ -335,6 +339,57 @@ function everythingWorks(url) {
     await flush();
     s.check("and so is one that cannot be read at all",
         requests.filter(u => u.includes("n_en")).length, 1);
+
+    /*
+     * Best served first. COVERAGE_LANGUAGES is written in an order that suits
+     * reading the file — English, German, French, Spanish, Japanese — and the
+     * list came out in it whatever the figures said. French has some three
+     * thousand more property labels than German, so the bars went up and then
+     * down again, which is the one thing a row of bars is read for.
+     */
+    console.log("\n-- The coverage list is in order --");
+    load(url => {
+        if (url.includes("w/api.php")) return ok(report);
+        if (url.includes("VALUES")) return ok(labels);
+        if (url.includes("n_en")) return ok({ results: { bindings: [{
+            total: { value: "100" },
+            n_en: { value: "100" }, n_de: { value: "56" }, n_fr: { value: "79" },
+            n_es: { value: "43" }, n_ja: { value: "39" },
+        }] } });
+        return ok(count(100));
+    });
+    await flush();
+    s.check("the best served language first, whatever order they are declared in",
+        elements.translationProgress.find("progress-value").map(v => v.textContent),
+        ["100%", "79%", "56%", "43%", "39%"]);
+    s.check("and each is named beside its own figure",
+        elements.translationProgress.find("progress-label").map(v => v.textContent),
+        ["English (en)", "French (fr)", "German (de)", "Spanish (es)", "Japanese (ja)"]);
+
+    /*
+     * None of this widget carries data-i18n: the language names, the service
+     * words and the line saying when the figures are from are built here, from
+     * messages looked up at the moment they were built. That moment is usually
+     * before the language has arrived — every message file but English is
+     * fetched by a script tag — so a French page drew its dashboard in English
+     * and never revisited it. "Figures from" stayed English for that reason.
+     */
+    console.log("\n-- Drawn again when the language changes --");
+    /* Opened again, so the figures come from store and carry their date. */
+    load(everythingWorks, true);
+    await flush();
+    english["dash.lastUpdated"] = "Chiffres de";
+    english["lang.en"] = "anglais";
+    requests = [];
+    handlers["wdprop:language"].forEach(fn => fn({ detail: "fr" }));
+    s.check("the line saying when the figures are from is retranslated",
+        elements.translationProgress.find("progress-asof").length === 0
+            ? "no line"
+            : elements.translationProgress.find("progress-asof")[0].textContent,
+        "Chiffres de just now");
+    s.check("and so are the language names",
+        elements.translationProgress.find("progress-label")[0].textContent, "anglais (en)");
+    s.check("without asking Wikidata for figures it already has", requests, []);
 
     process.exit(s.done());
 })();

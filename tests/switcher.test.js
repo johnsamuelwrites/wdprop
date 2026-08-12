@@ -40,8 +40,19 @@ function load(options) {
         setItem: (k, v) => { store[k] = String(v); },
     };
 
+    /*
+     * Announced when the language is applied, for the parts of a page i18n.js
+     * cannot retranslate: what Wikidata sent was fetched in one language and
+     * has to be asked for again in another.
+     */
+    const announced = [];
+
     const sandbox = {
         console,
+        CustomEvent: function (type, init) {
+            this.type = type;
+            this.detail = init && init.detail;
+        },
         window: {
             location: { search: options.search || "" },
             localStorage: storage,
@@ -68,6 +79,7 @@ function load(options) {
             querySelector: () => null,
             querySelectorAll: () => [],
             addEventListener() {},
+            dispatchEvent(event) { announced.push(event); return true; },
         },
     };
 
@@ -93,6 +105,7 @@ function load(options) {
         sandbox,
         store,
         pending,
+        announced,
         chooser: () => byId["header"].children.find(c => c.tag === "select"),
         /* Runs a message file that i18n.js asked for, as the browser would. */
         deliver(language, dictionary) {
@@ -187,6 +200,21 @@ function showing(select) {
         typeof select.getAttribute("aria-label"), "string");
     t.check("and offers every language WDProp has",
         select.options.map(o => o.getAttribute("value")), ["en", "fr", "es"]);
+}
+
+/* ------------------------------------------- the change is announced */
+
+/*
+ * The interface retranslates itself from the message files; a table of
+ * property labels cannot. search.html listens for this and asks Wikidata
+ * again, which is what stops a French page carrying English labels.
+ */
+{
+    const page = load({ search: "?uselang=fr" });
+    page.deliver("fr", { "app.subtitle": "Tout sur les propriétés" });
+    t.check("applying a language says so",
+        page.announced.map(e => e.type), ["wdprop:language"]);
+    t.check("and says which one", page.announced[0].detail, "fr");
 }
 
 process.exit(t.done());

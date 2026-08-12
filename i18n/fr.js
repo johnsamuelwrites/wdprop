@@ -403,6 +403,7 @@ WDProp.i18n.add("fr", {
     "js.totalProperties": "Total : $1 propriétés",
     "js.withoutLabel": " — $1 sans libellé dans cette langue",
     "js.fallbackLabel": "(pas encore dans cette langue)",
+    "js.acrossProjectPages": "Trouvées sur $1 pages de ce projet, sous-pages comprises.",
     "js.propertyNumberSpace": "P1 à P$1 sur P$2 — $3 propriétés existent, les trous ont été supprimés",
     "js.translateThese": "Traduire ces $1",
     "js.translateMissing": "Traduire ce qui manque",

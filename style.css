@@ -1762,6 +1762,17 @@ img {
 }
 
 /*
+ * A line under a listing saying something about how it was gathered — where a
+ * WikiProject's properties were found, for one, since its own main page often
+ * lists none of them.
+ */
+.wdp-note {
+    margin: 12px 0 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+/*
  * When the coverage figures are from, shown only when they were kept from an
  * earlier visit. The query behind them takes twenty seconds, so they are asked
  * for once a day and drawn from store in between; a reader is owed the date on
